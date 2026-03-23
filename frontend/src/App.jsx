@@ -7,7 +7,6 @@ import DashboardPage from './pages/DashboardPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
 import DocumentsPage from './pages/DocumentsPage'
-import ManpowerPage from './pages/ManpowerPage'
 import ReportsPage from './pages/ReportsPage'
 import ActivityLogPage from './pages/ActivityLogPage'
 import NotificationsPage from './pages/NotificationsPage'
@@ -29,7 +28,6 @@ export default function App() {
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="documents" element={<DocumentsPage />} />
-          <Route path="manpower" element={<ManpowerPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="activity" element={<ActivityLogPage />} />
           <Route path="notifications" element={<NotificationsPage />} />

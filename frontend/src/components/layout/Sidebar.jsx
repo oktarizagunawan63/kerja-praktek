@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, FolderKanban, FileText, Users,
+  LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, LogOut, Stethoscope
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
@@ -10,7 +10,6 @@ const navItems = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/projects',       icon: FolderKanban,    label: 'Proyek' },
   { to: '/documents',      icon: FileText,        label: 'Dokumen' },
-  { to: '/manpower',       icon: Users,           label: 'Manpower' },
   { to: '/reports',        icon: BarChart3,       label: 'Laporan' },
   { to: '/notifications',  icon: Bell,            label: 'Notifikasi' },
   { to: '/activity',       icon: Activity,        label: 'Activity Log' },
