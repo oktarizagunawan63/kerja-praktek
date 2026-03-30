@@ -39,16 +39,23 @@ export default function FileUpload({ onFilesChange, accept, maxFiles = 5, label 
 
       {files.length > 0 && (
         <ul className="space-y-2">
-          {files.map((f, i) => (
-            <li key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
-              <File size={14} className="text-blue-500 shrink-0" />
-              <span className="text-xs text-gray-700 flex-1 truncate">{f.name}</span>
-              <span className="text-xs text-gray-400">{(f.size / 1024).toFixed(1)} KB</span>
-              <button onClick={() => remove(i)} className="text-gray-400 hover:text-red-500 transition-colors">
-                <X size={14} />
-              </button>
-            </li>
-          ))}
+          {files.map((f, i) => {
+            const isImage = f.type.startsWith('image/')
+            const previewUrl = isImage ? URL.createObjectURL(f) : null
+            return (
+              <li key={i} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                {isImage
+                  ? <img src={previewUrl} alt={f.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                  : <File size={14} className="text-blue-500 shrink-0" />
+                }
+                <span className="text-xs text-gray-700 flex-1 truncate">{f.name}</span>
+                <span className="text-xs text-gray-400">{(f.size / 1024).toFixed(1)} KB</span>
+                <button onClick={() => remove(i)} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <X size={14} />
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

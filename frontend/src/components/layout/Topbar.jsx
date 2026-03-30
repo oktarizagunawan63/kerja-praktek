@@ -1,10 +1,16 @@
 import { Bell, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
+import useNotifStore from '../../store/notifStore'
+import { useEffect } from 'react'
 
 export default function Topbar() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const { notifs, syncFromProjects } = useNotifStore()
+  const unread = notifs.filter(n => !n.read).length
+
+  useEffect(() => { syncFromProjects() }, [])
 
   return (
     <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0">
@@ -25,7 +31,11 @@ export default function Topbar() {
           className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+          {unread > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
         </button>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-[#0f4c81] flex items-center justify-center text-white text-xs font-bold">

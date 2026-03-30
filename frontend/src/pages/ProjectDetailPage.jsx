@@ -5,6 +5,7 @@ import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import FileUpload from '../components/ui/FileUpload'
 import toast from 'react-hot-toast'
+import useNotifStore from '../store/notifStore'
 
 const addActivityLog = (action, detail, project = 'RS Sentral Amsar') => {
   const logs = JSON.parse(localStorage.getItem('activity_logs') || '[]')
@@ -20,25 +21,24 @@ const addActivityLog = (action, detail, project = 'RS Sentral Amsar') => {
   localStorage.setItem('activity_logs', JSON.stringify(logs.slice(0, 50)))
 }
 
-const MOCK_MATERIALS = [
-  { id: 1, name: 'Beton K-300', unit: 'm3', qty_plan: 500, qty_terpasang: 350 },
-  { id: 2, name: 'Besi Tulangan', unit: 'ton', qty_plan: 80, qty_terpasang: 60 },
-  { id: 3, name: 'Kabel Listrik', unit: 'm', qty_plan: 2000, qty_terpasang: 1200 },
-  { id: 4, name: 'Pipa PVC', unit: 'btg', qty_plan: 300, qty_terpasang: 180 },
-]
+const MOCK_MATERIALS = []
 
-const MOCK_DOCS = [
-  { id: 1, name: 'Laporan Harian 22 Mar', type: 'Laporan Harian', uploader: 'Budi S.', date: '22 Mar 2026', previewUrl: null },
-  { id: 2, name: 'Foto Pekerjaan Lantai 3', type: 'Foto', uploader: 'Ahmad F.', date: '21 Mar 2026', previewUrl: null },
-]
+const SATUAN_OPTIONS = ['m3', 'm2', 'm', 'ton', 'kg', 'btg', 'unit', 'set', 'ls', 'buah', 'liter', 'zak']
 
-const INIT_HISTORY = [
-  { id: 1, action: 'Update Material Terpasang', detail: 'Tambah 50 m3 Beton K-300 — Pekerjaan lantai 2', user: 'Budi Santoso', time: '22 Mar 2026, 14:30', type: 'material' },
-  { id: 2, action: 'Upload Dokumen', detail: 'Upload Laporan Harian: Laporan Harian 22 Mar', user: 'Budi Santoso', time: '22 Mar 2026, 09:15', type: 'dokumen' },
-  { id: 3, action: 'Update Material Terpasang', detail: 'Tambah 10 ton Besi Tulangan — Struktur kolom', user: 'Ahmad Fauzi', time: '21 Mar 2026, 16:00', type: 'material' },
-  { id: 4, action: 'Upload Dokumen', detail: 'Upload Foto: Foto Pekerjaan Lantai 3', user: 'Ahmad Fauzi', time: '21 Mar 2026, 11:45', type: 'dokumen' },
-  { id: 5, action: 'Proyek Dibuat', detail: 'Proyek RS Sentral Amsar berhasil dibuat', user: 'Admin', time: '01 Jan 2026, 08:00', type: 'system' },
-]
+const loadMaterials = (projectId) => {
+  try {
+    const saved = localStorage.getItem(`materials_${projectId}`)
+    return saved ? JSON.parse(saved) : []
+  } catch { return [] }
+}
+
+const saveMaterials = (projectId, data) => {
+  localStorage.setItem(`materials_${projectId}`, JSON.stringify(data))
+}
+
+const MOCK_DOCS = []
+
+const INIT_HISTORY = []
 
 const historyIcon = {
   material: <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center"><Plus size={13} className="text-blue-600" /></div>,
@@ -72,13 +72,15 @@ export default function ProjectDetailPage() {
   const [materialOpen, setMaterialOpen] = useState(false)
   const [completeOpen, setCompleteOpen] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState(null)
-  const [materials, setMaterials] = useState(project ? MOCK_MATERIALS : [])
+  const [materials, setMaterials] = useState(() => loadMaterials(id))
   const [docs, setDocs] = useState(MOCK_DOCS)
   const [history, setHistory] = useState(INIT_HISTORY)
   const [isCompleted, setIsCompleted] = useState(project?.status === 'completed')
   const [completeNote, setCompleteNote] = useState('')
   const [previewPhoto, setPreviewPhoto] = useState(null)
   const [docTab, setDocTab] = useState('semua')
+  const [addMatOpen, setAddMatOpen] = useState(false)
+  const [newMatForm, setNewMatForm] = useState({ name: '', unit: 'm3', qty_plan: '', qty_terpasang: '' })
 
   if (!project) {
     return (
@@ -94,6 +96,8 @@ export default function ProjectDetailPage() {
   const [matForm, setMatForm] = useState({ qty_tambah: '', catatan: '', files: [] })
   const [docForm, setDocForm] = useState({ type: 'Laporan Harian', files: [] })
 
+  const { notifs, syncFromProjects, addNotif } = useNotifStore()
+
   const addHistory = (entry) => {
     setHistory(prev => [{ id: Date.now(), ...entry, time: new Date().toLocaleString('id-ID') }, ...prev])
   }
@@ -104,18 +108,69 @@ export default function ProjectDetailPage() {
       toast.error('Isi qty dan upload dokumen perintah')
       return
     }
-    const qty = parseFloat(matForm.qty_tambah)
-    setMaterials(prev => prev.map(m =>
+    const qty = parseInt(matForm.qty_tambah)
+    const updated = materials.map(m =>
       m.id === selectedMaterial.id
         ? { ...m, qty_terpasang: Math.min(m.qty_terpasang + qty, m.qty_plan) }
         : m
-    ))
+    )
+    setMaterials(updated)
+    saveMaterials(id, updated)
+
+    // simpan semua file yang diupload ke dokumen proyek
+    const newDocs = matForm.files.map(file => {
+      const isImage = file.type.startsWith('image/')
+      return {
+        id: Date.now() + Math.random(),
+        name: file.name,
+        type: isImage ? 'Foto' : 'Dokumen Teknis',
+        uploader: project.pm.split(' ')[0] + ' S.',
+        date: new Date().toLocaleDateString('id-ID'),
+        previewUrl: isImage ? URL.createObjectURL(file) : null,
+      }
+    })
+    if (newDocs.length > 0) setDocs(prev => [...newDocs, ...prev])
+
     const detail = `Tambah ${qty} ${selectedMaterial.unit} untuk ${selectedMaterial.name}${matForm.catatan ? ' — ' + matForm.catatan : ''}`
-    addActivityLog('Update Material Terpasang', detail)
-    addHistory({ action: 'Update Material Terpasang', detail, user: 'Budi Santoso', type: 'material' })
+    addActivityLog('Update Material Terpasang', detail, project.name)
+    addHistory({ action: 'Update Material Terpasang', detail, user: project.pm, type: 'material' })
     toast.success('Material terpasang berhasil diupdate')
     setMaterialOpen(false)
     setMatForm({ qty_tambah: '', catatan: '', files: [] })
+  }
+
+  const handleAddMaterial = (e) => {
+    e.preventDefault()
+    if (!newMatForm.name || !newMatForm.qty_plan) {
+      toast.error('Nama dan qty rencana wajib diisi')
+      return
+    }
+    if (materials.find(m => m.name.toLowerCase() === newMatForm.name.toLowerCase())) {
+      toast.error('Material dengan nama ini sudah ada')
+      return
+    }
+    const newMat = {
+      id: Date.now(),
+      name: newMatForm.name,
+      unit: newMatForm.unit,
+      qty_plan: parseInt(newMatForm.qty_plan),
+      qty_terpasang: parseInt(newMatForm.qty_terpasang) || 0,
+    }
+    const updated = [...materials, newMat]
+    setMaterials(updated)
+    saveMaterials(id, updated)
+    addHistory({ action: 'Tambah Material', detail: `Material baru: ${newMat.name} (${newMat.qty_plan} ${newMat.unit})`, user: project.pm, type: 'material' })
+    toast.success(`${newMat.name} berhasil ditambahkan`)
+    setAddMatOpen(false)
+    setNewMatForm({ name: '', unit: 'm3', qty_plan: '', qty_terpasang: '' })
+  }
+
+  const handleDeleteMaterial = (matId) => {
+    const mat = materials.find(m => m.id === matId)
+    const updated = materials.filter(m => m.id !== matId)
+    setMaterials(updated)
+    saveMaterials(id, updated)
+    toast.success(`${mat.name} dihapus`)
   }
 
   const handleDocUpload = () => {
@@ -139,6 +194,7 @@ export default function ProjectDetailPage() {
     const detail = `Upload ${docForm.type}: ${newDoc.name}`
     addActivityLog('Upload Dokumen', detail, project.name)
     addHistory({ action: 'Upload Dokumen', detail, user: project.pm, type: 'dokumen' })
+    addNotif({ type: 'info', category: 'dokumen', title: 'Dokumen Baru', message: `${newDoc.name} diupload di ${project.name}`, project: project.name })
     toast.success('Dokumen berhasil diupload')
     setUploadOpen(false)
     setDocForm({ type: 'Laporan Harian', files: [] })
@@ -150,6 +206,8 @@ export default function ProjectDetailPage() {
     addActivityLog('Proyek Selesai', detail, project.name)
     addHistory({ action: 'Proyek Selesai', detail, user: project.pm, type: 'selesai' })
     saveProjectField(id, { status: 'completed', progress: 100, completedAt: new Date().toISOString().split('T')[0] })
+    addNotif({ type: 'success', category: 'project', title: 'Proyek Selesai', message: `${project.name} telah ditandai selesai`, project: project.name })
+    syncFromProjects()
     toast.success('Proyek berhasil ditandai selesai')
     setCompleteOpen(false)
     setCompleteNote('')
@@ -170,7 +228,7 @@ export default function ProjectDetailPage() {
         </button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
-          <p className="text-sm text-gray-500">{project.location} · PM: {project.pm}</p>
+          <p className="text-sm text-gray-500">{project.location} · SM: {project.pm}</p>
         </div>
         {isCompleted
           ? <Badge variant="info">Selesai</Badge>
@@ -222,7 +280,17 @@ export default function ProjectDetailPage() {
 
       {/* Material Terpasang */}
       <div className="card">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Material Terpasang</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-700">Material Terpasang</h3>
+          {!isCompleted && (
+            <button
+              onClick={() => setAddMatOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"
+            >
+              <Plus size={13} /> Tambah Material
+            </button>
+          )}
+        </div>
         <div className="space-y-3">
           {materials.map((mat) => {
             const pct = Math.round((mat.qty_terpasang / mat.qty_plan) * 100)
@@ -241,12 +309,20 @@ export default function ProjectDetailPage() {
                       {pct}%
                     </span>
                     {!isCompleted && (
-                      <button
-                        onClick={() => openMaterialModal(mat)}
-                        className="flex items-center gap-1 text-xs bg-[#0f4c81] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#1a6bb5] transition-colors"
-                      >
-                        <Plus size={12} /> Tambah
-                      </button>
+                      <>
+                        <button
+                          onClick={() => openMaterialModal(mat)}
+                          className="flex items-center gap-1 text-xs bg-[#0f4c81] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#1a6bb5] transition-colors"
+                        >
+                          <Plus size={12} /> Tambah
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMaterial(mat.id)}
+                          className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -259,6 +335,9 @@ export default function ProjectDetailPage() {
               </div>
             )
           })}
+          {materials.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-6">Belum ada material — klik "+ Tambah Material"</p>
+          )}
         </div>
       </div>
 
@@ -476,7 +555,7 @@ export default function ProjectDetailPage() {
               Qty Terpasang ({selectedMaterial?.unit})
             </label>
             <input
-              type="number" min="0.01" step="0.01" required
+              type="number" min="1" step="1" required
               value={matForm.qty_tambah}
               onChange={(e) => setMatForm({ ...matForm, qty_tambah: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -498,15 +577,68 @@ export default function ProjectDetailPage() {
               Dokumen Perintah <span className="text-red-500">*</span>
             </label>
             <FileUpload
+              key={materialOpen ? selectedMaterial?.id : 'closed'}
               label="Upload dokumen perintah / berita acara"
               accept={{ 'image/*': [], 'application/pdf': [] }}
               maxFiles={3}
-              onFilesChange={(files) => setMatForm({ ...matForm, files })}
+              onFilesChange={(files) => setMatForm(prev => ({ ...prev, files }))}
             />
           </div>
           <div className="flex gap-2 justify-end pt-2">
             <button type="button" onClick={() => setMaterialOpen(false)} className="btn-secondary">Batal</button>
             <button type="submit" className="btn-primary">Simpan</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Tambah Material Baru */}
+      <Modal open={addMatOpen} onClose={() => setAddMatOpen(false)} title="Tambah Material Baru" size="md">
+        <form onSubmit={handleAddMaterial} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Nama Material</label>
+            <input
+              type="text" required
+              value={newMatForm.name}
+              onChange={e => setNewMatForm({ ...newMatForm, name: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Contoh: Bata Merah, Cat Tembok..."
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Satuan</label>
+              <select
+                value={newMatForm.unit}
+                onChange={e => setNewMatForm({ ...newMatForm, unit: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                {SATUAN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Qty Rencana</label>
+              <input
+                type="number" min="1" step="1" required
+                value={newMatForm.qty_plan}
+                onChange={e => setNewMatForm({ ...newMatForm, qty_plan: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Total kebutuhan..."
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Qty Sudah Terpasang <span className="text-gray-400">(opsional)</span></label>
+            <input
+              type="number" min="0" step="1"
+              value={newMatForm.qty_terpasang}
+              onChange={e => setNewMatForm({ ...newMatForm, qty_terpasang: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="0"
+            />
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <button type="button" onClick={() => setAddMatOpen(false)} className="btn-secondary">Batal</button>
+            <button type="submit" className="btn-primary">Tambah Material</button>
           </div>
         </form>
       </Modal>

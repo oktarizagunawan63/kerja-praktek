@@ -6,11 +6,11 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const INIT_PROJECTS = [
-  { id: 1, name: 'RS Sentral Amsar', location: 'Jakarta Selatan', status: 'on_track', progress: 72, rab: 850, realisasi: 720, pm: 'Budi Santoso', deadline: '2026-09-30', completedAt: null },
-  { id: 2, name: 'Klinik Utama Barat', location: 'Tangerang', status: 'at_risk', progress: 45, rab: 400, realisasi: 410, pm: 'Siti Rahayu', deadline: '2026-07-15', completedAt: null },
-  { id: 3, name: 'Lab Medis Timur', location: 'Bekasi', status: 'on_track', progress: 88, rab: 300, realisasi: 280, pm: 'Ahmad Fauzi', deadline: '2026-06-10', completedAt: null },
-  { id: 4, name: 'Apotek Cabang 3', location: 'Depok', status: 'delayed', progress: 30, rab: 200, realisasi: 195, pm: 'Dewi Lestari', deadline: '2026-05-01', completedAt: null },
-  { id: 5, name: 'Puskesmas Cilandak', location: 'Jakarta Selatan', status: 'completed', progress: 100, rab: 150, realisasi: 148, pm: 'Rudi Hartono', deadline: '2025-12-31', completedAt: '2025-12-28' },
+  { id: 1, name: 'RS Sentral Amsar', location: 'Jakarta Selatan', status: 'on_track', progress: 72, rab: 850, realisasi: 720, pm: 'Budi Santoso', phone: '6281234567890', deadline: '2026-09-30', completedAt: null },
+  { id: 2, name: 'Klinik Utama Barat', location: 'Tangerang', status: 'at_risk', progress: 45, rab: 400, realisasi: 410, pm: 'Siti Rahayu', phone: '6281234567891', deadline: '2026-07-15', completedAt: null },
+  { id: 3, name: 'Lab Medis Timur', location: 'Bekasi', status: 'on_track', progress: 88, rab: 300, realisasi: 280, pm: 'Ahmad Fauzi', phone: '6281234567892', deadline: '2026-06-10', completedAt: null },
+  { id: 4, name: 'Apotek Cabang 3', location: 'Depok', status: 'delayed', progress: 30, rab: 200, realisasi: 195, pm: 'Dewi Lestari', phone: '6281234567893', deadline: '2026-05-01', completedAt: null },
+  { id: 5, name: 'Puskesmas Cilandak', location: 'Jakarta Selatan', status: 'completed', progress: 100, rab: 150, realisasi: 148, pm: 'Rudi Hartono', phone: '6281234567894', deadline: '2025-12-31', completedAt: '2025-12-28' },
 ]
 
 const statusMap = {
@@ -31,7 +31,7 @@ const loadProjects = () => {
   }
 }
 
-const EMPTY_FORM = { name: '', location: '', pm: '', deadline: '', rab: '', status: 'on_track' }
+const EMPTY_FORM = { name: '', location: '', pm: '', phone: '', deadline: '', rab: '', status: 'on_track' }
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState(loadProjects)
@@ -94,6 +94,7 @@ export default function ProjectsPage() {
       name: form.name,
       location: form.location,
       pm: form.pm,
+      phone: form.phone,
       deadline: form.deadline,
       rab: parseFloat(form.rab),
       realisasi: 0,
@@ -118,6 +119,11 @@ export default function ProjectsPage() {
     setConfirmId(null)
   }
 
+
+  const handleDelete = (id, name) => {
+    saveProjects(projects.filter(p => p.id !== id))
+    toast.success(`Proyek "${name}" dihapus`)
+  }
 
   return (
     <div className="space-y-5">
@@ -314,7 +320,7 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            {/* Tandai Selesai Button */}
+            {/* Tandai Selesai + Hapus */}
             <div className="mt-3 pt-3 border-t border-gray-100">
               {confirmId === p.id ? (
                 <div className="flex items-center gap-2">
@@ -333,12 +339,20 @@ export default function ProjectsPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-1.5 rounded-lg transition-colors font-medium"
-                >
-                  <CheckCircle size={13} /> Tandai Selesai
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-1.5 rounded-lg transition-colors font-medium"
+                  >
+                    <CheckCircle size={13} /> Tandai Selesai
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
+                    className="flex items-center justify-center gap-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                  >
+                    Hapus
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -427,13 +441,23 @@ export default function ProjectsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Project Manager</label>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Side Manager</label>
               <input
                 type="text" required
                 value={form.pm}
                 onChange={(e) => setForm({ ...form, pm: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Nama PM..."
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">No. HP SM(WhatsApp)</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="628xxxxxxxxxx"
               />
             </div>
             <div>

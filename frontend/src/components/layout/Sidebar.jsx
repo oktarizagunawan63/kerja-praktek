@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText,
-  BarChart3, Bell, Activity, LogOut, Stethoscope
+  BarChart3, Bell, Activity, LogOut
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import clsx from 'clsx'
+import amsarLogo from '../../assets/amsar.png?url'
 
 const navItems = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
@@ -15,6 +16,16 @@ const navItems = [
   { to: '/activity',       icon: Activity,        label: 'Activity Log' },
 ]
 
+function AmsarLogo({ size = 40 }) {
+  return (
+    <img
+      src={amsarLogo}
+      alt="PT Amsar"
+      style={{ width: size, height: size, objectFit: 'contain' }}
+    />
+  )
+}
+
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
 
@@ -22,9 +33,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-        <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center">
-          <Stethoscope className="w-5 h-5 text-[#0f4c81]" />
-        </div>
+        <AmsarLogo size={38} />
         <div>
           <p className="text-white font-bold text-sm leading-tight">PT Amsar</p>
           <p className="text-blue-200 text-xs">Medical Services</p>
