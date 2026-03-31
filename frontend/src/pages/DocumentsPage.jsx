@@ -1,15 +1,21 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { FileText, Image, Download, Eye, Plus, Trash2, X, Search, SlidersHorizontal, History, ChevronDown, ChevronUp } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import FileUpload from '../components/ui/FileUpload'
 import toast from 'react-hot-toast'
+import { fileToBase64, downloadFile } from '../lib/fileUtils'
 
-const addActivityLog = (action, detail) => {
+const addActivityLog = (action, detail, project = '-') => {
+  const auth = JSON.parse(localStorage.getItem('amsar-auth') || '{}')
+  const user = auth?.state?.user
   const logs = JSON.parse(localStorage.getItem('activity_logs') || '[]')
   logs.unshift({
-    id: Date.now(), user: 'Budi Santoso', role: 'Project Manager',
-    action, detail, project: '-', time: new Date().toLocaleString('id-ID'),
+    id: Date.now(),
+    user: user?.name || 'Unknown',
+    role: user?.role || '-',
+    action, detail, project,
+    time: new Date().toLocaleString('id-ID'),
   })
   localStorage.setItem('activity_logs', JSON.stringify(logs.slice(0, 50)))
 }
@@ -26,15 +32,50 @@ const typeVariant = {
   'Foto': 'warning', 'Dokumen Teknis': 'default',
 }
 
-const loadProjects = () => {
+const loadAllDocs = () => {
   try {
-    const saved = JSON.parse(localStorage.getItem('projects_data') || '[]')
-    return saved.length ? saved.map(p => p.name) : ['RS Sentral Amsar', 'Klinik Utama Barat', 'Lab Medis Timur', 'Apotek Cabang 3']
-  } catch { return ['RS Sentral Amsar'] }
+    // Baca dari semua proyek di appStore
+    const appData = JSON.parse(localStorage.getItem('amsar-app') || '{}')
+    const projects = appData?.state?.projects || []
+
+    // Dokumen dari ProjectDetailPage (pdocs_${id})
+    const projectDocs = []
+    projects.forEach(p => {
+      const saved = JSON.parse(localStorage.getItem(`pdocs_${p.id}`) || '[]')
+      saved.forEach(d => projectDocs.push({ ...d, projectName: p.name }))
+    })
+
+    // Dokumen dari halaman Dokumen sendiri
+    const globalDocs = JSON.parse(localStorage.getItem('global_docs') || '[]')
+
+    // Gabung, hilangkan duplikat
+    const all = [...globalDocs, ...projectDocs]
+    const seen = new Set()
+    return all.filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true })
+  } catch { return [] }
 }
 
+const saveGlobalDocs = (docs) => {
+  // Hanya simpan dokumen yang diupload dari halaman Dokumen (bukan dari ProjectDetail)
+  const serializable = docs.filter(d => d.fromGlobal).map(d => ({ ...d, previewUrl: null }))
+  localStorage.setItem('global_docs', JSON.stringify(serializable))
+}
+
+  const loadProjects = () => {
+    try {
+      const appData = JSON.parse(localStorage.getItem('amsar-app') || '{}')
+      const projects = appData?.state?.projects || []
+      return projects.length ? projects.map(p => p.name) : ['RS Sentral Amsar', 'Klinik Utama Barat', 'Lab Medis Timur']
+    } catch { return [] }
+  }
+
 export default function DocumentsPage() {
-  const [docs, setDocs] = useState(INIT_DOCS)
+  const [docs, setDocs] = useState(() => loadAllDocs())
+
+  // Refresh dari localStorage setiap kali halaman aktif
+  useEffect(() => {
+    setDocs(loadAllDocs())
+  }, [])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ project: '', type: 'Laporan Harian', files: [] })
   const [preview, setPreview] = useState(null)
@@ -83,20 +124,19 @@ export default function DocumentsPage() {
     setFilterType('all'); setFilterProject(''); setFilterUploader(''); setFilterBulan(''); setFilterTahun('')
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (form.files.length === 0) { toast.error('Pilih file terlebih dahulu'); return }
     const file = form.files[0]
     const isImage = file.type.startsWith('image/')
     const isPdf = file.type === 'application/pdf'
     const resolvedType = isImage ? 'Foto' : form.type
     const selectedProject = form.project || projects[0]
+    const base64 = await fileToBase64(file)
 
-    // Cek apakah ada dokumen dengan tipe + proyek yang sama (kandidat revisi)
-    const baseName = file.name.replace(/\.[^/.]+$/, '') // tanpa ekstensi
     const existing = docs.find(d =>
       d.project === selectedProject &&
       d.type === resolvedType &&
-      !d.isRevision // hanya dokumen utama
+      !d.isRevision
     )
 
     const newDoc = {
@@ -107,12 +147,13 @@ export default function DocumentsPage() {
       uploader: 'Budi S.',
       date: new Date().toLocaleDateString('id-ID'),
       size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-      previewUrl: (isImage || isPdf) ? URL.createObjectURL(file) : null,
+      previewUrl: base64,
       fileType: isImage ? 'image' : isPdf ? 'pdf' : 'other',
       fileName: file.name,
-      revisions: [], // riwayat revisi
+      revisions: [],
       version: 1,
       isRevision: false,
+      fromGlobal: true,
     }
 
     if (existing && form.asRevision) {
@@ -129,15 +170,20 @@ export default function DocumentsPage() {
         version: (existing.revisions?.length || 0) + 2,
         note: form.revisionNote || '',
       }
-      setDocs(prev => prev.map(d =>
+      const updated = docs.map(d =>
         d.id === existing.id
           ? { ...d, revisions: [revEntry, ...(d.revisions || [])], version: revEntry.version, name: file.name, previewUrl: newDoc.previewUrl, fileType: newDoc.fileType, date: newDoc.date, size: newDoc.size }
           : d
-      ))
+      )
+      setDocs(updated)
+      saveGlobalDocs(updated)
       addActivityLog('Revisi Dokumen', `Revisi v${revEntry.version}: ${file.name} — Proyek: ${selectedProject}`)
       toast.success(`Revisi v${revEntry.version} berhasil disimpan`)
     } else {
-      setDocs(prev => [newDoc, ...prev])
+      const withFlag = { ...newDoc, fromGlobal: true }
+      const updated = [withFlag, ...docs]
+      setDocs(updated)
+      saveGlobalDocs(updated)
       addActivityLog('Upload Dokumen', `Upload ${resolvedType}: ${newDoc.name} — Proyek: ${selectedProject}`)
       toast.success('Dokumen berhasil ditambahkan')
     }
@@ -158,11 +204,13 @@ export default function DocumentsPage() {
 
   const handlePreview = (doc) => {
     if (!doc.previewUrl) {
-      toast('File ini tidak bisa dipreview — tidak ada file asli', { icon: 'ℹ️' })
+      toast('File ini tidak bisa dipreview', { icon: 'ℹ️' })
       return
     }
     if (doc.fileType === 'pdf') {
-      window.open(doc.previewUrl, '_blank')
+      // Buka PDF di tab baru
+      const win = window.open()
+      win.document.write(`<iframe src="${doc.previewUrl}" style="width:100%;height:100vh;border:none"></iframe>`)
     } else {
       setPreview(doc)
     }
@@ -170,18 +218,17 @@ export default function DocumentsPage() {
 
   const handleDownload = (doc) => {
     if (!doc.previewUrl) {
-      toast('File ini tidak bisa didownload — tidak ada file asli', { icon: 'ℹ️' })
+      toast('File ini tidak bisa didownload', { icon: 'ℹ️' })
       return
     }
-    const a = document.createElement('a')
-    a.href = doc.previewUrl
-    a.download = doc.fileName || doc.name
-    a.click()
+    downloadFile(doc.previewUrl, doc.fileName || doc.name)
     toast.success('Download dimulai')
   }
 
   const handleDelete = (id, name) => {
-    setDocs(prev => prev.filter(d => d.id !== id))
+    const updated = docs.filter(d => d.id !== id)
+    setDocs(updated)
+    saveGlobalDocs(updated)
     addActivityLog('Hapus Dokumen', `Hapus dokumen: ${name}`)
     toast.success('Dokumen dihapus')
   }

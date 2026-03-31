@@ -1,16 +1,13 @@
 import { Bell, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
-import useNotifStore from '../../store/notifStore'
-import { useEffect } from 'react'
+import useAppStore from '../../store/appStore'
 
 export default function Topbar() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const { notifs, syncFromProjects } = useNotifStore()
-  const unread = notifs.filter(n => !n.read).length
-
-  useEffect(() => { syncFromProjects() }, [])
+  const { notifications } = useAppStore()
+  const unread = notifications.filter(n => !n.isRead).length
 
   return (
     <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0">

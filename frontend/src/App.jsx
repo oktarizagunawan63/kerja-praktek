@@ -16,6 +16,13 @@ function PrivateRoute({ children }) {
   return token ? children : <Navigate to="/login" replace />
 }
 
+function DirectorRoute({ children }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  if (user?.role !== 'direktur') return <Navigate to="/dashboard" replace />
+  return children
+}
+
 export default function App() {
   return (
     <>
@@ -29,7 +36,7 @@ export default function App() {
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="activity" element={<ActivityLogPage />} />
+          <Route path="activity" element={<DirectorRoute><ActivityLogPage /></DirectorRoute>} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Routes>

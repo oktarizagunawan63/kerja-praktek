@@ -7,13 +7,12 @@ import useAuthStore from '../../store/authStore'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
-const navItems = [
+const BASE_NAV = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/projects',       icon: FolderKanban,    label: 'Proyek' },
   { to: '/documents',      icon: FileText,        label: 'Dokumen' },
   { to: '/reports',        icon: BarChart3,       label: 'Laporan' },
   { to: '/notifications',  icon: Bell,            label: 'Notifikasi' },
-  { to: '/activity',       icon: Activity,        label: 'Activity Log' },
 ]
 
 function AmsarLogo({ size = 40 }) {
@@ -28,6 +27,9 @@ function AmsarLogo({ size = 40 }) {
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
+  const navItems = user?.role === 'direktur'
+    ? [...BASE_NAV, { to: '/activity', icon: Activity, label: 'Activity Log' }]
+    : BASE_NAV
 
   return (
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0">
@@ -36,7 +38,7 @@ export default function Sidebar() {
         <AmsarLogo size={38} />
         <div>
           <p className="text-white font-bold text-sm leading-tight">PT Amsar</p>
-          <p className="text-blue-200 text-xs">Medical Services</p>
+          <p className="text-blue-200 text-xs">Prima Mandiri</p>
         </div>
       </div>
 
