@@ -12,8 +12,11 @@ const useAppStore = create(
       projects: [],
 
       addProject: (project) => {
-        set(s => ({ projects: [{ ...project, id: Date.now(), progress: 0, realisasi: 0, status: project.status || 'on_track', completedAt: null }, ...s.projects] }))
+        const newId = Date.now()
+        const newProject = { ...project, id: newId, progress: 0, realisasi: 0, status: project.status || 'on_track', completedAt: null }
+        set(s => ({ projects: [newProject, ...s.projects] }))
         setTimeout(() => get().checkNotifications(), 0)
+        return newId
       },
 
       updateProject: (id, fields) =>

@@ -1,18 +1,25 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText,
-  BarChart3, Bell, Activity, LogOut
+  BarChart3, Bell, Activity, LogOut, Users
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+import useAppStore from '../../store/appStore'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
 const BASE_NAV = [
-  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/projects',       icon: FolderKanban,    label: 'Proyek' },
-  { to: '/documents',      icon: FileText,        label: 'Dokumen' },
-  { to: '/reports',        icon: BarChart3,       label: 'Laporan' },
-  { to: '/notifications',  icon: Bell,            label: 'Notifikasi' },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/projects',      icon: FolderKanban,    label: 'Proyek' },
+  { to: '/documents',     icon: FileText,        label: 'Dokumen' },
+  { to: '/reports',       icon: BarChart3,       label: 'Laporan' },
+  { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true },
+]
+
+const DIRECTOR_NAV = [
+  ...BASE_NAV,
+  { to: '/activity', icon: Activity, label: 'Activity Log' },
+  { to: '/users',    icon: Users,    label: 'Manajemen User' },
 ]
 
 function AmsarLogo({ size = 40 }) {
@@ -27,9 +34,10 @@ function AmsarLogo({ size = 40 }) {
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const navItems = user?.role === 'direktur'
-    ? [...BASE_NAV, { to: '/activity', icon: Activity, label: 'Activity Log' }]
-    : BASE_NAV
+  const { notifications } = useAppStore()
+  const unread = notifications.filter(n => !n.isRead).length
+
+  const navItems = user?.role === 'direktur' ? DIRECTOR_NAV : BASE_NAV
 
   return (
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0">
@@ -44,7 +52,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, label, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -57,7 +65,14 @@ export default function Sidebar() {
               )
             }
           >
-            <Icon className="w-4.5 h-4.5 shrink-0" size={18} />
+            <div className="relative shrink-0">
+              <Icon size={18} />
+              {badge && unread > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-bold px-0.5">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </div>
             {label}
           </NavLink>
         ))}

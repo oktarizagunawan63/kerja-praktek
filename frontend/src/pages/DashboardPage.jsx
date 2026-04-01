@@ -5,7 +5,10 @@ import KpiCard from '../components/kpi/KpiCard'
 import ProgressBar from '../components/kpi/ProgressBar'
 import Badge from '../components/ui/Badge'
 import useAppStore from '../store/appStore'
+import useAuthStore from '../store/authStore'
+import useUserStore from '../store/userStore'
 import { formatRupiah } from '../lib/formatRupiah'
+import { filterProjectsByRole } from '../lib/permissions'
 
 const statusMap = {
   on_track:  { label: 'On Track',  variant: 'success' },
@@ -17,11 +20,14 @@ const statusMap = {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { projects, checkNotifications } = useAppStore()
+  const { user } = useAuthStore()
+  const { users } = useUserStore()
+  const projects_visible = filterProjectsByRole(projects, user, users)
 
   useEffect(() => { checkNotifications() }, [projects])
 
-  const active    = projects.filter(p => p.status !== 'completed')
-  const completed = projects.filter(p => p.status === 'completed')
+  const active    = projects_visible.filter(p => p.status !== 'completed')
+  const completed = projects_visible.filter(p => p.status === 'completed')
   const totalRab  = projects.reduce((s, p) => s + (p.rab || 0), 0)
   const totalReal = projects.reduce((s, p) => s + (p.realisasi || 0), 0)
   const avgProg   = active.length ? Math.round(active.reduce((s, p) => s + (p.progress || 0), 0) / active.length) : 0

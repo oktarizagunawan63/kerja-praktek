@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
-  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download
+  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -10,8 +10,10 @@ import FileUpload from '../components/ui/FileUpload'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useAppStore from '../store/appStore'
+import useUserStore from '../store/userStore'
 import { fileToBase64, downloadFile } from '../lib/fileUtils'
 import { formatRupiah } from '../lib/formatRupiah'
+import { can } from '../lib/permissions'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const SATUAN = ['m3','m2','m','ton','kg','btg','unit','set','ls','buah','liter','zak']
@@ -33,11 +35,8 @@ export default function ProjectDetailPage() {
   const navigate     = useNavigate()
   const { user }     = useAuthStore()
   const currentUser  = user?.name || 'Unknown'
-  const {
-    projects, getMaterials, addMaterial,
-    updateMaterialQty, deleteMaterial,
-    markComplete, addActivity, updateProject,
-  } = useAppStore()
+  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject } = useAppStore()
+  const { users, updateUser } = useUserStore()
 
   // ── all hooks before any return ──
   const [docs,         setDocs]         = useState(() => loadDocs(id))
@@ -46,7 +45,9 @@ export default function ProjectDetailPage() {
   const [matOpen,      setMatOpen]      = useState(false)
   const [addMatOpen,   setAddMatOpen]   = useState(false)
   const [completeOpen, setCompleteOpen] = useState(false)
-  const [editRabOpen,  setEditRabOpen]  = useState(false)
+  const [editOpen, setEditOpen]   = useState(false)
+  const [editForm, setEditForm]   = useState({})
+  const [editRabOpen, setEditRabOpen] = useState(false)
   const [selMat,       setSelMat]       = useState(null)
   const [previewDoc,   setPreviewDoc]   = useState(null)
   const [docTab,       setDocTab]       = useState('semua')
@@ -55,6 +56,7 @@ export default function ProjectDetailPage() {
   const [matForm,      setMatForm]      = useState({ qty: '', catatan: '', files: [] })
   const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })
   const [newMat,       setNewMat]       = useState({ name: '', unit: 'm3', qty_plan: '', qty_terpasang: '' })
+  const [teamOpen,     setTeamOpen]     = useState(false)
 
   const project   = projects.find(p => String(p.id) === String(id))
   const materials = getMaterials(id)
@@ -306,6 +308,57 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
+      {/* Tim Proyek — assign engineer (hanya direktur & site_manager) */}
+      {can(user, 'edit_project') && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-gray-400"/>
+              <h3 className="text-sm font-semibold text-gray-700">Tim Proyek</h3>
+            </div>
+            {!isCompleted && (
+              <button onClick={() => setTeamOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+                <Plus size={13}/> Assign Engineer
+              </button>
+            )}
+          </div>
+          {(() => {
+            const engineers = users.filter(u =>
+              u.role === 'engineer' &&
+              (u.assignedProjects || []).includes(String(id))
+            )
+            return engineers.length === 0
+              ? <p className="text-sm text-gray-400 text-center py-4">Belum ada engineer di-assign ke proyek ini</p>
+              : <div className="space-y-2">
+                  {engineers.map(eng => (
+                    <div key={eng.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
+                        {eng.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800">{eng.name}</p>
+                        <p className="text-xs text-gray-400">{eng.email}</p>
+                      </div>
+                      <Badge variant="default">Engineer</Badge>
+                      {!isCompleted && (
+                        <button
+                          onClick={() => {
+                            const assigned = (eng.assignedProjects || []).filter(p => p !== String(id))
+                            updateUser(eng.id, { assignedProjects: assigned })
+                            toast.success(`${eng.name} dilepas dari proyek`)
+                          }}
+                          className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
+                        >
+                          <X size={14}/>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+          })()}
+        </div>
+      )}
+
       {/* History */}
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
@@ -477,6 +530,51 @@ export default function ProjectDetailPage() {
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={() => setUploadOpen(false)} className="btn-secondary">Batal</button>
             <button onClick={handleDocUpload} className="btn-primary">Upload</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Assign Engineer */}
+      <Modal open={teamOpen} onClose={() => setTeamOpen(false)} title="Assign Engineer ke Proyek" size="md">
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">Pilih engineer yang akan di-assign ke proyek ini:</p>
+          {users.filter(u => u.role === 'engineer').length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">Belum ada akun engineer. Buat dulu di Manajemen User.</p>
+          ) : (
+            users.filter(u => u.role === 'engineer').map(eng => {
+              const isAssigned = (eng.assignedProjects || []).includes(String(id))
+              return (
+                <div key={eng.id}
+                  onClick={() => {
+                    const assigned = eng.assignedProjects || []
+                    if (isAssigned) {
+                      updateUser(eng.id, { assignedProjects: assigned.filter(p => p !== String(id)) })
+                      toast.success(`${eng.name} dilepas`)
+                    } else {
+                      updateUser(eng.id, { assignedProjects: [...assigned, String(id)] })
+                      toast.success(`${eng.name} di-assign`)
+                    }
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isAssigned ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold">
+                      {eng.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{eng.name}</p>
+                      <p className="text-xs text-gray-400">{eng.email}</p>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isAssigned ? 'bg-purple-500 border-purple-500' : 'border-gray-300'}`}>
+                    {isAssigned && <div className="w-2 h-2 bg-white rounded-full"/>}
+                  </div>
+                </div>
+              )
+            })
+          )}
+          <div className="flex justify-end pt-2">
+            <button onClick={() => setTeamOpen(false)} className="btn-primary">Selesai</button>
           </div>
         </div>
       </Modal>

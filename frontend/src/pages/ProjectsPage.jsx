@@ -5,7 +5,10 @@ import Modal from '../components/ui/Modal'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useAppStore from '../store/appStore'
+import useAuthStore from '../store/authStore'
+import useUserStore from '../store/userStore'
 import { formatRupiah } from '../lib/formatRupiah'
+import { can, filterProjectsByRole } from '../lib/permissions'
 
 const statusMap = {
   on_track:  { label: 'On Track',  variant: 'success' },
@@ -18,6 +21,9 @@ const EMPTY_FORM = { name: '', location: '', pm: '', phone: '', deadline: '', ra
 
 export default function ProjectsPage() {
   const { projects, addProject, deleteProject, markComplete } = useAppStore()
+  const { user } = useAuthStore()
+  const { users, updateUser } = useUserStore()
+  const visibleProjects = filterProjectsByRole(projects, user, users)
   const [search, setSearch]           = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterLokasi, setFilterLokasi] = useState('')
@@ -28,10 +34,11 @@ export default function ProjectsPage() {
   const [form, setForm]                 = useState(EMPTY_FORM)
   const [confirmId, setConfirmId]       = useState(null)
   const [showHistory, setShowHistory]   = useState(true)
+  const [editProject, setEditProject]   = useState(null)
   const navigate = useNavigate()
 
-  const active    = projects.filter(p => p.status !== 'completed')
-  const completed = projects.filter(p => p.status === 'completed')
+  const active    = visibleProjects.filter(p => p.status !== 'completed')
+  const completed = visibleProjects.filter(p => p.status === 'completed')
 
   const lokasiOptions = useMemo(() => [...new Set(projects.map(p => p.location))].sort(), [projects])
   const tahunOptions  = useMemo(() => [...new Set(projects.map(p => new Date(p.deadline).getFullYear()))].sort(), [projects])
@@ -65,9 +72,29 @@ export default function ProjectsPage() {
     if (!form.name || !form.location || !form.pm || !form.deadline || !form.rab) {
       toast.error('Semua field wajib diisi'); return
     }
-    addProject({ name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: parseFloat(String(form.rab).replace(/\./g, '')), status: form.status })
-    toast.success('Proyek berhasil ditambahkan')
-    setOpen(false); setForm(EMPTY_FORM)
+    const rabNum = parseFloat(String(form.rab).replace(/\./g, ''))
+    if (editProject) {
+      // Mode edit
+      useAppStore.getState().updateProject(editProject.id, {
+        name: form.name, location: form.location, pm: form.pm,
+        phone: form.phone, deadline: form.deadline, rab: rabNum, status: form.status,
+      })
+      toast.success('Proyek berhasil diupdate')
+    } else {
+      const newId = addProject({ name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: form.status })
+      // Auto-assign ke pembuat kalau bukan direktur
+      if (user.role !== 'direktur' && newId) {
+        const creator = users.find(u => u.email === user.email)
+        if (creator) {
+          const assigned = creator.assignedProjects || []
+          if (!assigned.includes(String(newId))) {
+            updateUser(creator.id, { assignedProjects: [...assigned, String(newId)] })
+          }
+        }
+      }
+      toast.success('Proyek berhasil ditambahkan')
+    }
+    setOpen(false); setForm(EMPTY_FORM); setEditProject(null)
   }
 
   const handleDelete = (id, name) => {
@@ -82,9 +109,11 @@ export default function ProjectsPage() {
           <h1 className="text-xl font-bold text-gray-900">Daftar Proyek</h1>
           <p className="text-sm text-gray-500 mt-0.5">{active.length} proyek aktif · {completed.length} selesai</p>
         </div>
-        <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={16} /> Tambah Proyek
-        </button>
+        {can(user, 'create_project') && (
+          <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={16} /> Tambah Proyek
+          </button>
+        )}
       </div>
 
       {/* Search + Filter */}
@@ -193,14 +222,24 @@ export default function ProjectsPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
-                    className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-1.5 rounded-lg font-medium">
-                    <CheckCircle size={13} /> Tandai Selesai
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
-                    className="flex items-center justify-center gap-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium">
-                    Hapus
-                  </button>
+                  {can(user, 'mark_complete') && (
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
+                      className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-1.5 rounded-lg font-medium">
+                      <CheckCircle size={13} /> Tandai Selesai
+                    </button>
+                  )}
+                  {can(user, 'edit_project') && (
+                    <button onClick={(e) => { e.stopPropagation(); setEditProject(p); setForm({ name: p.name, location: p.location, pm: p.pm, phone: p.phone || '', deadline: p.deadline, rab: Number(p.rab).toLocaleString('id-ID'), rabUnit: p.rabUnit, status: p.status }); setOpen(true) }}
+                      className="flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium">
+                      Edit
+                    </button>
+                  )}
+                  {can(user, 'delete_project') && (
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
+                      className="flex items-center justify-center gap-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium">
+                      Hapus
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -253,7 +292,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Modal Tambah Proyek */}
-      <Modal open={open} onClose={() => setOpen(false)} title="Tambah Proyek Baru" size="md">
+      <Modal open={open} onClose={() => { setOpen(false); setEditProject(null); setForm(EMPTY_FORM) }} title={editProject ? 'Edit Proyek' : 'Tambah Proyek Baru'} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Nama Proyek</label>
@@ -316,8 +355,8 @@ export default function ProjectsPage() {
             })()}
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="btn-secondary">Batal</button>
-            <button type="submit" className="btn-primary">Simpan Proyek</button>
+            <button type="button" onClick={() => { setOpen(false); setEditProject(null); setForm(EMPTY_FORM) }} className="btn-secondary">Batal</button>
+            <button type="submit" className="btn-primary">{editProject ? 'Simpan Perubahan' : 'Simpan Proyek'}</button>
           </div>
         </form>
       </Modal>
