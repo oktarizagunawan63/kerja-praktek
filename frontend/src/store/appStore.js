@@ -22,12 +22,47 @@ const useAppStore = create(
       updateProject: (id, fields) =>
         set(s => ({ projects: s.projects.map(p => String(p.id) === String(id) ? { ...p, ...fields } : p) })),
 
-      deleteProject: (id) =>
-        set(s => ({ projects: s.projects.filter(p => String(p.id) !== String(id)) })),
+      // ── Trash / Recycle Bin ───────────────────────────────────────
+      trash: [], // proyek yang dihapus sementara
+
+      moveToTrash: (id) => {
+        const project = get().projects.find(p => String(p.id) === String(id))
+        if (!project) return
+        set(s => ({
+          projects: s.projects.filter(p => String(p.id) !== String(id)),
+          trash: [{ ...project, deletedAt: new Date().toISOString() }, ...s.trash],
+        }))
+      },
+
+      restoreFromTrash: (id) => {
+        const project = get().trash.find(p => String(p.id) === String(id))
+        if (!project) return
+        const { deletedAt, ...restored } = project
+        set(s => ({
+          trash: s.trash.filter(p => String(p.id) !== String(id)),
+          projects: [restored, ...s.projects],
+        }))
+      },
+
+      deletePermanent: (id) =>
+        set(s => ({ trash: s.trash.filter(p => String(p.id) !== String(id)) })),
+
+      emptyTrash: () => set({ trash: [] }),
+
+      deleteProject: (id) => get().moveToTrash(id),
 
       markComplete: (id, note = '') => {
+        const project = get().projects.find(p => String(p.id) === String(id))
         set(s => ({ projects: s.projects.map(p => String(p.id) === String(id) ? { ...p, status: 'completed', progress: 100, completedAt: new Date().toISOString().split('T')[0] } : p) }))
         get().addActivity({ action: 'Proyek Selesai', detail: `Proyek ditandai selesai${note ? ' — ' + note : ''}`, projectId: id })
+        if (project) {
+          get().addNotif({
+            type: 'success',
+            title: 'Proyek Selesai ✓',
+            message: `${project.name} (${project.location}) telah ditandai selesai${note ? ' — ' + note : ''}`,
+            projectId: id,
+          })
+        }
       },
 
       // ── Materials per project ──────────────────────────────────
@@ -99,21 +134,31 @@ const useAppStore = create(
       // ── Activity Log ──────────────────────────────────────────
       activities: [],
 
-      addActivity: ({ action, detail, projectId }) => {
+      addActivity: ({ action, detail, projectId, actorRole }) => {
         const auth = JSON.parse(localStorage.getItem('amsar-auth') || '{}')
         const user = auth?.state?.user
         const project = get().projects.find(p => String(p.id) === String(projectId))
-        set(s => ({
-          activities: [{
-            id: Date.now(),
-            user: user?.name || 'Unknown',
-            role: user?.role || '-',
-            action,
-            detail,
-            project: project?.name || '-',
-            time: new Date().toLocaleString('id-ID'),
-          }, ...s.activities].slice(0, 100)
-        }))
+        const entry = {
+          id: Date.now(),
+          user: user?.name || 'Unknown',
+          role: user?.role || '-',
+          action,
+          detail,
+          project: project?.name || '-',
+          time: new Date().toLocaleString('id-ID'),
+        }
+        set(s => ({ activities: [entry, ...s.activities].slice(0, 100) }))
+
+        // Notif ke site manager kalau yang aksi adalah engineer
+        if ((user?.role === 'engineer' || actorRole === 'engineer') && project) {
+          const notifMsg = `${user?.name || 'Engineer'}: ${action} — ${detail}`
+          get().addNotif({
+            type: 'info',
+            title: `Aktivitas Engineer di ${project.name}`,
+            message: notifMsg,
+            projectId,
+          })
+        }
       },
 
       // ── Notifications ─────────────────────────────────────────
@@ -166,14 +211,13 @@ const useAppStore = create(
     }),
     {
       name: 'amsar-app',
-      // Jangan persist previewUrl base64 yang besar — simpan terpisah
       partialize: (state) => ({
         projects: state.projects,
+        trash: state.trash,
         materials: state.materials,
         activities: state.activities,
         notifications: state.notifications,
-        // documents tanpa previewUrl (disimpan terpisah di localStorage biasa)
-        documents: state.documents.map(d => ({ ...d, previewUrl: undefined })),
+        documents: state.documents, // simpan lengkap termasuk previewUrl
       }),
     }
   )

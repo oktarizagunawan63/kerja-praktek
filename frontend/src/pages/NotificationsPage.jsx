@@ -2,6 +2,7 @@ import { AlertTriangle, Clock, CheckCircle, Info, ExternalLink, Mail, Trash2 } f
 import clsx from 'clsx'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '../store/appStore'
+import useAuthStore from '../store/authStore'
 
 const typeStyle = {
   over_budget:      { bg: 'bg-red-50',    icon: 'text-red-500',    border: 'border-red-100',    Icon: AlertTriangle, label: 'Over Budget' },
@@ -12,6 +13,7 @@ const typeStyle = {
 
 export default function NotificationsPage() {
   const { notifications, projects, markNotifRead, markAllNotifRead, deleteNotif, clearAllNotif } = useAppStore()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
 
   const getStyle = (type) => typeStyle[type] || typeStyle.info
@@ -89,7 +91,7 @@ export default function NotificationsPage() {
                     <p className="text-xs text-gray-600 mt-0.5">{n.message}</p>
                     {project && (
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Proyek: {project.name} · PM: {project.pm}
+                        Proyek: {project.name} · SM: {project.pm}
                         {pmEmail && <span className="ml-1 text-gray-400">({pmEmail})</span>}
                       </p>
                     )}
@@ -109,12 +111,12 @@ export default function NotificationsPage() {
                       <ExternalLink size={12} /> Lihat Proyek
                     </button>
                   )}
-                  {pmEmail && (
+                  {pmEmail && user?.role === 'direktur' && n.type !== 'success' && (
                     <button
                       onClick={(e) => handleGmail(e, pmEmail, project?.name, project?.pm, n.type, project?.progress, Math.ceil((new Date(project?.deadline) - new Date()) / 86400000))}
                       className="flex items-center gap-1.5 text-xs bg-white border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors font-medium"
                     >
-                      <Mail size={12} /> Hubungi PM via Gmail
+                      <Mail size={12} /> Hubungi SM via Gmail
                     </button>
                   )}
                   <button

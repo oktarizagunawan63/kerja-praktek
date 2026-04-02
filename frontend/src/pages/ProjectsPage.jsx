@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X } from 'lucide-react'
+import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import { useNavigate } from 'react-router-dom'
@@ -20,7 +20,7 @@ const statusMap = {
 const EMPTY_FORM = { name: '', location: '', pm: '', phone: '', deadline: '', rab: '', status: 'on_track' }
 
 export default function ProjectsPage() {
-  const { projects, addProject, deleteProject, markComplete } = useAppStore()
+  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash } = useAppStore()
   const { user } = useAuthStore()
   const { users, updateUser } = useUserStore()
   const visibleProjects = filterProjectsByRole(projects, user, users)
@@ -33,8 +33,15 @@ export default function ProjectsPage() {
   const [open, setOpen]                 = useState(false)
   const [form, setForm]                 = useState(EMPTY_FORM)
   const [confirmId, setConfirmId]       = useState(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [showHistory, setShowHistory]   = useState(true)
+  const [showTrash, setShowTrash]       = useState(false)
   const [editProject, setEditProject]   = useState(null)
+  const [deletePasswordModal, setDeletePasswordModal] = useState(null)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deletePasswordError, setDeletePasswordError] = useState('')
+  const [emptyTrashModal, setEmptyTrashModal] = useState(false)
+  const [permanentDeleteModal, setPermanentDeleteModal] = useState(null) // { id, name }
   const navigate = useNavigate()
 
   const active    = visibleProjects.filter(p => p.status !== 'completed')
@@ -73,15 +80,18 @@ export default function ProjectsPage() {
       toast.error('Semua field wajib diisi'); return
     }
     const rabNum = parseFloat(String(form.rab).replace(/\./g, ''))
+    const autoStatus = (() => {
+      const days = Math.ceil((new Date(form.deadline) - new Date()) / 86400000)
+      return days < 0 ? 'delayed' : days <= 30 ? 'at_risk' : 'on_track'
+    })()
     if (editProject) {
-      // Mode edit
       useAppStore.getState().updateProject(editProject.id, {
         name: form.name, location: form.location, pm: form.pm,
-        phone: form.phone, deadline: form.deadline, rab: rabNum, status: form.status,
+        phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus,
       })
       toast.success('Proyek berhasil diupdate')
     } else {
-      const newId = addProject({ name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: form.status })
+      const newId = addProject({ name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus })
       // Auto-assign ke pembuat kalau bukan direktur
       if (user.role !== 'direktur' && newId) {
         const creator = users.find(u => u.email === user.email)
@@ -99,9 +109,38 @@ export default function ProjectsPage() {
 
   const handleDelete = (id, name) => {
     deleteProject(id)
-    toast.success(`Proyek "${name}" dihapus`)
+    toast.custom((t) => (
+      <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+          <Trash2 size={13} className="text-red-500" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-800">{name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Dipindahkan ke sampah</p>
+        </div>
+      </div>
+    ), { duration: 3000 })
+    setDeleteConfirmId(null)
   }
 
+  const openDeleteModal = (e, p) => {
+    e.stopPropagation()
+    setDeletePasswordModal({ id: p.id, name: p.name })
+    setDeletePassword('')
+    setDeletePasswordError('')
+  }
+
+  const handleDeleteWithPassword = () => {
+    const currentUser = users.find(u => u.email === user.email)
+    if (!currentUser || currentUser.password !== deletePassword) {
+      setDeletePasswordError('Password salah')
+      return
+    }
+    handleDelete(deletePasswordModal.id, deletePasswordModal.name)
+    setDeletePasswordModal(null)
+    setDeletePassword('')
+    setDeletePasswordError('')
+  }
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -213,31 +252,39 @@ export default function ProjectsPage() {
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
-              {confirmId === p.id ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 flex-1">Tandai proyek ini selesai?</span>
-                  <button onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
-                    className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">Ya, Selesai</button>
-                  <button onClick={() => setConfirmId(null)} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200">Batal</button>
+              {/* Konfirmasi selesai */}
+              {confirmId === p.id ? (                <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
+                  <p className="text-xs font-medium text-green-800">Tandai proyek ini selesai?</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
+                      className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium transition-colors">
+                      Ya, Selesai
+                    </button>
+                    <button onClick={() => setConfirmId(null)}
+                      className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 py-1.5 rounded-lg font-medium transition-colors">
+                      Batal
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                /* Tombol normal */
+                <div className="flex items-center gap-2">
                   {can(user, 'mark_complete') && (
                     <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-1.5 rounded-lg font-medium">
-                      <CheckCircle size={13} /> Tandai Selesai
+                      className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-2 rounded-lg font-medium transition-colors">
+                      <CheckCircle size={13} /> Selesai
                     </button>
                   )}
                   {can(user, 'edit_project') && (
                     <button onClick={(e) => { e.stopPropagation(); setEditProject(p); setForm({ name: p.name, location: p.location, pm: p.pm, phone: p.phone || '', deadline: p.deadline, rab: Number(p.rab).toLocaleString('id-ID'), rabUnit: p.rabUnit, status: p.status }); setOpen(true) }}
-                      className="flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium">
+                      className="flex-1 flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 rounded-lg font-medium transition-colors">
                       Edit
                     </button>
                   )}
                   {can(user, 'delete_project') && (
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
-                      className="flex items-center justify-center gap-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium">
-                      Hapus
+                    <button onClick={(e) => openDeleteModal(e, p)}
+                      className="flex items-center justify-center text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                      <Trash2 size={14} />
                     </button>
                   )}
                 </div>
@@ -282,8 +329,67 @@ export default function ProjectsPage() {
                     <p className="text-xs text-gray-400">dari {formatRupiah(p.rab)}</p>
                   </div>
                   <Badge variant="info">Selesai</Badge>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
+                  <button onClick={(e) => { e.stopPropagation(); openDeleteModal(e, p) }}
                     className="text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium">Hapus</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sampah / Recycle Bin */}
+      {can(user, 'delete_project') && trash.length > 0 && (
+        <div className="card border-dashed border-red-200 bg-red-50/30">
+          <button onClick={() => setShowTrash(v => !v)} className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🗑️</span>
+              <h3 className="text-sm font-semibold text-gray-700">Sampah</h3>
+              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{trash.length}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={(e) => { e.stopPropagation(); setEmptyTrashModal(true) }}
+                className="text-xs text-red-500 hover:text-red-700 hover:underline">
+                Kosongkan
+              </button>
+              {showTrash ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
+            </div>
+          </button>
+
+          {showTrash && (
+            <div className="mt-4 space-y-3">
+              {trash.map(p => (
+                <div key={p.id} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-red-100 opacity-70">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-700 line-through">{p.name}</p>
+                    <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                    <p className="text-xs text-red-400 mt-0.5">
+                      Dihapus {p.deletedAt ? new Date(p.deletedAt).toLocaleDateString('id-ID') : '-'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => {
+                        restoreFromTrash(p.id)
+                        toast.custom((t) => (
+                          <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+                            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                              <CheckCircle size={13} className="text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">{p.name}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">Proyek berhasil dipulihkan</p>
+                            </div>
+                          </div>
+                        ), { duration: 3000 })
+                      }}
+                      className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
+                      Pulihkan
+                    </button>
+                    <button onClick={() => setPermanentDeleteModal({ id: p.id, name: p.name })}
+                      className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
+                      Hapus Permanen
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -306,30 +412,27 @@ export default function ProjectsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Project Manager</label>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Side Manager</label>
               <input type="text" required value={form.pm} onChange={e => setForm({...form, pm: e.target.value})}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama PM..." />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Email PM</label>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Email SM</label>
               <input type="email" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="pm@ptamsar.co.id" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Status</label>
-              <select value={form.status} onChange={e => setForm({...form, status: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option value="on_track">On Track</option>
-                <option value="at_risk">At Risk</option>
-                <option value="delayed">Delayed</option>
-              </select>
-            </div>
-            <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Deadline</label>
               <input type="date" required value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              {form.deadline && (() => {
+                const days = Math.ceil((new Date(form.deadline) - new Date()) / 86400000)
+                const status = days < 0 ? 'Delayed' : days <= 30 ? 'At Risk' : 'On Track'
+                const color = days < 0 ? 'text-red-500' : days <= 30 ? 'text-yellow-600' : 'text-green-600'
+                return <p className={`text-xs mt-1 ${color}`}>Status otomatis: {status} ({days < 0 ? `${Math.abs(days)} hari lewat` : `${days} hari lagi`})</p>
+              })()}
             </div>
           </div>
           <div>
@@ -359,6 +462,94 @@ export default function ProjectsPage() {
             <button type="submit" className="btn-primary">{editProject ? 'Simpan Perubahan' : 'Simpan Proyek'}</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Konfirmasi Hapus dengan Password */}
+      <Modal open={!!deletePasswordModal} onClose={() => { setDeletePasswordModal(null); setDeletePassword(''); setDeletePasswordError('') }} title="Konfirmasi Hapus Proyek" size="sm">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+            <Trash2 size={16} className="text-red-500 shrink-0 mt-0.5"/>
+            <div>
+              <p className="text-xs font-semibold text-red-800">Hapus "{deletePasswordModal?.name}"?</p>
+              <p className="text-xs text-red-600 mt-0.5">Proyek akan dipindahkan ke sampah. Masukkan password untuk konfirmasi.</p>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">
+              <Lock size={11} className="inline mr-1"/>Password Anda
+            </label>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={e => { setDeletePassword(e.target.value); setDeletePasswordError('') }}
+              onKeyDown={e => e.key === 'Enter' && handleDeleteWithPassword()}
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${deletePasswordError ? 'border-red-400' : 'border-gray-200'}`}
+              placeholder="Masukkan password..."
+              autoFocus
+            />
+            {deletePasswordError && <p className="text-xs text-red-500 mt-1">{deletePasswordError}</p>}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setDeletePasswordModal(null); setDeletePassword(''); setDeletePasswordError('') }} className="btn-secondary">Batal</button>
+            <button onClick={handleDeleteWithPassword} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
+              <Trash2 size={14}/> Hapus
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Kosongkan Sampah */}
+      <Modal open={emptyTrashModal} onClose={() => setEmptyTrashModal(false)} title="Kosongkan Sampah" size="sm">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+            <Trash2 size={16} className="text-red-500 shrink-0 mt-0.5"/>
+            <div>
+              <p className="text-xs font-semibold text-red-800">Hapus semua proyek di sampah?</p>
+              <p className="text-xs text-red-600 mt-0.5">Tindakan ini tidak bisa dibatalkan. Semua data akan hilang permanen.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setEmptyTrashModal(false)} className="btn-secondary">Batal</button>
+            <button onClick={() => { emptyTrash(); setEmptyTrashModal(false); toast.success('Sampah dikosongkan') }}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
+              <Trash2 size={14}/> Hapus Semua
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Hapus Permanen per Item */}
+      <Modal open={!!permanentDeleteModal} onClose={() => setPermanentDeleteModal(null)} title="Hapus Permanen" size="sm">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+            <Trash2 size={16} className="text-red-500 shrink-0 mt-0.5"/>
+            <div>
+              <p className="text-xs font-semibold text-red-800">{permanentDeleteModal?.name}</p>
+              <p className="text-xs text-red-600 mt-0.5">Proyek ini akan dihapus permanen dan tidak bisa dipulihkan.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setPermanentDeleteModal(null)} className="btn-secondary">Batal</button>
+            <button onClick={() => {
+              deletePermanent(permanentDeleteModal.id)
+              setPermanentDeleteModal(null)
+              toast.custom((t) => (
+                <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                    <Trash2 size={13} className="text-red-500"/>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{permanentDeleteModal?.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Dihapus permanen</p>
+                  </div>
+                </div>
+              ), { duration: 3000 })
+            }}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
+              <Trash2 size={14}/> Hapus Permanen
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

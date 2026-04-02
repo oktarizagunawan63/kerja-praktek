@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
-  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users
+  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -14,6 +14,7 @@ import useUserStore from '../store/userStore'
 import { fileToBase64, downloadFile } from '../lib/fileUtils'
 import { formatRupiah } from '../lib/formatRupiah'
 import { can } from '../lib/permissions'
+import { exportProyekPDF } from '../lib/exportPdf'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const SATUAN = ['m3','m2','m','ton','kg','btg','unit','set','ls','buah','liter','zak']
@@ -25,21 +26,16 @@ const HIcon = {
   system:   <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"><Clock size={13} className="text-gray-500"/></div>,
 }
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
-const loadDocs  = (id) => { try { return JSON.parse(localStorage.getItem(`pdocs_${id}`) || '[]') } catch { return [] } }
-const saveDocs  = (id, d) => localStorage.setItem(`pdocs_${id}`, JSON.stringify(d))
-
 // ── component ─────────────────────────────────────────────────────────────────
 export default function ProjectDetailPage() {
   const { id }       = useParams()
   const navigate     = useNavigate()
   const { user }     = useAuthStore()
   const currentUser  = user?.name || 'Unknown'
-  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject } = useAppStore()
+  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc } = useAppStore()
   const { users, updateUser } = useUserStore()
 
   // ── all hooks before any return ──
-  const [docs,         setDocs]         = useState(() => loadDocs(id))
   const [history,      setHistory]      = useState([])
   const [uploadOpen,   setUploadOpen]   = useState(false)
   const [matOpen,      setMatOpen]      = useState(false)
@@ -60,6 +56,7 @@ export default function ProjectDetailPage() {
 
   const project   = projects.find(p => String(p.id) === String(id))
   const materials = getMaterials(id)
+  const docs      = getDocs(id) // baca dari appStore, otomatis sync
   const isCompleted = project?.status === 'completed'
 
   const progressVal = materials.length
@@ -77,8 +74,7 @@ export default function ProjectDetailPage() {
   }
 
   // ── helpers ──
-  const updateDocs = (d) => { setDocs(d); saveDocs(id, d) }
-  const addHist    = (e) => setHistory(p => [{ id: Date.now(), ...e, time: new Date().toLocaleString('id-ID') }, ...p])
+  const addHist = (e) => setHistory(p => [{ id: Date.now(), ...e, time: new Date().toLocaleString('id-ID') }, ...p])
 
   // ── handlers ──
   const handleMatSubmit = async (e) => {
@@ -86,13 +82,11 @@ export default function ProjectDetailPage() {
     if (!matForm.qty || matForm.files.length === 0) { toast.error('Isi qty dan upload dokumen perintah'); return }
     const qty = parseInt(matForm.qty)
     updateMaterialQty(id, selMat.id, qty, matForm.catatan)
-    const newDocs = await Promise.all(matForm.files.map(async file => {
+    await Promise.all(matForm.files.map(async file => {
       const isImg = file.type.startsWith('image/')
-      return { id: Date.now() + Math.random(), name: file.name, type: isImg ? 'Foto' : 'Dokumen Teknis', uploader: currentUser.split(' ')[0], date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : 'pdf', projectId: id }
+      addDoc({ name: file.name, type: isImg ? 'Foto' : 'Dokumen Teknis', uploader: currentUser, date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : 'pdf', projectId: id })
     }))
-    if (newDocs.length) updateDocs([...newDocs, ...docs])
     const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' — ' + matForm.catatan : ''}`
-    addActivity({ action: 'Update Material Terpasang', detail, projectId: id })
     addHist({ action: 'Update Material Terpasang', detail, user: currentUser, type: 'material' })
     toast.success('Material berhasil diupdate')
     setMatOpen(false); setMatForm({ qty: '', catatan: '', files: [] })
@@ -114,10 +108,8 @@ export default function ProjectDetailPage() {
     const isImg = file.type.startsWith('image/')
     const isPdf = file.type === 'application/pdf'
     const type  = isImg ? 'Foto' : docForm.type
-    const doc   = { id: Date.now(), name: file.name, type, uploader: currentUser.split(' ')[0], date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : isPdf ? 'pdf' : 'other', projectId: id }
-    updateDocs([doc, ...docs])
-    addActivity({ action: 'Upload Dokumen', detail: `Upload ${type}: ${doc.name}`, projectId: id })
-    addHist({ action: 'Upload Dokumen', detail: `Upload ${type}: ${doc.name}`, user: currentUser, type: 'dokumen' })
+    addDoc({ name: file.name, type, uploader: currentUser, date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : isPdf ? 'pdf' : 'other', projectId: id })
+    addHist({ action: 'Upload Dokumen', detail: `Upload ${type}: ${file.name}`, user: currentUser, type: 'dokumen' })
     toast.success('Dokumen berhasil diupload')
     setUploadOpen(false); setDocForm({ type: 'Laporan Harian', files: [] })
   }
@@ -142,26 +134,75 @@ export default function ProjectDetailPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg"><ArrowLeft size={18} className="text-gray-600"/></button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
-          <p className="text-sm text-gray-500">{project.location} · PM: {project.pm}</p>
+      <div className="card p-4 space-y-3">
+        {/* Baris 1: navigasi + info proyek + badge */}
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
+            <ArrowLeft size={18} className="text-gray-600"/>
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-gray-900 truncate">{project.name}</h1>
+            <p className="text-xs text-gray-500 mt-0.5">{project.location} · PM: {project.pm}</p>
+          </div>
+          {isCompleted
+            ? <Badge variant="info">Selesai</Badge>
+            : <Badge variant={project.status==='at_risk'?'warning':project.status==='delayed'?'danger':'success'}>
+                {project.status==='at_risk'?'At Risk':project.status==='delayed'?'Delayed':'On Track'}
+              </Badge>
+          }
         </div>
-        {isCompleted
-          ? <Badge variant="info">Selesai</Badge>
-          : <Badge variant={project.status==='at_risk'?'warning':project.status==='delayed'?'danger':'success'}>
-              {project.status==='at_risk'?'At Risk':project.status==='delayed'?'Delayed':'On Track'}
-            </Badge>
-        }
-        {!isCompleted && <>
-          <button onClick={() => setCompleteOpen(true)} className="flex items-center gap-2 text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
-            <CheckCircle size={15}/> Tandai Selesai
-          </button>
-          <button onClick={() => setUploadOpen(true)} className="btn-primary flex items-center gap-2">
-            <Upload size={15}/> Upload Dokumen
-          </button>
-        </>}
+
+        {/* Baris 2: tombol aksi */}
+        {!isCompleted && (
+          <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
+            <button onClick={() => setCompleteOpen(true)}
+              className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
+              <CheckCircle size={13}/> Tandai Selesai
+            </button>
+            {can(user, 'edit_project') && (
+              <button onClick={() => {
+                setEditForm({ name: project.name, location: project.location, pm: project.pm, phone: project.phone || '', deadline: project.deadline, rab: Number(project.rab).toLocaleString('id-ID'), status: project.status })
+                setEditOpen(true)
+              }} className="flex items-center gap-1.5 text-xs border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors">
+                Edit Proyek
+              </button>
+            )}
+            {can(user, 'export_pdf') && (
+              <button onClick={() => exportProyekPDF(project, materials, docs)}
+                className="flex items-center gap-1.5 text-xs border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors">
+                <Download size={13}/> Export PDF
+              </button>
+            )}
+            <button onClick={() => setUploadOpen(true)}
+              className="flex items-center gap-1.5 text-xs bg-[#0f4c81] hover:bg-[#1a6bb5] text-white px-3 py-2 rounded-lg font-medium transition-colors">
+              <Upload size={13}/> Upload Dokumen
+            </button>
+            {user?.role === 'site_manager' && (() => {
+              const direktur = useUserStore.getState().users.find(u => u.role === 'direktur')
+              if (!direktur?.email) return null
+              const daysLeft = Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))
+              const subject = encodeURIComponent(`[Laporan] ${project.name} — Progress ${progressVal}%`)
+              const body = encodeURIComponent(
+                `Yth. ${direktur.name},\n\nBerikut laporan terkini proyek:\n\n` +
+                `Proyek     : ${project.name}\n` +
+                `Lokasi     : ${project.location}\n` +
+                `Progress   : ${progressVal}%\n` +
+                `RAB        : ${formatRupiah(project.rab)}\n` +
+                `Terealisasi: ${formatRupiah(project.realisasi || 0)}\n` +
+                `Sisa Waktu : ${daysLeft} hari (Deadline: ${new Date(project.deadline).toLocaleDateString('id-ID')})\n` +
+                `Status     : ${project.status === 'on_track' ? 'On Track' : project.status === 'at_risk' ? 'At Risk' : project.status === 'delayed' ? 'Delayed' : 'Selesai'}\n\n` +
+                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSite Manager — PT Amsar Prima Mandiri`
+              )
+              return (
+                <button
+                  onClick={() => window.open(`https://mail.google.com/mail/?view=cm&to=${direktur.email}&su=${subject}&body=${body}`, '_blank')}
+                  className="flex items-center gap-1.5 text-xs border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium transition-colors ml-auto">
+                  <Mail size={13}/> Laporkan ke Direktur
+                </button>
+              )
+            })()}
+          </div>
+        )}
       </div>
 
       {isCompleted && (
@@ -186,7 +227,7 @@ export default function ProjectDetailPage() {
           <p className="text-xs text-gray-500 mb-1">RAB Terealisasi</p>
           <p className="text-xl font-bold text-gray-900">{formatRupiah(project.realisasi || 0)}</p>
           <p className="text-xs text-gray-400 mt-0.5">RAB: {formatRupiah(project.rab)}</p>
-          {!isCompleted && (
+          {!isCompleted && can(user, 'edit_rab') && (
             <button onClick={() => { 
                 const val = project.realisasi || 0
                 setRabInput(val ? Number(val).toLocaleString('id-ID') : '')
@@ -279,7 +320,7 @@ export default function ProjectDetailPage() {
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
                       <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100"/>
                     </div>
-                    {!isCompleted && <button onClick={e => { e.stopPropagation(); updateDocs(docs.filter(d=>d.id!==doc.id)); toast.success('Foto dihapus') }}
+                    {!isCompleted && <button onClick={e => { e.stopPropagation(); deleteDoc(doc.id); toast.success('Foto dihapus') }}
                       className="absolute top-1.5 right-1.5 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100"><Trash2 size={11}/></button>}
                   </div>
                 ))}
@@ -299,7 +340,7 @@ export default function ProjectDetailPage() {
                   <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
                 </div>
                 {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
-                {!isCompleted && <button onClick={() => { updateDocs(docs.filter(d=>d.id!==doc.id)); toast.success('Dokumen dihapus') }}
+                {!isCompleted && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
                   className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>}
               </div>
             ))}
@@ -534,12 +575,73 @@ export default function ProjectDetailPage() {
         </div>
       </Modal>
 
+      {/* Modal: Edit Proyek */}
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Proyek" size="md">
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          const rabNum = parseFloat(String(editForm.rab).replace(/\./g, ''))
+          const autoStatus = (() => { const d = Math.ceil((new Date(editForm.deadline) - new Date()) / 86400000); return d < 0 ? 'delayed' : d <= 30 ? 'at_risk' : 'on_track' })()
+          updateProject(id, { name: editForm.name, location: editForm.location, pm: editForm.pm, phone: editForm.phone, deadline: editForm.deadline, rab: rabNum, status: autoStatus })
+          addActivity({ action: 'Edit Proyek', detail: `Proyek diupdate: ${editForm.name}`, projectId: id })
+          toast.success('Proyek berhasil diupdate')
+          setEditOpen(false)
+        }} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Nama Proyek</label>
+            <input type="text" required value={editForm.name || ''} onChange={e => setEditForm({...editForm, name: e.target.value})}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Lokasi</label>
+            <input type="text" required value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Side Manager</label>
+              <input type="text" value={editForm.pm || ''} onChange={e => setEditForm({...editForm, pm: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Email SM</label>
+              <input type="email" value={editForm.phone || ''} onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Deadline</label>
+            <input type="date" value={editForm.deadline || ''} onChange={e => setEditForm({...editForm, deadline: e.target.value})}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+            {editForm.deadline && (() => {
+              const days = Math.ceil((new Date(editForm.deadline) - new Date()) / 86400000)
+              const status = days < 0 ? 'Delayed' : days <= 30 ? 'At Risk' : 'On Track'
+              const color = days < 0 ? 'text-red-500' : days <= 30 ? 'text-yellow-600' : 'text-green-600'
+              return <p className={`text-xs mt-1 ${color}`}>Status otomatis: {status}</p>
+            })()}
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">RAB</label>
+            <input type="text" value={editForm.rab || ''} onChange={e => {
+              const raw = e.target.value.replace(/\D/g, '')
+              setEditForm({...editForm, rab: raw ? Number(raw).toLocaleString('id-ID') : ''})
+            }}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Contoh: 7.500.000"/>
+            {editForm.rab && <p className="text-xs text-blue-600 mt-1">{formatRupiah(parseFloat(String(editForm.rab).replace(/\./g, '')))}</p>}
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary">Batal</button>
+            <button type="submit" className="btn-primary">Simpan Perubahan</button>
+          </div>
+        </form>
+      </Modal>
+
       {/* Modal: Assign Engineer */}
       <Modal open={teamOpen} onClose={() => setTeamOpen(false)} title="Assign Engineer ke Proyek" size="md">
         <div className="space-y-3">
           <p className="text-xs text-gray-500">Pilih engineer yang akan di-assign ke proyek ini:</p>
           {users.filter(u => u.role === 'engineer').length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Belum ada akun engineer. Buat dulu di Manajemen User.</p>
+            <p className="text-sm text-gray-400 text-center py-4">Belum ada akun engineer.</p>
           ) : (
             users.filter(u => u.role === 'engineer').map(eng => {
               const isAssigned = (eng.assignedProjects || []).includes(String(id))
@@ -573,11 +675,62 @@ export default function ProjectDetailPage() {
               )
             })
           )}
+
+          {/* Buat akun engineer baru — site manager & direktur */}
+          {can(user, 'edit_project') && (
+            <NewEngineerInline onCreated={(eng) => {
+              updateUser(eng.id, { assignedProjects: [String(id)] })
+              toast.success(`${eng.name} dibuat & di-assign`)
+            }} />
+          )}
+
           <div className="flex justify-end pt-2">
             <button onClick={() => setTeamOpen(false)} className="btn-primary">Selesai</button>
           </div>
         </div>
       </Modal>
     </div>
+  )
+}
+
+// ── Inline form buat engineer baru ────────────────────────────────────────────
+function NewEngineerInline({ onCreated }) {
+  const { addUser } = useUserStore()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', password: '' })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!form.name || !form.email || !form.password) return
+    const eng = addUser({ ...form, role: 'engineer', assignedProjects: [] })
+    onCreated(eng)
+    setOpen(false)
+    setForm({ name: '', email: '', password: '' })
+  }
+
+  if (!open) return (
+    <button onClick={() => setOpen(true)}
+      className="w-full flex items-center justify-center gap-2 text-xs text-purple-600 border border-dashed border-purple-300 hover:bg-purple-50 py-2.5 rounded-xl transition-colors">
+      <Plus size={13}/> Buat Akun Engineer Baru
+    </button>
+  )
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
+      <p className="text-xs font-semibold text-purple-800">Buat Akun Engineer Baru</p>
+      <input required type="text" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
+        className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+        placeholder="Nama lengkap..."/>
+      <input required type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))}
+        className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+        placeholder="Email..."/>
+      <input required type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))}
+        className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+        placeholder="Password..."/>
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => setOpen(false)} className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 py-1.5 rounded-lg">Batal</button>
+        <button type="submit" className="flex-1 text-xs bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg font-medium">Buat & Assign</button>
+      </div>
+    </form>
   )
 }
