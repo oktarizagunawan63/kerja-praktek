@@ -3,29 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { Stethoscope } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
-import useUserStore from '../store/userStore'
+import { api } from '../lib/api'
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const { setAuth } = useAuthStore()
-  const { loginCheck } = useUserStore()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      // Cek di userStore dulu (local users)
-      const localUser = loginCheck(form.email, form.password)
-      if (localUser) {
-        setAuth('local-token-' + localUser.id, localUser)
-        navigate('/dashboard')
-        return
-      }
-      toast.error('Email atau password salah')
-    } catch {
-      toast.error('Terjadi kesalahan')
+      const res = await api.login(form)
+      setAuth(res.token, res.user)
+      navigate('/dashboard')
+    } catch (err) {
+      toast.error(err.message || 'Email atau password salah')
     } finally {
       setLoading(false)
     }

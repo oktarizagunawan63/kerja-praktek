@@ -1,22 +1,9 @@
 import { useState } from 'react'
 import Modal from './Modal'
+import LocationSelect from './LocationSelect'
 import toast from 'react-hot-toast'
 
 const EMPTY = { name: '', location: '', sm: '', email: '', deadline: '', rab: '', status: 'on_track' }
-
-const addActivityLog = (action, detail, project) => {
-  const auth = JSON.parse(localStorage.getItem('amsar-auth') || '{}')
-  const user = auth?.state?.user
-  const logs = JSON.parse(localStorage.getItem('activity_logs') || '[]')
-  logs.unshift({
-    id: Date.now(),
-    user: user?.name || 'Unknown',
-    role: user?.role || '-',
-    action, detail, project,
-    time: new Date().toLocaleString('id-ID'),
-  })
-  localStorage.setItem('activity_logs', JSON.stringify(logs.slice(0, 50)))
-}
 
 export default function AddProjectForm({ open, onClose, onSave }) {
   const [form, setForm] = useState(EMPTY)
@@ -43,7 +30,6 @@ export default function AddProjectForm({ open, onClose, onSave }) {
       status: form.status,
       completedAt: null,
     })
-    addActivityLog('Proyek Dibuat', `Proyek baru "${form.name}" di ${form.location} — SM: ${form.sm}`, form.name)
     setForm(EMPTY)
     onClose()
   }
@@ -57,7 +43,12 @@ export default function AddProjectForm({ open, onClose, onSave }) {
         </div>
         <div>
           <label className="text-xs font-medium text-gray-600 block mb-1">Lokasi</label>
-          <input type="text" required {...f('location')} className={cls} placeholder="Kota / lokasi proyek..." />
+          <LocationSelect
+            value={form.location}
+            onChange={(location) => setForm(p => ({ ...p, location }))}
+            placeholder="Pilih lokasi proyek..."
+            required
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

@@ -18,6 +18,30 @@ const useUserStore = create(
           password: 'password',
           role: 'direktur',
           assignedProjects: [], // direktur lihat semua, tidak perlu assign
+        },
+        {
+          id: 'sm-1',
+          name: 'Budi Santoso',
+          email: 'budi@ptamsar.co.id',
+          password: 'password',
+          role: 'site_manager',
+          assignedProjects: [],
+        },
+        {
+          id: 'sm-2',
+          name: 'Siti Rahayu',
+          email: 'siti@ptamsar.co.id',
+          password: 'password',
+          role: 'site_manager',
+          assignedProjects: [],
+        },
+        {
+          id: 'eng-1',
+          name: 'Ahmad Fauzi',
+          email: 'ahmad@ptamsar.co.id',
+          password: 'password',
+          role: 'engineer',
+          assignedProjects: [],
         }
       ],
 

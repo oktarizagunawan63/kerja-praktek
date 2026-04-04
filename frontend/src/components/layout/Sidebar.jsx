@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
+import { isDirector } from '../../utils/roleUtils'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
@@ -37,7 +38,7 @@ export default function Sidebar() {
   const { notifications } = useAppStore()
   const unread = notifications.filter(n => !n.isRead).length
 
-  const navItems = user?.role === 'direktur' ? DIRECTOR_NAV : BASE_NAV
+  const navItems = isDirector(user) ? DIRECTOR_NAV : BASE_NAV
 
   return (
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0">

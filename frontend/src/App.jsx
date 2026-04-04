@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import useAuthStore from './store/authStore'
+import { isDirector } from './utils/roleUtils'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -19,7 +20,7 @@ function PrivateRoute({ children }) {
 
 function DirectorOnly({ children }) {
   const { user } = useAuthStore()
-  if (user?.role !== 'direktur') return <Navigate to="/dashboard" replace />
+  if (!isDirector(user)) return <Navigate to="/dashboard" replace />
   return children
 }
 

@@ -15,12 +15,49 @@ const useAppStore = create(
         const newId = Date.now()
         const newProject = { ...project, id: newId, progress: 0, realisasi: 0, status: project.status || 'on_track', completedAt: null }
         set(s => ({ projects: [newProject, ...s.projects] }))
+        
+        // Add activity log
+        get().addActivity({ 
+          action: 'Proyek Dibuat', 
+          detail: `Proyek baru "${project.name}" di ${project.location} — PM: ${project.pm}`, 
+          projectId: newId 
+        })
+        
+        // Add notification
+        get().addNotif({
+          type: 'success',
+          title: 'Proyek Baru Dibuat ✓',
+          message: `${project.name} (${project.location}) telah ditambahkan ke sistem`,
+          projectId: newId,
+        })
+        
         setTimeout(() => get().checkNotifications(), 0)
         return newId
       },
 
-      updateProject: (id, fields) =>
-        set(s => ({ projects: s.projects.map(p => String(p.id) === String(id) ? { ...p, ...fields } : p) })),
+      updateProject: (id, fields) => {
+        const project = get().projects.find(p => String(p.id) === String(id))
+        if (!project) return
+        
+        set(s => ({ projects: s.projects.map(p => String(p.id) === String(id) ? { ...p, ...fields } : p) }))
+        
+        // Add activity log for project updates
+        const changes = Object.keys(fields).map(key => {
+          if (key === 'name') return `Nama: ${fields[key]}`
+          if (key === 'location') return `Lokasi: ${fields[key]}`
+          if (key === 'pm') return `PM: ${fields[key]}`
+          if (key === 'deadline') return `Deadline: ${new Date(fields[key]).toLocaleDateString('id-ID')}`
+          if (key === 'rab') return `RAB: Rp ${fields[key].toLocaleString('id-ID')}`
+          if (key === 'status') return `Status: ${fields[key]}`
+          return `${key}: ${fields[key]}`
+        }).join(', ')
+        
+        get().addActivity({ 
+          action: 'Proyek Diupdate', 
+          detail: `Update ${project.name} — ${changes}`, 
+          projectId: id 
+        })
+      },
 
       // ── Trash / Recycle Bin ───────────────────────────────────────
       trash: [], // proyek yang dihapus sementara
@@ -32,6 +69,13 @@ const useAppStore = create(
           projects: s.projects.filter(p => String(p.id) !== String(id)),
           trash: [{ ...project, deletedAt: new Date().toISOString() }, ...s.trash],
         }))
+        
+        // Add activity log
+        get().addActivity({ 
+          action: 'Proyek Dihapus', 
+          detail: `${project.name} (${project.location}) dipindahkan ke sampah`, 
+          projectId: id 
+        })
       },
 
       restoreFromTrash: (id) => {
@@ -42,12 +86,42 @@ const useAppStore = create(
           trash: s.trash.filter(p => String(p.id) !== String(id)),
           projects: [restored, ...s.projects],
         }))
+        
+        // Add activity log
+        get().addActivity({ 
+          action: 'Proyek Dipulihkan', 
+          detail: `${project.name} (${project.location}) dipulihkan dari sampah`, 
+          projectId: id 
+        })
       },
 
-      deletePermanent: (id) =>
-        set(s => ({ trash: s.trash.filter(p => String(p.id) !== String(id)) })),
+      deletePermanent: (id) => {
+        const project = get().trash.find(p => String(p.id) === String(id))
+        set(s => ({ trash: s.trash.filter(p => String(p.id) !== String(id)) }))
+        
+        // Add activity log
+        if (project) {
+          get().addActivity({ 
+            action: 'Proyek Dihapus Permanen', 
+            detail: `${project.name} (${project.location}) dihapus permanen dari sistem`, 
+            projectId: id 
+          })
+        }
+      },
 
-      emptyTrash: () => set({ trash: [] }),
+      emptyTrash: () => {
+        const trashCount = get().trash.length
+        set({ trash: [] })
+        
+        // Add activity log
+        if (trashCount > 0) {
+          get().addActivity({ 
+            action: 'Sampah Dikosongkan', 
+            detail: `${trashCount} proyek dihapus permanen dari sampah`, 
+            projectId: null 
+          })
+        }
+      },
 
       deleteProject: (id) => get().moveToTrash(id),
 
@@ -103,12 +177,46 @@ const useAppStore = create(
         )
         get().setMaterials(pid, updated)
         get().addActivity({ action: 'Update Material Terpasang', detail: `Tambah ${qtyTambah} ${mat.unit} ${mat.name}${catatan ? ' — ' + catatan : ''}`, projectId })
+        
+        // Check if material is completed and add notification
+        const updatedMat = updated.find(m => m.id === matId)
+        const project = get().projects.find(p => String(p.id) === String(projectId))
+        
+        if (updatedMat && project) {
+          const percentage = (updatedMat.qty_terpasang / updatedMat.qty_plan) * 100
+          
+          if (percentage >= 100) {
+            get().addNotif({
+              type: 'success',
+              title: 'Material Selesai ✓',
+              message: `${updatedMat.name} di ${project.name} telah terpasang 100%`,
+              projectId,
+            })
+          } else if (percentage >= 90) {
+            get().addNotif({
+              type: 'warning',
+              title: 'Material Hampir Selesai',
+              message: `${updatedMat.name} di ${project.name} sudah ${Math.round(percentage)}%`,
+              projectId,
+            })
+          }
+        }
       },
 
       deleteMaterial: (projectId, matId) => {
         const pid = String(projectId)
         const current = get().materials[pid] || []
+        const material = current.find(m => m.id === matId)
         get().setMaterials(pid, current.filter(m => m.id !== matId))
+        
+        // Add activity log
+        if (material) {
+          get().addActivity({ 
+            action: 'Hapus Material', 
+            detail: `${material.name} (${material.qty_plan} ${material.unit}) dihapus`, 
+            projectId 
+          })
+        }
       },
 
       // ── Documents ─────────────────────────────────────────────
@@ -122,6 +230,18 @@ const useAppStore = create(
         const newDoc = { ...doc, id: Date.now() }
         set(s => ({ documents: [newDoc, ...s.documents] }))
         get().addActivity({ action: 'Upload Dokumen', detail: `Upload ${doc.type}: ${doc.name}`, projectId: doc.projectId })
+        
+        // Add notification for important document uploads
+        const project = get().projects.find(p => String(p.id) === String(doc.projectId))
+        if (project && ['kontrak', 'rab', 'izin'].some(type => doc.type.toLowerCase().includes(type))) {
+          get().addNotif({
+            type: 'info',
+            title: 'Dokumen Penting Diupload',
+            message: `${doc.type}: ${doc.name} untuk proyek ${project.name}`,
+            projectId: doc.projectId,
+          })
+        }
+        
         return newDoc
       },
 

@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
+import LocationSelect from '../components/ui/LocationSelect'
+import { ProjectCreatedToast } from '../components/ui/ProjectToast'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useAppStore from '../store/appStore'
@@ -91,7 +93,9 @@ export default function ProjectsPage() {
       })
       toast.success('Proyek berhasil diupdate')
     } else {
-      const newId = addProject({ name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus })
+      const newProject = { name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus }
+      const newId = addProject(newProject)
+      
       // Auto-assign ke pembuat kalau bukan direktur
       if (user.role !== 'direktur' && newId) {
         const creator = users.find(u => u.email === user.email)
@@ -102,7 +106,14 @@ export default function ProjectsPage() {
           }
         }
       }
-      toast.success('Proyek berhasil ditambahkan')
+      
+      // Custom toast for project creation
+      toast.custom((t) => (
+        <ProjectCreatedToast 
+          project={newProject} 
+          visible={t.visible} 
+        />
+      ), { duration: 4000 })
     }
     setOpen(false); setForm(EMPTY_FORM); setEditProject(null)
   }
@@ -407,8 +418,12 @@ export default function ProjectsPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Lokasi</label>
-            <input type="text" required value={form.location} onChange={e => setForm({...form, location: e.target.value})}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Kota / lokasi..." />
+            <LocationSelect
+              value={form.location}
+              onChange={(location) => setForm({...form, location})}
+              placeholder="Pilih lokasi proyek..."
+              required
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
