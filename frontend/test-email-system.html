@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Email System - Password Reset</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .step { background: #f8f9fa; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+        button { margin: 5px; padding: 10px 20px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #1a6bb5; }
+        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin: 5px; width: 200px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>📧 Test Email System - Password Reset</h1>
+    
+    <div class="section">
+        <h3>🔧 Setup Email Configuration</h3>
+        <div class="info">
+            <strong>Langkah setup email:</strong>
+            <ol>
+                <li>Buka <code>backend/.env</code></li>
+                <li>Update konfigurasi email (lihat EMAIL_SETUP.md)</li>
+                <li>Restart Laravel server</li>
+                <li>Test email di bawah</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <strong>Gmail SMTP Configuration:</strong>
+            <pre>MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-16-digit-app-password
+MAIL_ENCRYPTION=tls</pre>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Test Password Reset Email</h3>
+        <div>
+            <input type="email" id="testEmail" placeholder="Enter email address" value="timothilois007@gmail.com">
+            <button onclick="testSendEmail()">Send Reset Token</button>
+        </div>
+        <div id="emailResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>📋 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        
+        async function testSendEmail() {
+            const email = document.getElementById('testEmail').value;
+            
+            if (!email || !email.includes('@')) {
+                document.getElementById('emailResult').innerHTML = `
+                    <div class="error">❌ Email tidak valid</div>
+                `;
+                return;
+            }
+            
+            document.getElementById('emailResult').innerHTML = `
+                <div class="info">🔄 Mengirim token reset ke ${email}...</div>
+            `;
+            
+            try {
+                const response = await fetch(`${API_BASE}/password/send-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let resultHtml = `
+                        <div class="success">
+                            ✅ <strong>Email berhasil dikirim!</strong><br>
+                            📧 Tujuan: ${data.email}<br>
+                            ⏰ Berlaku: ${data.expires_in}<br>
+                            💬 Pesan: ${data.message}
+                        </div>
+                    `;
+                    
+                    // Show token if in debug mode
+                    if (data.token) {
+                        resultHtml += `
+                            <div class="info">
+                                🔧 <strong>Debug Mode:</strong><br>
+                                🎯 Token: <code>${data.token}</code><br>
+                                ⚠️ Token ini hanya muncul karena APP_DEBUG=true
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.error) {
+                        resultHtml += `
+                            <div class="error">
+                                ⚠️ <strong>Email Service Error:</strong><br>
+                                ${data.error}
+                            </div>
+                        `;
+                    }
+                    
+                    document.getElementById('emailResult').innerHTML = resultHtml;
+                    
+                    // Update test results
+                    updateTestResults('send_email', true, data);
+                    
+                } else {
+                    document.getElementById('emailResult').innerHTML = `
+                        <div class="error">
+                            ❌ <strong>Gagal mengirim email:</strong><br>
+                            ${data.message}
+                        </div>
+                    `;
+                    
+                    updateTestResults('send_email', false, data);
+                }
+                
+            } catch (error) {
+                document.getElementById('emailResult').innerHTML = `
+                    <div class="error">❌ <strong>Network Error:</strong> ${error.message}</div>
+                `;
+                
+                updateTestResults('send_email', false, { error: error.message });
+            }
+        }
+        
+        function updateTestResults(test, success, data) {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const resultHtml = `
+                <div class="${success ? 'success' : 'error'}">
+                    <strong>[${timestamp}] ${test.toUpperCase()}:</strong> 
+                    ${success ? '✅ PASS' : '❌ FAIL'}<br>
+                    <small>${JSON.stringify(data, null, 2)}</small>
+                </div>
+            `;
+            
+            results.innerHTML = resultHtml + results.innerHTML;
+        }
+        
+        // Auto-fill with test email on load
+        window.onload = function() {
+            document.getElementById('testEmail').value = 'timothilois007@gmail.com';
+        }
+    </script>
+</body>
+</html>

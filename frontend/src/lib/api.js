@@ -52,9 +52,15 @@ async function request(method, path, body = null, isFormData = false) {
 
 export const api = {
   // Auth
-  login:  (data)  => request('POST', '/auth/login', data),
-  logout: ()      => request('POST', '/auth/logout'),
-  me:     ()      => request('GET',  '/auth/me'),
+  login:    (data)  => request('POST', '/auth/login', data),
+  register: (data)  => request('POST', '/auth/register', data),
+  logout:   ()      => request('POST', '/auth/logout'),
+  me:       ()      => request('GET',  '/auth/me'),
+
+  // Password Reset
+  sendResetToken:   (email) => request('POST', '/password/send-token', { email }),
+  verifyResetToken: (email, token) => request('POST', '/password/verify-token', { email, token }),
+  resetPassword:    (data) => request('POST', '/password/reset', data),
 
   // Projects
   getProjects:     ()       => request('GET',    '/projects'),
@@ -92,11 +98,16 @@ export const api = {
   },
 
   // Users
-  getUsers:       ()        => request('GET',    '/users'),
+  getUsers:       (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/users${q ? '?'+q : ''}`)
+  },
   createUser:     (data)    => request('POST',   '/users', data),
   updateUser:     (id, d)   => request('PUT',    `/users/${id}`, d),
   deleteUser:     (id)      => request('DELETE', `/users/${id}`),
   assignProject:  (uid, pid) => request('POST',  `/users/${uid}/assign-project`, { project_id: pid }),
+  approveUser:    (id)      => request('POST',   `/users/${id}/approve`),
+  rejectUser:     (id, reason) => request('POST', `/users/${id}/reject`, { reason }),
 
   // Locations
   getLocations:   (params = {}) => {

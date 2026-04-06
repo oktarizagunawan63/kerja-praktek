@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Stethoscope } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
@@ -56,6 +56,21 @@ export default function LoginPage() {
             {loading ? 'Masuk...' : 'Masuk'}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <Link to="/forgot-password" className="text-sm text-[#0f4c81] hover:underline">
+            Lupa password?
+          </Link>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Belum punya akun?{' '}
+            <Link to="/register" className="text-[#0f4c81] hover:underline font-medium">
+              Daftar di sini
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

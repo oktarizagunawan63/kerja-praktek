@@ -10,17 +10,18 @@ import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
 const BASE_NAV = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/projects',      icon: FolderKanban,    label: 'Proyek' },
-  { to: '/documents',     icon: FileText,        label: 'Dokumen' },
-  { to: '/reports',       icon: BarChart3,       label: 'Laporan' },
-  { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+  { to: '/projects',      icon: FolderKanban,    label: 'Proyek', tourId: 'projects' },
+  { to: '/documents',     icon: FileText,        label: 'Dokumen', tourId: 'documents' },
+  { to: '/reports',       icon: BarChart3,       label: 'Laporan', tourId: 'reports' },
+  { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true, tourId: 'notifications' },
 ]
 
 const DIRECTOR_NAV = [
   ...BASE_NAV,
-  { to: '/activity', icon: Activity, label: 'Activity Log' },
-  { to: '/users',    icon: Users,    label: 'Manajemen User' },
+  { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },
+  { to: '/users', icon: Users, label: 'Manajemen User', tourId: 'users' },
+  { to: '/user-approvals', icon: Users, label: 'Persetujuan User', badge: true, tourId: 'user-approvals' },
 ]
 
 function AmsarLogo({ size = 40 }) {
@@ -41,7 +42,7 @@ export default function Sidebar() {
   const navItems = isDirector(user) ? DIRECTOR_NAV : BASE_NAV
 
   return (
-    <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0">
+    <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0" data-tour="sidebar">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
         <AmsarLogo size={38} />
@@ -53,10 +54,11 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label, badge }) => (
+        {navItems.map(({ to, icon: Icon, label, badge, tourId }) => (
           <NavLink
             key={to}
             to={to}
+            data-tour={tourId}
             className={({ isActive }) =>
               clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',

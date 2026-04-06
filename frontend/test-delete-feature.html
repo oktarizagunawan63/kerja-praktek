@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Delete Feature</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        button { margin: 5px; padding: 8px 16px; background: #0f4c81; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1a6bb5; }
+        button.delete { background: #dc3545; }
+        button.delete:hover { background: #c82333; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; max-height: 400px; overflow-y: auto; }
+        pre { white-space: pre-wrap; font-size: 12px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .pending { background-color: #fff3cd; }
+        .rejected { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Test Delete Feature</h1>
+    
+    <div class="section">
+        <h3>Step 1: Login as Director</h3>
+        <button onclick="loginAsDirector()">Login as Director</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Create Test User</h3>
+        <button onclick="createTestUser()">Create Test User</button>
+        <div id="createResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 3: Get Pending Users</h3>
+        <button onclick="getPendingUsers()">Get Pending Users</button>
+        <div id="usersResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 4: Delete User</h3>
+        <input type="number" id="userIdToDelete" placeholder="User ID to delete">
+        <button class="delete" onclick="deleteUser()">Delete User</button>
+        <div id="deleteResult"></div>
+    </div>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let authToken = null;
+        let testUserId = null;
+        
+        async function loginAsDirector() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'direktur@ptamsar.co.id',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    document.getElementById('loginResult').innerHTML = `
+                        <div class="success">
+                            ✅ Logged in as ${data.user.name}<br>
+                            Role: ${data.user.role}<br>
+                            Token: ${data.token.substring(0, 20)}...
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('loginResult').innerHTML = `
+                        <div class="error">❌ Login failed: ${data.message}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `
+                    <div class="error">❌ Network Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function createTestUser() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Delete User',
+                        email: 'testdelete@ptamsar.co.id',
+                        password: 'password123',
+                        password_confirmation: 'password123',
+                        role: 'engineer'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    testUserId = data.user.id;
+                    document.getElementById('userIdToDelete').value = testUserId;
+                    document.getElementById('createResult').innerHTML = `
+                        <div class="success">
+                            ✅ Test user created<br>
+                            Name: ${data.user.name}<br>
+                            ID: ${data.user.id}<br>
+                            Status: ${data.user.status}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('createResult').innerHTML = `
+                        <div class="error">❌ Create failed: ${data.message}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('createResult').innerHTML = `
+                    <div class="error">❌ Network Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function getPendingUsers() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/users?status=pending`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let html = `<div class="success">✅ Found ${data.length} pending users:</div>`;
+                    
+                    if (data.length > 0) {
+                        html += `<table>
+                            <thead>
+                                <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>`;
+                        
+                        data.forEach(user => {
+                            html += `<tr class="pending">
+                                <td>${user.id}</td>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${user.status}</td>
+                                <td>
+                                    <button class="delete" onclick="deleteUserById(${user.id})">Delete</button>
+                                </td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table>';
+                    }
+                    
+                    document.getElementById('usersResult').innerHTML = html;
+                } else {
+                    document.getElementById('usersResult').innerHTML = `
+                        <div class="error">❌ Error: ${data.message}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('usersResult').innerHTML = `
+                    <div class="error">❌ Network Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function deleteUser() {
+            const userId = document.getElementById('userIdToDelete').value;
+            if (!userId) {
+                alert('Please enter User ID');
+                return;
+            }
+            
+            await deleteUserById(userId);
+        }
+        
+        async function deleteUserById(userId) {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete user ID ${userId}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('deleteResult').innerHTML = `
+                        <div class="success">✅ Delete successful: ${data.message}</div>
+                    `;
+                    
+                    // Refresh pending users list
+                    setTimeout(() => {
+                        getPendingUsers();
+                    }, 1000);
+                } else {
+                    document.getElementById('deleteResult').innerHTML = `
+                        <div class="error">❌ Delete failed (${response.status}): ${data.message}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('deleteResult').innerHTML = `
+                    <div class="error">❌ Network Error: ${error.message}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

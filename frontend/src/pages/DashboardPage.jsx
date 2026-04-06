@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import KpiCard from '../components/kpi/KpiCard'
 import ProgressBar from '../components/kpi/ProgressBar'
 import Badge from '../components/ui/Badge'
+import WelcomeCard from '../components/ui/WelcomeCard'
 import useAppStore from '../store/appStore'
 import useAuthStore from '../store/authStore'
 import useUserStore from '../store/userStore'
@@ -23,8 +24,41 @@ export default function DashboardPage() {
   const { user } = useAuthStore()
   const { users } = useUserStore()
   const [filterSM, setFilterSM] = useState('all') // filter per site manager (direktur only)
+  const [showWelcome, setShowWelcome] = useState(false)
 
-  useEffect(() => { checkNotifications() }, [projects])
+  useEffect(() => { 
+    checkNotifications()
+    
+    // Show welcome card for new users (created within last 24 hours)
+    if (user?.created_at) {
+      const createdAt = new Date(user.created_at)
+      const now = new Date()
+      const hoursDiff = (now - createdAt) / (1000 * 60 * 60)
+      
+      // Show welcome for users created within last 24 hours
+      if (hoursDiff <= 24) {
+        setShowWelcome(true)
+      }
+    }
+  }, [projects, user])
+
+  const isNewUser = () => {
+  const handleChecklistComplete = () => {
+    setShowChecklist(false)
+    if (user?.id) {
+      localStorage.setItem(`checklist-completed-${user.id}`, 'true')
+    }
+  }
+    if (!user) return false
+    
+    // Check if user has any assigned projects
+    const userProjects = projects.filter(p => 
+      p.pm?.toLowerCase() === user.name?.toLowerCase() ||
+      (user.assignedProjects && user.assignedProjects.includes(p.id.toString()))
+    )
+    
+    return userProjects.length === 0
+  }
 
   // Site managers list untuk filter
   const siteManagers = users.filter(u => u.role === 'site_manager')
@@ -49,6 +83,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Welcome Card for New Users */}
+      {(showWelcome || isNewUser()) && (
+        <WelcomeCard 
+          user={user} 
+          onDismiss={() => setShowWelcome(false)}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>

@@ -1,9 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { useState, useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import { isDirector } from './utils/roleUtils'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
@@ -12,6 +16,9 @@ import ReportsPage from './pages/ReportsPage'
 import ActivityLogPage from './pages/ActivityLogPage'
 import NotificationsPage from './pages/NotificationsPage'
 import UsersPage from './pages/UsersPage'
+import UserApprovalsPage from './pages/UserApprovalsPage'
+import WelcomeModal from './components/ui/WelcomeModal'
+import './styles/animations.css'
 
 function PrivateRoute({ children }) {
   const { token } = useAuthStore()
@@ -25,6 +32,36 @@ function DirectorOnly({ children }) {
 }
 
 export default function App() {
+  const { user } = useAuthStore()
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+
+  // Check if user is new and should see welcome modal
+  useEffect(() => {
+    if (user && user.status === 'approved') {
+      // Check if user hasn't seen welcome before
+      const hasSeenWelcome = localStorage.getItem(`welcome-seen-${user.id}`)
+      
+      if (!hasSeenWelcome) {
+        // Check if user is recently approved (within last 7 days for testing)
+        const approvedAt = new Date(user.approved_at || user.created_at)
+        const now = new Date()
+        const daysDiff = (now - approvedAt) / (1000 * 60 * 60 * 24)
+        
+        if (daysDiff <= 7) {
+          setShowWelcomeModal(true)
+        }
+      }
+    }
+  }, [user])
+
+  const handleWelcomeClose = () => {
+    setShowWelcomeModal(false)
+    // Mark as seen so it doesn't show again
+    if (user) {
+      localStorage.setItem(`welcome-seen-${user.id}`, 'true')
+    }
+  }
+
   return (
     <>
       <Toaster
@@ -48,6 +85,9 @@ export default function App() {
       />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard"        element={<DashboardPage />} />
@@ -58,8 +98,16 @@ export default function App() {
           <Route path="notifications"    element={<NotificationsPage />} />
           <Route path="activity"         element={<DirectorOnly><ActivityLogPage /></DirectorOnly>} />
           <Route path="users"            element={<DirectorOnly><UsersPage /></DirectorOnly>} />
+          <Route path="user-approvals"   element={<DirectorOnly><UserApprovalsPage /></DirectorOnly>} />
         </Route>
       </Routes>
+
+      {/* Welcome Modal for New Users */}
+      <WelcomeModal
+        open={showWelcomeModal}
+        onClose={handleWelcomeClose}
+        user={user}
+      />
     </>
   )
 }
