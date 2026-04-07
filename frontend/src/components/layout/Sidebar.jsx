@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText,
-  BarChart3, Bell, Activity, LogOut, Users
+  BarChart3, Bell, Activity, LogOut, Users,
+  MapPin, Calendar, CheckSquare, Clock, AlertTriangle
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
-import { isDirector } from '../../utils/roleUtils'
+import { isDirector, getRoleDisplayName } from '../../utils/roleUtils'
+import { can } from '../../lib/permissions'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
@@ -15,6 +17,14 @@ const BASE_NAV = [
   { to: '/documents',     icon: FileText,        label: 'Dokumen', tourId: 'documents' },
   { to: '/reports',       icon: BarChart3,       label: 'Laporan', tourId: 'reports' },
   { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true, tourId: 'notifications' },
+]
+
+const VISIT_MANAGEMENT_NAV = [
+  { to: '/customers',       icon: Users,         label: 'Customer List', tourId: 'customers' },
+  { to: '/plan-visits',     icon: Calendar,      label: 'Plan Visit', tourId: 'plan-visits' },
+  { to: '/realisasi-visits', icon: CheckSquare,  label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+  { to: '/attendance',      icon: Clock,         label: 'Attendance', tourId: 'attendance' },
+  { to: '/visit-reports',   icon: BarChart3,     label: 'Visit Reports', tourId: 'visit-reports' },
 ]
 
 const DIRECTOR_NAV = [
@@ -39,7 +49,26 @@ export default function Sidebar() {
   const { notifications } = useAppStore()
   const unread = notifications.filter(n => !n.isRead).length
 
-  const navItems = isDirector(user) ? DIRECTOR_NAV : BASE_NAV
+  // Determine navigation based on role - SIMPLE & DIRECT
+  let navItems = []
+  
+  // Check if user is direktur (any variant)
+  const isDirektorUser = user?.role === 'direktur' || user?.role === 'Direktur' || user?.role === 'director' || user?.role === 'Director'
+  
+  if (isDirektorUser) {
+    // DIREKTUR gets full admin navigation
+    navItems = DIRECTOR_NAV
+  } else if (can(user, 'access_visit_management')) {
+    // Site Manager and Sales get visit management navigation
+    navItems = [
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+      ...VISIT_MANAGEMENT_NAV,
+      { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' },
+    ]
+  } else {
+    // Regular users (Engineer) get base navigation
+    navItems = BASE_NAV
+  }
 
   return (
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0" data-tour="sidebar">
@@ -54,6 +83,17 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {/* Visit Management Section */}
+        {can(user, 'access_visit_management') && (
+          <>
+            <div className="px-3 py-2">
+              <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider">
+                Visit Management
+              </p>
+            </div>
+          </>
+        )}
+        
         {navItems.map(({ to, icon: Icon, label, badge, tourId }) => (
           <NavLink
             key={to}
@@ -79,6 +119,26 @@ export default function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Warnings for Site Manager */}
+        {can(user, 'view_all_warnings') && (
+          <NavLink
+            to="/warnings"
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-white/15 text-white'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              )
+            }
+          >
+            <div className="relative shrink-0">
+              <AlertTriangle size={18} />
+            </div>
+            Warnings
+          </NavLink>
+        )}
       </nav>
 
       {/* User */}
@@ -89,7 +149,7 @@ export default function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-medium truncate">{user?.name ?? 'User'}</p>
-            <p className="text-blue-300 text-xs capitalize">{user?.role ?? '-'}</p>
+            <p className="text-blue-300 text-xs">{getRoleDisplayName(user?.role) ?? '-'}</p>
           </div>
         </div>
         <button

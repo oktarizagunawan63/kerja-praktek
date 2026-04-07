@@ -6,22 +6,32 @@ import { USER_ROLES } from '../constants'
 
 // Normalize role names for consistency
 export function normalizeRole(role) {
+  if (!role) return null
+  
   const roleMap = {
     'director': USER_ROLES.DIRECTOR,
+    'direktur': USER_ROLES.DIRECTOR,
+    'Direktur': USER_ROLES.DIRECTOR,
+    'Director': USER_ROLES.DIRECTOR,
     'project_manager': USER_ROLES.SITE_MANAGER,
     'site_manager': USER_ROLES.SITE_MANAGER,
+    'Site Manager': USER_ROLES.SITE_MANAGER,
     'engineer': USER_ROLES.ENGINEER,
-    'direktur': USER_ROLES.DIRECTOR
+    'Engineer': USER_ROLES.ENGINEER,
+    'sales': USER_ROLES.SALES,
+    'Sales': USER_ROLES.SALES
   }
   
-  return roleMap[role] || role
+  return roleMap[role] || role.toLowerCase()
 }
 
-// Check if user is director (any variant)
+// Check if user is director (any variant) - SIMPLE VERSION
 export function isDirector(user) {
   if (!user?.role) return false
-  const role = normalizeRole(user.role)
-  return role === USER_ROLES.DIRECTOR
+  
+  // Direct check for all director variants
+  const directorRoles = ['direktur', 'director', 'Direktur', 'Director']
+  return directorRoles.includes(user.role)
 }
 
 // Check if user is site manager (any variant)

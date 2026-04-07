@@ -115,4 +115,74 @@ export const api = {
     return request('GET', `/locations${q ? '?'+q : ''}`)
   },
   getProvinces:   ()        => request('GET',    '/locations/provinces'),
+
+  // Visit Management - Customers
+  getCustomers:     (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/customers${q ? '?'+q : ''}`)
+  },
+  getCustomer:      (id)     => request('GET',    `/customers/${id}`),
+  createCustomer:   (data)   => request('POST',   '/customers', data),
+  updateCustomer:   (id, d)  => request('PUT',    `/customers/${id}`, d),
+  deleteCustomer:   (id)     => request('DELETE', `/customers/${id}`),
+  getCustomerVisitHistory: (id) => request('GET', `/customers/${id}/visit-history`),
+
+  // Visit Management - Plan Visits
+  getPlanVisits:    (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/plan-visits${q ? '?'+q : ''}`)
+  },
+  getPlanVisit:     (id)     => request('GET',    `/plan-visits/${id}`),
+  createPlanVisit:  (data)   => request('POST',   '/plan-visits', data),
+  updatePlanVisit:  (id, d)  => request('PUT',    `/plan-visits/${id}`, d),
+  deletePlanVisit:  (id)     => request('DELETE', `/plan-visits/${id}`),
+  getSalesUsers:    ()       => request('GET',    '/plan-visits/sales-users'),
+
+  // Visit Management - Realisasi Visits
+  getRealisasiVisits: (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/realisasi-visits${q ? '?'+q : ''}`)
+  },
+  getRealisasiVisit: (id)    => request('GET',    `/realisasi-visits/${id}`),
+  createRealisasiVisit: (data) => request('POST', '/realisasi-visits', data),
+  updateRealisasiVisit: (id, d) => request('PUT', `/realisasi-visits/${id}`, d),
+  markVisitAsMissed: (planVisitId) => request('POST', `/realisasi-visits/mark-missed/${planVisitId}`),
+  getPendingVisits:  ()      => request('GET',    '/realisasi-visits/pending-visits'),
+
+  // Visit Management - Attendance
+  getAttendance:     (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/attendance${q ? '?'+q : ''}`)
+  },
+  checkIn:          (data)   => request('POST',   '/attendance/check-in', data),
+  checkOut:         (data)   => request('POST',   '/attendance/check-out', data),
+  getTodayAttendance: ()     => request('GET',    '/attendance/today'),
+  getAttendanceReport: (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/attendance/report${q ? '?'+q : ''}`)
+  },
+
+  // Visit Management - Warnings
+  getWarnings:      (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/warnings${q ? '?'+q : ''}`)
+  },
+  getWarning:       (id)     => request('GET',    `/warnings/${id}`),
+  markWarningRead:  (id)     => request('POST',   `/warnings/${id}/read`),
+  markAllWarningsRead: ()    => request('POST',   '/warnings/mark-all-read'),
+  getUnreadWarningsCount: () => request('GET',    '/warnings/unread-count'),
+  deleteWarning:    (id)     => request('DELETE', `/warnings/${id}`),
+  getWarningStats:  ()       => request('GET',    '/warnings/stats'),
+
+  // Visit Management - Reports
+  getDashboardStats: ()      => request('GET',    '/reports/dashboard-stats'),
+  getMySalesStats:   ()      => request('GET',    '/reports/my-sales-stats'),
+  getVisitReport:   (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/reports/visit-report${q ? '?'+q : ''}`)
+  },
+  getSalesPerformance: (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/reports/sales-performance${q ? '?'+q : ''}`)
+  },
 }

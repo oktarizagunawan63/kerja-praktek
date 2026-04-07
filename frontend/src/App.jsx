@@ -3,12 +3,15 @@ import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import { isDirector } from './utils/roleUtils'
+import { can } from './lib/permissions'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
+import SiteManagerDashboard from './pages/SiteManagerDashboard'
+import SalesDashboard from './pages/SalesDashboard'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
 import DocumentsPage from './pages/DocumentsPage'
@@ -17,6 +20,13 @@ import ActivityLogPage from './pages/ActivityLogPage'
 import NotificationsPage from './pages/NotificationsPage'
 import UsersPage from './pages/UsersPage'
 import UserApprovalsPage from './pages/UserApprovalsPage'
+// Visit Management Pages
+import CustomersPage from './pages/CustomersPage'
+import PlanVisitsPage from './pages/PlanVisitsPage'
+import RealisasiVisitsPage from './pages/RealisasiVisitsPage'
+import AttendancePage from './pages/AttendancePage'
+import VisitReportsPage from './pages/VisitReportsPage'
+import WarningsPage from './pages/WarningsPage'
 import WelcomeModal from './components/ui/WelcomeModal'
 import './styles/animations.css'
 
@@ -28,6 +38,12 @@ function PrivateRoute({ children }) {
 function DirectorOnly({ children }) {
   const { user } = useAuthStore()
   if (!isDirector(user)) return <Navigate to="/dashboard" replace />
+  return children
+}
+
+function VisitManagementOnly({ children }) {
+  const { user } = useAuthStore()
+  if (!can(user, 'access_visit_management')) return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -91,6 +107,11 @@ export default function App() {
         <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard"        element={<DashboardPage />} />
+          
+          {/* Role-based Dashboards */}
+          <Route path="manager/dashboard" element={<SiteManagerDashboard />} />
+          <Route path="sales/dashboard"   element={<SalesDashboard />} />
+          
           <Route path="projects"         element={<ProjectsPage />} />
           <Route path="projects/:id"     element={<ProjectDetailPage />} />
           <Route path="documents"        element={<DocumentsPage />} />
@@ -99,6 +120,14 @@ export default function App() {
           <Route path="activity"         element={<DirectorOnly><ActivityLogPage /></DirectorOnly>} />
           <Route path="users"            element={<DirectorOnly><UsersPage /></DirectorOnly>} />
           <Route path="user-approvals"   element={<DirectorOnly><UserApprovalsPage /></DirectorOnly>} />
+          
+          {/* Visit Management Routes */}
+          <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
+          <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
+          <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
+          <Route path="attendance"       element={<VisitManagementOnly><AttendancePage /></VisitManagementOnly>} />
+          <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
+          <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
         </Route>
       </Routes>
 

@@ -1,39 +1,52 @@
 /**
  * Role-based permission helper
- * roles: 'direktur' | 'site_manager' | 'engineer'
+ * roles: 'direktur' | 'site_manager' | 'engineer' | 'sales'
  */
 
 export const can = (user, action) => {
   if (!user) return false
+  
   const role = user.role
+  
+  // DIREKTUR gets ALL permissions
+  if (role === 'direktur' || role === 'Direktur' || role === 'director' || role === 'Director') {
+    return true  // DIREKTUR can do EVERYTHING
+  }
 
   const rules = {
-    // Proyek
-    create_project:   ['direktur', 'director', 'site_manager', 'project_manager'],
-    delete_project:   ['direktur', 'director'],
-    edit_project:     ['direktur', 'director', 'site_manager', 'project_manager'],
-    mark_complete:    ['direktur', 'director', 'site_manager', 'project_manager'],
-
-    // Material
-    add_material:     ['direktur', 'director', 'site_manager', 'project_manager'],
-    update_material:  ['direktur', 'director', 'site_manager', 'project_manager', 'engineer'],
-    delete_material:  ['direktur', 'director', 'site_manager', 'project_manager'],
-
-    // Dokumen
-    upload_doc:       ['direktur', 'director', 'site_manager', 'project_manager', 'engineer'],
-    delete_doc:       ['direktur', 'director', 'site_manager', 'project_manager'],
-
-    // RAB
-    edit_rab:         ['direktur', 'director', 'site_manager', 'project_manager'],
-
-    // Laporan
-    export_pdf:       ['direktur', 'director', 'site_manager', 'project_manager'],
-
-    // User management
-    manage_users:     ['direktur', 'director'],
-
-    // Activity log
-    view_activity:    ['direktur', 'director'],
+    // Visit Management
+    access_visit_management: ['site_manager', 'sales'],
+    
+    // Customer Management
+    create_customer:  ['site_manager', 'sales'],
+    edit_customer:    ['site_manager', 'sales'],
+    delete_customer:  ['site_manager'],
+    view_all_customers: ['site_manager'],
+    
+    // Plan Visit Management
+    create_plan_visit: ['site_manager', 'sales'],
+    edit_plan_visit:   ['site_manager', 'sales'],
+    delete_plan_visit: ['site_manager'],
+    assign_visits:     ['site_manager'],
+    view_all_plan_visits: ['site_manager'],
+    
+    // Realisasi Visit
+    create_realisasi_visit: ['sales'],
+    view_realisasi_visits: ['site_manager', 'sales'],
+    mark_visit_missed: ['sales'],
+    
+    // Attendance
+    manage_attendance: ['sales'],
+    view_all_attendance: ['site_manager'],
+    
+    // Warnings
+    view_all_warnings: ['site_manager'],
+    manage_warnings:   ['site_manager'],
+    
+    // Reports
+    view_visit_reports: ['site_manager', 'sales'],
+    view_sales_performance: ['site_manager'],
+    export_reports: ['site_manager'],
   }
 
   return rules[action]?.includes(role) ?? false

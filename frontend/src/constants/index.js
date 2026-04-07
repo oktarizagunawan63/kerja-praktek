@@ -53,7 +53,58 @@ export const USER_ROLES = {
   DIRECTOR_ALT: 'director', // For backward compatibility
   SITE_MANAGER: 'site_manager',
   PROJECT_MANAGER: 'project_manager', // Legacy role, treat as site_manager
-  ENGINEER: 'engineer'
+  ENGINEER: 'engineer',
+  SALES: 'sales'
+}
+
+// Visit Management
+export const VISIT_STATUS = {
+  PENDING: 'pending',
+  DONE: 'done',
+  MISSED: 'missed'
+}
+
+export const VISIT_STATUS_CONFIG = {
+  [VISIT_STATUS.PENDING]: {
+    label: 'Pending',
+    variant: 'warning',
+    color: '#ea580c'
+  },
+  [VISIT_STATUS.DONE]: {
+    label: 'Selesai',
+    variant: 'success',
+    color: '#16a34a'
+  },
+  [VISIT_STATUS.MISSED]: {
+    label: 'Terlewat',
+    variant: 'danger',
+    color: '#dc2626'
+  }
+}
+
+// Warning Types
+export const WARNING_TYPES = {
+  MISSED_VISIT: 'missed_visit',
+  LATE_ATTENDANCE: 'late_attendance',
+  NO_ATTENDANCE: 'no_attendance'
+}
+
+export const WARNING_TYPE_CONFIG = {
+  [WARNING_TYPES.MISSED_VISIT]: {
+    label: 'Visit Terlewat',
+    icon: '📅',
+    color: '#dc2626'
+  },
+  [WARNING_TYPES.LATE_ATTENDANCE]: {
+    label: 'Terlambat Absen',
+    icon: '⏰',
+    color: '#ea580c'
+  },
+  [WARNING_TYPES.NO_ATTENDANCE]: {
+    label: 'Tidak Absen',
+    icon: '❌',
+    color: '#dc2626'
+  }
 }
 
 // Notification Types
