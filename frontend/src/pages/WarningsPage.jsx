@@ -184,7 +184,7 @@ export default function WarningsPage() {
     }
   ]
 
-  // Only Site Manager can access this page
+  // Only Sales Manager can access this page
   if (!can(user, 'view_all_warnings')) {
     return (
       <div className="p-6">

@@ -3,36 +3,36 @@ import { persist } from 'zustand/middleware'
 
 /**
  * User management store
- * Direktur bisa buat akun site_manager dan engineer
+ * Administrator bisa buat akun sales_manager dan engineer
  * Setiap user punya assignedProjects: [projectId, ...]
  */
 const useUserStore = create(
   persist(
     (set, get) => ({
       users: [
-        // Default direktur — sesuai dengan seeder backend
+        // Default administrator — sesuai dengan seeder backend
         {
-          id: 'direktur-1',
-          name: 'Direktur Utama',
+          id: 'administrator-1',
+          name: 'Admin',
           email: 'direktur@ptamsar.co.id',
           password: 'password',
-          role: 'direktur',
-          assignedProjects: [], // direktur lihat semua, tidak perlu assign
+          role: 'administrator',
+          assignedProjects: [], // administrator lihat semua, tidak perlu assign
         },
         {
           id: 'sm-1',
-          name: 'Budi Santoso',
+          name: 'Sales Manager',
           email: 'budi@ptamsar.co.id',
           password: 'password',
-          role: 'site_manager',
+          role: 'sales_manager',
           assignedProjects: [],
         },
         {
           id: 'sm-2',
-          name: 'Siti Rahayu',
+          name: 'Sales Manager 2',
           email: 'siti@ptamsar.co.id',
           password: 'password',
-          role: 'site_manager',
+          role: 'sales_manager',
           assignedProjects: [],
         },
         {
@@ -41,6 +41,22 @@ const useUserStore = create(
           email: 'ahmad@ptamsar.co.id',
           password: 'password',
           role: 'engineer',
+          assignedProjects: [],
+        },
+        {
+          id: 'sales-1',
+          name: 'Sales 1',
+          email: 'sales1@ptamsar.co.id',
+          password: 'password',
+          role: 'sales',
+          assignedProjects: [],
+        },
+        {
+          id: 'sales-2',
+          name: 'Sales 2',
+          email: 'sales2@ptamsar.co.id',
+          password: 'password',
+          role: 'sales',
           assignedProjects: [],
         }
       ],

@@ -37,7 +37,7 @@ export default function DataTable({ columns, data = [], loading = false, emptyTe
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                    {col.render ? col.render(row[col.key], row) : row[col.key] ?? '-'}
+                    {col.render ? col.render(row) : row[col.key] ?? '-'}
                   </td>
                 ))}
               </tr>

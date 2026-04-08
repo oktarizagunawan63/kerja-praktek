@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { MapPin, Camera, CheckCircle, XCircle, Clock, Navigation, AlertTriangle } from 'lucide-react'
+import { MapPin, CheckCircle, XCircle, Clock, Navigation } from 'lucide-react'
 import { api } from '../lib/api'
+import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
 
@@ -76,6 +76,11 @@ export default function RealisasiVisitsPage() {
   })
 
   useEffect(() => {
+    // Check if user has permission to access realisasi visits
+    if (!can(user, 'access_visit_management')) {
+      return
+    }
+    
     fetchData()
   }, [])
 
@@ -83,17 +88,28 @@ export default function RealisasiVisitsPage() {
     try {
       setLoading(true)
       
-      // Fetch pending visits (assigned to current user)
-      const pendingResponse = await api.getPendingVisits()
-      setPendingVisits(pendingResponse.data || [])
+      // Fetch pending visits with fallback
+      try {
+        const pendingResponse = await api.getPendingVisits()
+        setPendingVisits(pendingResponse.data || [])
+      } catch (error) {
+        console.warn('Pending visits API failed:', error.message)
+        setPendingVisits([])
+      }
       
-      // Fetch realisasi visits
-      const realisasiResponse = await api.getRealisasiVisits()
-      setRealisasiVisits(realisasiResponse.data.data || [])
+      // Fetch realisasi visits with fallback
+      try {
+        const realisasiResponse = await api.getRealisasiVisits()
+        const realisasiData = realisasiResponse.data?.data || realisasiResponse.data || []
+        setRealisasiVisits(realisasiData)
+      } catch (error) {
+        console.warn('Realisasi visits API failed:', error.message)
+        setRealisasiVisits([])
+      }
       
     } catch (error) {
-      toast.error('Gagal memuat data')
       console.error('Error fetching data:', error)
+      // Don't show toast error for data loading issues
     } finally {
       setLoading(false)
     }
@@ -315,6 +331,18 @@ export default function RealisasiVisitsPage() {
       render: (realisasi) => getStatusBadge(realisasi.status)
     }
   ]
+
+  // Check permissions first
+  if (!can(user, 'access_visit_management')) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600">You do not have permission to access visit management.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6">

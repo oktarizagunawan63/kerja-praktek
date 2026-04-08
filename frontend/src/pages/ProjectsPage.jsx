@@ -96,8 +96,8 @@ export default function ProjectsPage() {
       const newProject = { name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus }
       const newId = addProject(newProject)
       
-      // Auto-assign ke pembuat kalau bukan direktur
-      if (user.role !== 'direktur' && newId) {
+      // Auto-assign ke pembuat kalau bukan administrator
+      if (user.role !== 'administrator' && user.role !== 'direktur' && newId) {
         const creator = users.find(u => u.email === user.email)
         if (creator) {
           const assigned = creator.assignedProjects || []

@@ -111,7 +111,7 @@ export default function NotificationsPage() {
                       <ExternalLink size={12} /> Lihat Proyek
                     </button>
                   )}
-                  {pmEmail && user?.role === 'direktur' && n.type !== 'success' && (
+                  {pmEmail && (user?.role === 'administrator' || user?.role === 'direktur') && n.type !== 'success' && (
                     <button
                       onClick={(e) => handleGmail(e, pmEmail, project?.name, project?.pm, n.type, project?.progress, Math.ceil((new Date(project?.deadline) - new Date()) / 86400000))}
                       className="flex items-center gap-1.5 text-xs bg-white border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors font-medium"

@@ -52,11 +52,11 @@ export default function AddProjectForm({ open, onClose, onSave }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Site Manager (SM)</label>
-            <input type="text" required {...f('sm')} className={cls} placeholder="Nama Site Manager..." />
+            <label className="text-xs font-medium text-gray-600 block mb-1">Sales Manager (SM)</label>
+            <input type="text" required {...f('sm')} className={cls} placeholder="Nama Sales Manager..." />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Email Site Manager</label>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Email Sales Manager</label>
             <input type="email" {...f('email')} className={cls} placeholder="nama@email.com" />
           </div>
         </div>

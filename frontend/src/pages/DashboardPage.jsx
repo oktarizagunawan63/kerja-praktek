@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const { projects, checkNotifications } = useAppStore()
   const { user } = useAuthStore()
   const { users } = useUserStore()
-  const [filterSM, setFilterSM] = useState('all') // filter per site manager (direktur only)
+  const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
   const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => { 
@@ -43,12 +43,6 @@ export default function DashboardPage() {
   }, [projects, user])
 
   const isNewUser = () => {
-  const handleChecklistComplete = () => {
-    setShowChecklist(false)
-    if (user?.id) {
-      localStorage.setItem(`checklist-completed-${user.id}`, 'true')
-    }
-  }
     if (!user) return false
     
     // Check if user has any assigned projects
@@ -60,13 +54,13 @@ export default function DashboardPage() {
     return userProjects.length === 0
   }
 
-  // Site managers list untuk filter
-  const siteManagers = users.filter(u => u.role === 'site_manager')
+  // Sales managers list untuk filter
+  const siteManagers = users.filter(u => u.role === 'sales_manager' || u.role === 'site_manager')
 
   const projects_visible = filterProjectsByRole(projects, user, users)
 
-  // Kalau direktur filter per SM
-  const projects_filtered = user?.role === 'direktur' && filterSM !== 'all'
+  // Kalau administrator filter per Sales Manager
+  const projects_filtered = (user?.role === 'administrator' || user?.role === 'direktur') && filterSM !== 'all'
     ? projects_visible.filter(p => p.pm?.toLowerCase() === siteManagers.find(sm => sm.id === filterSM)?.name?.toLowerCase())
     : projects_visible
 
@@ -96,10 +90,10 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
           <p className="text-sm text-gray-500 mt-0.5">Monitoring proyek PT Amsar Prima Mandiri</p>
         </div>
-        {user?.role === 'direktur' && siteManagers.length > 0 && (
+        {(user?.role === 'administrator' || user?.role === 'direktur') && siteManagers.length > 0 && (
           <select value={filterSM} onChange={e => setFilterSM(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-            <option value="all">Semua Site Manager</option>
+            <option value="all">Semua Sales Manager</option>
             {siteManagers.map(sm => (
               <option key={sm.id} value={sm.id}>{sm.name}</option>
             ))}

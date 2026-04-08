@@ -3,7 +3,7 @@ import { UserCheck, UserX, Clock, CheckCircle, XCircle, Eye, Trash2 } from 'luci
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
-import { isDirector, isSiteManager, getRoleDisplayName } from '../utils/roleUtils'
+import { isAdministrator, isSalesManager, getRoleDisplayName } from '../utils/roleUtils'
 import DataTable from '../components/ui/DataTable'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -132,8 +132,8 @@ export default function UserApprovalsPage() {
   }
 
   const canApprove = (user) => {
-    if (isDirector(currentUser)) return true
-    if (isSiteManager(currentUser) && user.role === 'engineer') return true
+    if (isAdministrator(currentUser)) return true
+    if (isSalesManager(currentUser) && user.role === 'engineer') return true
     return false
   }
 
@@ -233,8 +233,8 @@ export default function UserApprovalsPage() {
             </>
           )}
           
-          {/* Delete button for rejected users or directors can delete any pending/rejected */}
-          {((user.status === 'rejected') || (user.status === 'pending' && isDirector(currentUser))) && (
+          {/* Delete button for rejected users or administrators can delete any pending/rejected */}
+          {((user.status === 'rejected') || (user.status === 'pending' && isAdministrator(currentUser))) && (
             <button
               onClick={() => handleDelete(user)}
               className="p-1 text-gray-400 hover:text-red-600 rounded"
@@ -249,8 +249,8 @@ export default function UserApprovalsPage() {
   ]
 
   const filteredUsers = users.filter(user => {
-    // Site manager hanya bisa lihat engineer
-    if (isSiteManager(currentUser) && user.role !== 'engineer') {
+    // Sales manager hanya bisa lihat engineer
+    if (isSalesManager(currentUser) && user.role !== 'engineer') {
       return false
     }
     return true

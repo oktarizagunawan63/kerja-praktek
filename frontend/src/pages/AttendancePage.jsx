@@ -61,17 +61,27 @@ export default function AttendancePage() {
     try {
       setLoading(true)
       
-      // Fetch today's attendance
-      const todayResponse = await api.getTodayAttendance()
-      setTodayAttendance(todayResponse.data)
+      // Fetch today's attendance with fallback
+      try {
+        const todayResponse = await api.getTodayAttendance()
+        setTodayAttendance(todayResponse.data)
+      } catch (error) {
+        console.warn('Today attendance API failed:', error.message)
+        setTodayAttendance(null)
+      }
       
-      // Fetch attendance history
-      const historyResponse = await api.getAttendance()
-      setAttendanceHistory(historyResponse.data.data || [])
+      // Fetch attendance history with fallback
+      try {
+        const historyResponse = await api.getAttendance()
+        setAttendanceHistory(historyResponse.data?.data || historyResponse.data || [])
+      } catch (error) {
+        console.warn('Attendance history API failed:', error.message)
+        setAttendanceHistory([])
+      }
       
     } catch (error) {
-      toast.error('Gagal memuat data attendance')
       console.error('Error fetching attendance:', error)
+      // Don't show toast error for attendance loading issues
     } finally {
       setLoading(false)
     }

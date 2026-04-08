@@ -2,15 +2,16 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import useAuthStore from './store/authStore'
-import { isDirector } from './utils/roleUtils'
+import { isAdministrator } from './utils/roleUtils'
 import { can } from './lib/permissions'
+import { clearErrorNotifications } from './utils/clearErrorNotifications'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
-import SiteManagerDashboard from './pages/SiteManagerDashboard'
+import SalesManagerDashboard from './pages/SalesManagerDashboard'
 import SalesDashboard from './pages/SalesDashboard'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
@@ -35,9 +36,9 @@ function PrivateRoute({ children }) {
   return token ? children : <Navigate to="/login" replace />
 }
 
-function DirectorOnly({ children }) {
+function AdministratorOnly({ children }) {
   const { user } = useAuthStore()
-  if (!isDirector(user)) return <Navigate to="/dashboard" replace />
+  if (!isAdministrator(user)) return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -47,9 +48,26 @@ function VisitManagementOnly({ children }) {
   return children
 }
 
+function RoleBasedDashboardRedirect() {
+  const { user } = useAuthStore()
+  
+  if (user?.role === 'sales_manager') {
+    return <Navigate to="/manager/dashboard" replace />
+  } else if (user?.role === 'sales') {
+    return <Navigate to="/sales/dashboard" replace />
+  } else {
+    return <DashboardPage />
+  }
+}
+
 export default function App() {
   const { user } = useAuthStore()
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+
+  // Clear error notifications on app start
+  useEffect(() => {
+    clearErrorNotifications()
+  }, [])
 
   // Check if user is new and should see welcome modal
   useEffect(() => {
@@ -106,10 +124,10 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard"        element={<DashboardPage />} />
+          <Route path="dashboard"        element={<RoleBasedDashboardRedirect />} />
           
           {/* Role-based Dashboards */}
-          <Route path="manager/dashboard" element={<SiteManagerDashboard />} />
+          <Route path="manager/dashboard" element={<SalesManagerDashboard />} />
           <Route path="sales/dashboard"   element={<SalesDashboard />} />
           
           <Route path="projects"         element={<ProjectsPage />} />
@@ -117,9 +135,9 @@ export default function App() {
           <Route path="documents"        element={<DocumentsPage />} />
           <Route path="reports"          element={<ReportsPage />} />
           <Route path="notifications"    element={<NotificationsPage />} />
-          <Route path="activity"         element={<DirectorOnly><ActivityLogPage /></DirectorOnly>} />
-          <Route path="users"            element={<DirectorOnly><UsersPage /></DirectorOnly>} />
-          <Route path="user-approvals"   element={<DirectorOnly><UserApprovalsPage /></DirectorOnly>} />
+          <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
+          <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
+          <Route path="user-approvals"   element={<AdministratorOnly><UserApprovalsPage /></AdministratorOnly>} />
           
           {/* Visit Management Routes */}
           <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />

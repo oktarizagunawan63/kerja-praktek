@@ -75,7 +75,7 @@ export default function RegisterPage() {
           </h1>
           
           <p className="text-gray-600 mb-6">
-            Akun Anda telah terdaftar dan menunggu persetujuan dari direktur atau site manager. 
+            Akun Anda telah terdaftar dan menunggu persetujuan dari administrator atau sales manager. 
             Anda akan mendapat notifikasi melalui email setelah akun disetujui.
           </p>
           
@@ -137,13 +137,13 @@ export default function RegisterPage() {
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f4c81]"
               required
             >
-              <option value="site_manager">Site Manager</option>
+              <option value="sales_manager">Sales Manager</option>
               <option value="engineer">Engineer</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              {values.role === 'site_manager' 
-                ? 'Persetujuan dari Direktur' 
-                : 'Persetujuan dari Direktur atau Site Manager'
+              {values.role === 'sales_manager' 
+                ? 'Persetujuan dari Administrator' 
+                : 'Persetujuan dari Administrator atau Sales Manager'
               }
             </p>
           </div>

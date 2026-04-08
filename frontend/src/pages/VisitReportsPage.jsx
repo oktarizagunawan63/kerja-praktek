@@ -35,9 +35,11 @@ export default function VisitReportsPage() {
   const fetchSalesUsers = async () => {
     try {
       const response = await api.getSalesUsers()
-      setSalesUsers(response.data || [])
+      const salesData = response.data || []
+      setSalesUsers(salesData)
     } catch (error) {
-      console.error('Error fetching sales users:', error)
+      console.warn('Sales users API failed:', error.message)
+      setSalesUsers([])
     }
   }
 
@@ -49,7 +51,7 @@ export default function VisitReportsPage() {
       const reportResponse = await api.getVisitReport(filters)
       setReportData(reportResponse.data)
       
-      // Fetch sales performance (Site Manager only)
+      // Fetch sales performance (Sales Manager only)
       if (can(user, 'view_sales_performance')) {
         const performanceResponse = await api.getSalesPerformance({
           start_date: filters.start_date,
@@ -324,7 +326,7 @@ export default function VisitReportsPage() {
         </div>
       )}
 
-      {/* Sales Performance (Site Manager Only) */}
+      {/* Sales Performance (Sales Manager Only) */}
       {isSiteManager && salesPerformance.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">

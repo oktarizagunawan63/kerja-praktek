@@ -14,10 +14,11 @@ export default function WelcomeCard({ user, onDismiss }) {
 
   const getRoleWelcomeMessage = (role) => {
     switch (role) {
+      case 'administrator':
       case 'director':
       case 'direktur':
         return {
-          title: 'Selamat Datang, Direktur!',
+          title: 'Selamat Datang, Administrator!',
           message: 'Anda memiliki akses penuh untuk mengelola semua proyek, user, dan sistem perusahaan.',
           features: [
             'Kelola semua proyek perusahaan',
@@ -26,10 +27,11 @@ export default function WelcomeCard({ user, onDismiss }) {
             'Akses ke semua fitur sistem'
           ]
         }
+      case 'sales_manager':
       case 'site_manager':
         return {
-          title: 'Selamat Datang, Site Manager!',
-          message: 'Anda dapat mengelola proyek dan tim engineer di bawah supervisi Anda.',
+          title: 'Selamat Datang, Sales Manager!',
+          message: 'Anda dapat mengelola customer dan visit management dengan efisien.',
           features: [
             'Kelola proyek yang ditugaskan',
             'Approve registrasi engineer',

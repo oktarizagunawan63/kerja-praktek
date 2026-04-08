@@ -177,13 +177,13 @@ export default function ProjectDetailPage() {
               className="flex items-center gap-1.5 text-xs bg-[#0f4c81] hover:bg-[#1a6bb5] text-white px-3 py-2 rounded-lg font-medium transition-colors">
               <Upload size={13}/> Upload Dokumen
             </button>
-            {user?.role === 'site_manager' && (() => {
-              const direktur = useUserStore.getState().users.find(u => u.role === 'direktur')
-              if (!direktur?.email) return null
+            {(user?.role === 'sales_manager' || user?.role === 'site_manager') && (() => {
+              const administrator = useUserStore.getState().users.find(u => u.role === 'administrator' || u.role === 'direktur')
+              if (!administrator?.email) return null
               const daysLeft = Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))
               const subject = encodeURIComponent(`[Laporan] ${project.name} — Progress ${progressVal}%`)
               const body = encodeURIComponent(
-                `Yth. ${direktur.name},\n\nBerikut laporan terkini proyek:\n\n` +
+                `Yth. ${administrator.name},\n\nBerikut laporan terkini proyek:\n\n` +
                 `Proyek     : ${project.name}\n` +
                 `Lokasi     : ${project.location}\n` +
                 `Progress   : ${progressVal}%\n` +
@@ -191,13 +191,13 @@ export default function ProjectDetailPage() {
                 `Terealisasi: ${formatRupiah(project.realisasi || 0)}\n` +
                 `Sisa Waktu : ${daysLeft} hari (Deadline: ${new Date(project.deadline).toLocaleDateString('id-ID')})\n` +
                 `Status     : ${project.status === 'on_track' ? 'On Track' : project.status === 'at_risk' ? 'At Risk' : project.status === 'delayed' ? 'Delayed' : 'Selesai'}\n\n` +
-                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSite Manager — PT Amsar Prima Mandiri`
+                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager — PT Amsar Prima Mandiri`
               )
               return (
                 <button
-                  onClick={() => window.open(`https://mail.google.com/mail/?view=cm&to=${direktur.email}&su=${subject}&body=${body}`, '_blank')}
+                  onClick={() => window.open(`https://mail.google.com/mail/?view=cm&to=${administrator.email}&su=${subject}&body=${body}`, '_blank')}
                   className="flex items-center gap-1.5 text-xs border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium transition-colors ml-auto">
-                  <Mail size={13}/> Laporkan ke Direktur
+                  <Mail size={13}/> Laporkan ke Administrator
                 </button>
               )
             })()}
@@ -349,7 +349,7 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* Tim Proyek — assign engineer (hanya direktur & site_manager) */}
+      {/* Tim Proyek — assign engineer (hanya administrator & sales_manager) */}
       {can(user, 'edit_project') && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -676,7 +676,7 @@ export default function ProjectDetailPage() {
             })
           )}
 
-          {/* Buat akun engineer baru — site manager & direktur */}
+          {/* Buat akun engineer baru — sales manager & administrator */}
           {can(user, 'edit_project') && (
             <NewEngineerInline onCreated={(eng) => {
               updateUser(eng.id, { assignedProjects: [String(id)] })

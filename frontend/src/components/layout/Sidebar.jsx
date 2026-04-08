@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
-import { isDirector, getRoleDisplayName } from '../../utils/roleUtils'
+import { getRoleDisplayName } from '../../utils/roleUtils'
 import { can } from '../../lib/permissions'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
@@ -52,16 +52,23 @@ export default function Sidebar() {
   // Determine navigation based on role - SIMPLE & DIRECT
   let navItems = []
   
-  // Check if user is direktur (any variant)
-  const isDirektorUser = user?.role === 'direktur' || user?.role === 'Direktur' || user?.role === 'director' || user?.role === 'Director'
+  // Check if user is administrator (any variant)
+  const isAdministratorUser = user?.role === 'administrator' || user?.role === 'Administrator' || user?.role === 'direktur' || user?.role === 'Direktur' || user?.role === 'director' || user?.role === 'Director'
   
-  if (isDirektorUser) {
-    // DIREKTUR gets full admin navigation
+  if (isAdministratorUser) {
+    // ADMINISTRATOR gets full admin navigation
     navItems = DIRECTOR_NAV
-  } else if (can(user, 'access_visit_management')) {
-    // Site Manager and Sales get visit management navigation
+  } else if (user?.role === 'sales_manager') {
+    // Sales Manager gets visit management navigation with correct dashboard route
     navItems = [
-      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+      { to: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+      ...VISIT_MANAGEMENT_NAV,
+      { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' },
+    ]
+  } else if (user?.role === 'sales') {
+    // Sales gets visit management navigation with correct dashboard route
+    navItems = [
+      { to: '/sales/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
       ...VISIT_MANAGEMENT_NAV,
       { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' },
     ]
@@ -120,7 +127,7 @@ export default function Sidebar() {
           </NavLink>
         ))}
 
-        {/* Warnings for Site Manager */}
+        {/* Warnings for Sales Manager */}
         {can(user, 'view_all_warnings') && (
           <NavLink
             to="/warnings"

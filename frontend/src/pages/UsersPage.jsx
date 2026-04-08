@@ -6,10 +6,10 @@ import toast from 'react-hot-toast'
 import useUserStore from '../store/userStore'
 import useAppStore from '../store/appStore'
 
-const roleLabel = { direktur: 'Direktur', site_manager: 'Site Manager', engineer: 'Engineer' }
-const roleVariant = { direktur: 'info', site_manager: 'success', engineer: 'default' }
+const roleLabel = { administrator: 'Administrator', sales_manager: 'Sales Manager', engineer: 'Engineer', direktur: 'Administrator', site_manager: 'Sales Manager' }
+const roleVariant = { administrator: 'info', sales_manager: 'success', engineer: 'default', direktur: 'info', site_manager: 'success' }
 
-const EMPTY = { name: '', email: '', password: '', role: 'site_manager', assignedProjects: [] }
+const EMPTY = { name: '', email: '', password: '', role: 'sales_manager', assignedProjects: [] }
 
 export default function UsersPage() {
   const { users, addUser, deleteUser, updateUser } = useUserStore()
@@ -29,7 +29,7 @@ export default function UsersPage() {
   }
 
   const handleDelete = (u) => {
-    if (u.role === 'direktur') { toast.error('Akun direktur tidak bisa dihapus'); return }
+    if (u.role === 'administrator' || u.role === 'direktur') { toast.error('Akun administrator tidak bisa dihapus'); return }
     deleteUser(u.id)
     toast.success('User dihapus')
   }
@@ -73,7 +73,7 @@ export default function UsersPage() {
                 <td className="px-4 py-3 text-gray-600 text-xs">{u.email}</td>
                 <td className="px-4 py-3"><Badge variant={roleVariant[u.role]}>{roleLabel[u.role]}</Badge></td>
                 <td className="px-4 py-3">
-                  {u.role === 'direktur'
+                  {(u.role === 'administrator' || u.role === 'direktur')
                     ? <span className="text-xs text-gray-400">Semua proyek</span>
                     : (
                       <div className="flex items-center gap-2 flex-wrap">
@@ -93,7 +93,7 @@ export default function UsersPage() {
                   }
                 </td>
                 <td className="px-4 py-3">
-                  {u.role !== 'direktur' && (
+                  {(u.role !== 'administrator' && u.role !== 'direktur') && (
                     <button onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500">
                       <Trash2 size={14}/>
                     </button>
@@ -127,7 +127,7 @@ export default function UsersPage() {
             <label className="text-xs font-medium text-gray-600 block mb-1">Role</label>
             <select value={form.role} onChange={e => setForm({...form, role: e.target.value})}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-              <option value="site_manager">Site Manager</option>
+              <option value="sales_manager">Sales Manager</option>
               <option value="engineer">Engineer</option>
             </select>
           </div>

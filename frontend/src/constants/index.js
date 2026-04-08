@@ -49,10 +49,10 @@ export const STATUS_CONFIG = {
 
 // User Roles
 export const USER_ROLES = {
-  DIRECTOR: 'direktur',
+  ADMINISTRATOR: 'administrator',
   DIRECTOR_ALT: 'director', // For backward compatibility
-  SITE_MANAGER: 'site_manager',
-  PROJECT_MANAGER: 'project_manager', // Legacy role, treat as site_manager
+  SALES_MANAGER: 'sales_manager',
+  PROJECT_MANAGER: 'project_manager', // Legacy role, treat as sales_manager
   ENGINEER: 'engineer',
   SALES: 'sales'
 }

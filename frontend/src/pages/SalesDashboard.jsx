@@ -1,96 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Users, Calendar, CheckSquare, Clock, TrendingUp, MapPin, Target } from 'lucide-react'
-import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
-import toast from 'react-hot-toast'
 
 export default function SalesDashboard() {
   const { user } = useAuthStore()
-  const [stats, setStats] = useState({})
-  const [myVisits, setMyVisits] = useState([])
-  const [todayAttendance, setTodayAttendance] = useState(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-      
-      // Fetch my stats (sales-specific)
-      const statsResponse = await api.getMySalesStats()
-      setStats(statsResponse.data || {})
-      
-      // Fetch my visits
-      const visitsResponse = await api.getPlanVisits({ 
-        assigned_to: user.id,
-        limit: 5 
-      })
-      setMyVisits(visitsResponse.data?.data || [])
-      
-      // Check today's attendance
-      const attendanceResponse = await api.getTodayAttendance()
-      setTodayAttendance(attendanceResponse.data)
-      
-    } catch (error) {
-      toast.error('Gagal memuat data dashboard')
-      console.error('Dashboard error:', error)
-    } finally {
-      setLoading(false)
-    }
+  // Mock data untuk sales
+  const stats = {
+    my_customers: 8,
+    assigned_visits: 15,
+    completed_visits: 12,
+    monthly_completion: 80
   }
 
-  const statCards = [
-    {
-      title: 'My Customers',
-      value: stats.my_customers || 0,
-      icon: Users,
-      color: 'bg-red-500',
-      bgColor: 'bg-red-50',
-      textColor: 'text-red-700'
-    },
-    {
-      title: 'Assigned Visits',
-      value: stats.assigned_visits || 0,
-      icon: Calendar,
-      color: 'bg-red-600',
-      bgColor: 'bg-red-50',
-      textColor: 'text-red-700'
-    },
-    {
-      title: 'Completed Visits',
-      value: stats.completed_visits || 0,
-      icon: CheckSquare,
-      color: 'bg-red-700',
-      bgColor: 'bg-red-50',
-      textColor: 'text-red-700'
-    },
-    {
-      title: 'This Month Target',
-      value: `${stats.monthly_completion || 0}%`,
-      icon: Target,
-      color: 'bg-orange-500',
-      bgColor: 'bg-orange-50',
-      textColor: 'text-orange-700'
-    }
+  const myVisits = [
+    { id: 1, customer: { name: 'PT Maju Jaya' }, lokasi: 'Jakarta Pusat', tanggal_visit: '2026-04-10', status: 'pending' },
+    { id: 2, customer: { name: 'CV Berkah Mandiri' }, lokasi: 'Jakarta Selatan', tanggal_visit: '2026-04-11', status: 'done' },
+    { id: 3, customer: { name: 'PT Sukses Bersama' }, lokasi: 'Jakarta Timur', tanggal_visit: '2026-04-12', status: 'pending' }
   ]
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
+  const todayAttendance = {
+    check_in_time: '08:30',
+    check_out_time: null
   }
+
+  const canCheckIn = !todayAttendance?.check_in_time
+  const canCheckOut = todayAttendance?.check_in_time && !todayAttendance?.check_out_time
 
   return (
     <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 min-h-screen">
@@ -122,19 +57,53 @@ export default function SalesDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((stat, index) => (
-          <div key={index} className={`${stat.bgColor} rounded-xl p-6 border border-red-100`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                <p className={`text-2xl font-bold ${stat.textColor}`}>{stat.value}</p>
-              </div>
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
-                <stat.icon className="text-white" size={24} />
-              </div>
+        <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">My Customers</p>
+              <p className="text-2xl font-bold text-red-700">{stats.my_customers}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+              <Users className="text-white" size={24} />
             </div>
           </div>
-        ))}
+        </div>
+
+        <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Assigned Visits</p>
+              <p className="text-2xl font-bold text-red-700">{stats.assigned_visits}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+              <Calendar className="text-white" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Completed Visits</p>
+              <p className="text-2xl font-bold text-red-700">{stats.completed_visits}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-700 rounded-lg flex items-center justify-center">
+              <CheckSquare className="text-white" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-orange-50 rounded-xl p-6 border border-orange-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">This Month Target</p>
+              <p className="text-2xl font-bold text-orange-700">{stats.monthly_completion}%</p>
+            </div>
+            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
+              <Target className="text-white" size={24} />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -218,19 +187,31 @@ export default function SalesDashboard() {
       <div className="mt-8 bg-white rounded-xl shadow-sm border border-red-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+          <button 
+            onClick={() => window.location.href = '/customers'}
+            className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+          >
             <Users className="text-red-600" size={24} />
-            <span className="text-sm font-medium text-red-700">Add Customer</span>
+            <span className="text-sm font-medium text-red-700">My Customers</span>
           </button>
-          <button className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+          <button 
+            onClick={() => window.location.href = '/plan-visits'}
+            className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+          >
             <Calendar className="text-red-600" size={24} />
-            <span className="text-sm font-medium text-red-700">Plan Visit</span>
+            <span className="text-sm font-medium text-red-700">My Plan Visits</span>
           </button>
-          <button className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+          <button 
+            onClick={() => window.location.href = '/realisasi-visits'}
+            className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+          >
             <CheckSquare className="text-red-600" size={24} />
             <span className="text-sm font-medium text-red-700">Complete Visit</span>
           </button>
-          <button className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+          <button 
+            onClick={() => window.location.href = '/attendance'}
+            className="flex flex-col items-center gap-2 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+          >
             <Clock className="text-red-600" size={24} />
             <span className="text-sm font-medium text-red-700">Attendance</span>
           </button>

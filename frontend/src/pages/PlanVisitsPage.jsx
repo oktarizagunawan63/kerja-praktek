@@ -35,23 +35,41 @@ export default function PlanVisitsPage() {
     try {
       setLoading(true)
       
-      // Fetch plan visits
-      const visitsResponse = await api.getPlanVisits({ search: searchQuery })
-      setPlanVisits(visitsResponse.data.data || [])
+      // Fetch plan visits with fallback
+      try {
+        const visitsResponse = await api.getPlanVisits({ search: searchQuery })
+        const visitsData = visitsResponse.data?.data || visitsResponse.data || []
+        setPlanVisits(visitsData)
+      } catch (error) {
+        console.warn('Plan visits API failed:', error.message)
+        setPlanVisits([])
+      }
       
-      // Fetch customers (only user's customers for sales)
-      const customersResponse = await api.getCustomers()
-      setCustomers(customersResponse.data.data || [])
+      // Fetch customers with fallback
+      try {
+        const customersResponse = await api.getCustomers()
+        const customersData = customersResponse.data?.data || customersResponse.data || []
+        setCustomers(customersData)
+      } catch (error) {
+        console.warn('Customers API failed:', error.message)
+        setCustomers([])
+      }
       
-      // Fetch sales users (for Site Manager)
+      // Fetch sales users with fallback (for Sales Manager)
       if (can(user, 'assign_visits')) {
-        const salesResponse = await api.getSalesUsers()
-        setSalesUsers(salesResponse.data || [])
+        try {
+          const salesResponse = await api.getSalesUsers()
+          const salesData = salesResponse.data || []
+          setSalesUsers(salesData)
+        } catch (error) {
+          console.warn('Sales users API failed:', error.message)
+          setSalesUsers([])
+        }
       }
       
     } catch (error) {
-      toast.error('Gagal memuat data')
       console.error('Error fetching data:', error)
+      // Don't show toast error for data loading issues
     } finally {
       setLoading(false)
     }

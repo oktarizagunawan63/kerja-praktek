@@ -9,13 +9,17 @@ export function normalizeRole(role) {
   if (!role) return null
   
   const roleMap = {
-    'director': USER_ROLES.DIRECTOR,
-    'direktur': USER_ROLES.DIRECTOR,
-    'Direktur': USER_ROLES.DIRECTOR,
-    'Director': USER_ROLES.DIRECTOR,
-    'project_manager': USER_ROLES.SITE_MANAGER,
-    'site_manager': USER_ROLES.SITE_MANAGER,
-    'Site Manager': USER_ROLES.SITE_MANAGER,
+    'director': USER_ROLES.ADMINISTRATOR,
+    'direktur': USER_ROLES.ADMINISTRATOR,
+    'Direktur': USER_ROLES.ADMINISTRATOR,
+    'administrator': USER_ROLES.ADMINISTRATOR,
+    'Administrator': USER_ROLES.ADMINISTRATOR,
+    'Director': USER_ROLES.ADMINISTRATOR,
+    'project_manager': USER_ROLES.SALES_MANAGER,
+    'site_manager': USER_ROLES.SALES_MANAGER,
+    'Site Manager': USER_ROLES.SALES_MANAGER,
+    'sales_manager': USER_ROLES.SALES_MANAGER,
+    'Sales Manager': USER_ROLES.SALES_MANAGER,
     'engineer': USER_ROLES.ENGINEER,
     'Engineer': USER_ROLES.ENGINEER,
     'sales': USER_ROLES.SALES,
@@ -25,20 +29,20 @@ export function normalizeRole(role) {
   return roleMap[role] || role.toLowerCase()
 }
 
-// Check if user is director (any variant) - SIMPLE VERSION
-export function isDirector(user) {
+// Check if user is administrator (any variant) - SIMPLE VERSION
+export function isAdministrator(user) {
   if (!user?.role) return false
   
-  // Direct check for all director variants
-  const directorRoles = ['direktur', 'director', 'Direktur', 'Director']
-  return directorRoles.includes(user.role)
+  // Direct check for all administrator variants
+  const administratorRoles = ['administrator', 'direktur', 'director', 'Administrator', 'Direktur', 'Director']
+  return administratorRoles.includes(user.role)
 }
 
-// Check if user is site manager (any variant)
-export function isSiteManager(user) {
+// Check if user is sales manager (any variant)
+export function isSalesManager(user) {
   if (!user?.role) return false
   const role = normalizeRole(user.role)
-  return role === USER_ROLES.SITE_MANAGER
+  return role === USER_ROLES.SALES_MANAGER
 }
 
 // Check if user is engineer
@@ -51,9 +55,10 @@ export function isEngineer(user) {
 // Get role display name
 export function getRoleDisplayName(role) {
   const displayNames = {
-    [USER_ROLES.DIRECTOR]: 'Direktur',
-    [USER_ROLES.SITE_MANAGER]: 'Site Manager',
-    [USER_ROLES.ENGINEER]: 'Engineer'
+    [USER_ROLES.ADMINISTRATOR]: 'Administrator',
+    [USER_ROLES.SALES_MANAGER]: 'Sales Manager',
+    [USER_ROLES.ENGINEER]: 'Engineer',
+    [USER_ROLES.SALES]: 'Sales'
   }
   
   const normalizedRole = normalizeRole(role)
@@ -63,9 +68,10 @@ export function getRoleDisplayName(role) {
 // Get role permissions level (higher = more permissions)
 export function getRoleLevel(role) {
   const levels = {
-    [USER_ROLES.DIRECTOR]: 3,
-    [USER_ROLES.SITE_MANAGER]: 2,
-    [USER_ROLES.ENGINEER]: 1
+    [USER_ROLES.ADMINISTRATOR]: 3,
+    [USER_ROLES.SALES_MANAGER]: 2,
+    [USER_ROLES.ENGINEER]: 1,
+    [USER_ROLES.SALES]: 1
   }
   
   const normalizedRole = normalizeRole(role)

@@ -15,6 +15,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState(null)
+  const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -26,17 +27,31 @@ export default function CustomersPage() {
   })
 
   useEffect(() => {
+    // Check if user has permission to access customers
+    if (!can(user, 'access_visit_management')) {
+      setError('You do not have permission to access customer management')
+      return
+    }
+    
     fetchCustomers()
   }, [])
 
   const fetchCustomers = async () => {
     try {
       setLoading(true)
+      setError(null)
+      console.log('Fetching customers with search:', searchQuery)
       const response = await api.getCustomers({ search: searchQuery })
-      setCustomers(response.data.data || [])
+      console.log('API Response:', response)
+      
+      // Handle both paginated and non-paginated responses
+      const customersData = response.data?.data || response.data || []
+      console.log('Customers data:', customersData)
+      setCustomers(customersData)
     } catch (error) {
-      toast.error('Gagal memuat data customer')
       console.error('Error fetching customers:', error)
+      setError(error.message)
+      toast.error(`Gagal memuat data customer: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -194,6 +209,18 @@ export default function CustomersPage() {
     }
   ]
 
+  // Check permissions first
+  if (!can(user, 'access_visit_management')) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600">You do not have permission to access customer management.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -209,6 +236,27 @@ export default function CustomersPage() {
           </Button>
         )}
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs">!</span>
+            </div>
+            <div>
+              <p className="font-medium text-red-800">Error Loading Customers</p>
+              <p className="text-sm text-red-600">{error}</p>
+              <button 
+                onClick={fetchCustomers}
+                className="mt-2 text-sm text-red-700 hover:text-red-800 underline"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6">
