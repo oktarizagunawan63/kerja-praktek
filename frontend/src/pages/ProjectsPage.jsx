@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
-import LocationSelect from '../components/ui/LocationSelect'
+import EnhancedLocationSelect from '../components/ui/EnhancedLocationSelect'
 import { ProjectCreatedToast } from '../components/ui/ProjectToast'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -19,12 +19,28 @@ const statusMap = {
   completed: { label: 'Selesai',   variant: 'info' },
 }
 
-const EMPTY_FORM = { name: '', location: '', pm: '', phone: '', deadline: '', rab: '', status: 'on_track' }
+const EMPTY_FORM = { 
+  name: '', 
+  location: {
+    province: '',
+    city: '',
+    address: '',
+    postalCode: ''
+  }, 
+  pm: '', 
+  phone: '', 
+  deadline: '', 
+  rab: '', 
+  status: 'on_track' 
+}
 
 export default function ProjectsPage() {
   const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash } = useAppStore()
   const { user } = useAuthStore()
   const { users, updateUser } = useUserStore()
+  
+
+  
   const visibleProjects = filterProjectsByRole(projects, user, users)
   const [search, setSearch]           = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -35,11 +51,10 @@ export default function ProjectsPage() {
   const [open, setOpen]                 = useState(false)
   const [form, setForm]                 = useState(EMPTY_FORM)
   const [confirmId, setConfirmId]       = useState(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [deletePasswordModal, setDeletePasswordModal] = useState(null)
   const [showHistory, setShowHistory]   = useState(true)
   const [showTrash, setShowTrash]       = useState(false)
   const [editProject, setEditProject]   = useState(null)
-  const [deletePasswordModal, setDeletePasswordModal] = useState(null)
   const [deletePassword, setDeletePassword] = useState('')
   const [deletePasswordError, setDeletePasswordError] = useState('')
   const [emptyTrashModal, setEmptyTrashModal] = useState(false)
@@ -76,46 +91,110 @@ export default function ProjectsPage() {
   const filtered          = applyFilters(active)
   const filteredCompleted = applyFilters(completed)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.location || !form.pm || !form.deadline || !form.rab) {
-      toast.error('Semua field wajib diisi'); return
-    }
-    const rabNum = parseFloat(String(form.rab).replace(/\./g, ''))
-    const autoStatus = (() => {
-      const days = Math.ceil((new Date(form.deadline) - new Date()) / 86400000)
-      return days < 0 ? 'delayed' : days <= 30 ? 'at_risk' : 'on_track'
-    })()
-    if (editProject) {
-      useAppStore.getState().updateProject(editProject.id, {
-        name: form.name, location: form.location, pm: form.pm,
-        phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus,
-      })
-      toast.success('Proyek berhasil diupdate')
-    } else {
-      const newProject = { name: form.name, location: form.location, pm: form.pm, phone: form.phone, deadline: form.deadline, rab: rabNum, status: autoStatus }
-      const newId = addProject(newProject)
+    
+    try {
+      // Validate required fields
+      const validationErrors = []
       
-      // Auto-assign ke pembuat kalau bukan administrator
-      if (user.role !== 'administrator' && user.role !== 'direktur' && newId) {
-        const creator = users.find(u => u.email === user.email)
-        if (creator) {
-          const assigned = creator.assignedProjects || []
-          if (!assigned.includes(String(newId))) {
-            updateUser(creator.id, { assignedProjects: [...assigned, String(newId)] })
-          }
-        }
+      if (!form.name?.trim()) validationErrors.push('Nama proyek')
+      if (!form.location?.province) validationErrors.push('Provinsi')
+      if (!form.location?.city) validationErrors.push('Kota/Kabupaten')
+      if (!form.location?.address?.trim()) validationErrors.push('Alamat lengkap')
+      if (!form.pm?.trim()) validationErrors.push('Site Manager')
+      if (!form.deadline) validationErrors.push('Deadline')
+      if (!form.rab?.trim()) validationErrors.push('RAB')
+      
+      if (validationErrors.length > 0) {
+        const errorMsg = `Field wajib: ${validationErrors.join(', ')}`
+        toast.error(errorMsg)
+        return
       }
       
-      // Custom toast for project creation
-      toast.custom((t) => (
-        <ProjectCreatedToast 
-          project={newProject} 
-          visible={t.visible} 
-        />
-      ), { duration: 4000 })
+      // Generate location string for storage
+      const locationString = [
+        form.location.address?.trim(),
+        form.location.city,
+        form.location.province,
+        form.location.postalCode
+      ].filter(Boolean).join(', ')
+      
+      // Parse RAB
+      const rabNum = parseFloat(String(form.rab).replace(/\./g, ''))
+      
+      if (isNaN(rabNum) || rabNum <= 0) {
+        toast.error('RAB harus berupa angka yang valid')
+        return
+      }
+      
+      // Calculate auto status
+      const days = Math.ceil((new Date(form.deadline) - new Date()) / 86400000)
+      const autoStatus = days < 0 ? 'delayed' : days <= 30 ? 'at_risk' : 'on_track'
+      
+      if (editProject) {
+        useAppStore.getState().updateProject(editProject.id, {
+          name: form.name.trim(), 
+          location: locationString, 
+          pm: form.pm.trim(),
+          phone: form.phone?.trim() || '', 
+          deadline: form.deadline, 
+          rab: rabNum, 
+          status: autoStatus,
+        })
+        toast.success('Proyek berhasil diupdate')
+      } else {
+        const newProject = { 
+          name: form.name.trim(), 
+          location: locationString, 
+          pm: form.pm.trim(), 
+          phone: form.phone?.trim() || '', 
+          deadline: form.deadline, 
+          rab: rabNum, 
+          status: autoStatus 
+        }
+        
+        // Add project to store
+        const newId = addProject(newProject)
+        
+        if (!newId) {
+          toast.error('Gagal membuat proyek')
+          return
+        }
+        
+        // Auto-assign ke pembuat kalau bukan administrator
+        if (user.role !== 'administrator' && user.role !== 'direktur' && newId) {
+          const creator = users.find(u => u.email === user.email)
+          if (creator) {
+            const assigned = creator.assignedProjects || []
+            if (!assigned.includes(String(newId))) {
+              updateUser(creator.id, { assignedProjects: [...assigned, String(newId)] })
+            }
+          }
+        }
+        
+        // Show success toast
+        toast.success(`Proyek "${newProject.name}" berhasil dibuat!`)
+        
+        // Custom toast for project creation
+        setTimeout(() => {
+          toast.custom((t) => (
+            <ProjectCreatedToast 
+              project={newProject} 
+              visible={t.visible} 
+            />
+          ), { duration: 4000 })
+        }, 500)
+      }
+      
+      // Close modal and reset form
+      setOpen(false)
+      setForm(EMPTY_FORM)
+      setEditProject(null)
+      
+    } catch (error) {
+      toast.error('Terjadi kesalahan saat menyimpan proyek')
     }
-    setOpen(false); setForm(EMPTY_FORM); setEditProject(null)
   }
 
   const handleDelete = (id, name) => {
@@ -131,7 +210,6 @@ export default function ProjectsPage() {
         </div>
       </div>
     ), { duration: 3000 })
-    setDeleteConfirmId(null)
   }
 
   const openDeleteModal = (e, p) => {
@@ -157,13 +235,20 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Daftar Proyek</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{active.length} proyek aktif · {completed.length} selesai</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {active.length} proyek aktif · {completed.length} selesai
+            <span className="ml-2 text-xs text-gray-400">
+              (Total: {projects.length} proyek)
+            </span>
+          </p>
         </div>
-        {can(user, 'create_project') && (
-          <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
-            <Plus size={16} /> Tambah Proyek
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {can(user, 'create_project') && (
+            <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
+              <Plus size={16} /> Tambah Proyek
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search + Filter */}
@@ -227,86 +312,118 @@ export default function ProjectsPage() {
       </div>
 
       {/* Active Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map(p => (
-          <div key={p.id} className="card hover:shadow-md transition-shadow">
-            <div className="cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-sm">{p.name}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">{p.location}</p>
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map(p => (
+            <div key={p.id} className="card hover:shadow-md transition-shadow">
+              <div className="cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 text-sm">{p.name}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{p.location}</p>
+                  </div>
+                  <Badge variant={statusMap[p.status]?.variant || 'default'}>{statusMap[p.status]?.label || p.status}</Badge>
                 </div>
-                <Badge variant={statusMap[p.status]?.variant || 'default'}>{statusMap[p.status]?.label || p.status}</Badge>
-              </div>
-              <div className="space-y-1.5 mb-4">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Progress</span>
-                  <span className="font-semibold text-gray-700">{p.progress || 0}%</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.progress || 0}%` }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-gray-400">RAB</p>
-                  <p className="font-semibold text-gray-700">{formatRupiah(p.rab)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-gray-400">RAB Terealisasi</p>
-                  <p className={`font-semibold ${p.realisasi > p.rab ? 'text-red-500' : 'text-gray-700'}`}>{formatRupiah(p.realisasi || 0)}</p>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-400">
-                <span>PM: {p.pm}</span>
-                <span>Deadline: {new Date(p.deadline).toLocaleDateString('id-ID')}</span>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              {/* Konfirmasi selesai */}
-              {confirmId === p.id ? (                <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
-                  <p className="text-xs font-medium text-green-800">Tandai proyek ini selesai?</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
-                      className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium transition-colors">
-                      Ya, Selesai
-                    </button>
-                    <button onClick={() => setConfirmId(null)}
-                      className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 py-1.5 rounded-lg font-medium transition-colors">
-                      Batal
-                    </button>
+                <div className="space-y-1.5 mb-4">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Progress</span>
+                    <span className="font-semibold text-gray-700">{p.progress || 0}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.progress || 0}%` }} />
                   </div>
                 </div>
-              ) : (
-                /* Tombol normal */
-                <div className="flex items-center gap-2">
-                  {can(user, 'mark_complete') && (
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-2 rounded-lg font-medium transition-colors">
-                      <CheckCircle size={13} /> Selesai
-                    </button>
-                  )}
-                  {can(user, 'edit_project') && (
-                    <button onClick={(e) => { e.stopPropagation(); setEditProject(p); setForm({ name: p.name, location: p.location, pm: p.pm, phone: p.phone || '', deadline: p.deadline, rab: Number(p.rab).toLocaleString('id-ID'), rabUnit: p.rabUnit, status: p.status }); setOpen(true) }}
-                      className="flex-1 flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 rounded-lg font-medium transition-colors">
-                      Edit
-                    </button>
-                  )}
-                  {can(user, 'delete_project') && (
-                    <button onClick={(e) => openDeleteModal(e, p)}
-                      className="flex items-center justify-center text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-gray-400">RAB</p>
+                    <p className="font-semibold text-gray-700">{formatRupiah(p.rab)}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-gray-400">RAB Terealisasi</p>
+                    <p className={`font-semibold ${p.realisasi > p.rab ? 'text-red-500' : 'text-gray-700'}`}>{formatRupiah(p.realisasi || 0)}</p>
+                  </div>
                 </div>
-              )}
+                <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-400">
+                  <span>PM: {p.pm}</span>
+                  <span>Deadline: {new Date(p.deadline).toLocaleDateString('id-ID')}</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                {/* Konfirmasi selesai */}
+                {confirmId === p.id ? (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-medium text-green-800">Tandai proyek ini selesai?</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
+                        className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium transition-colors">
+                        Ya, Selesai
+                      </button>
+                      <button onClick={() => setConfirmId(null)}
+                        className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 py-1.5 rounded-lg font-medium transition-colors">
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Tombol normal */
+                  <div className="flex items-center gap-2">
+                    {can(user, 'mark_complete') && (
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
+                        className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-2 rounded-lg font-medium transition-colors">
+                        <CheckCircle size={13} /> Selesai
+                      </button>
+                    )}
+                    {can(user, 'edit_project') && (
+                      <button onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setEditProject(p); 
+                        
+                        // Parse location string back to object for editing
+                        const locationParts = p.location.split(', ')
+                        const locationObj = {
+                          address: locationParts[0] || '',
+                          city: locationParts[1] || '',
+                          province: locationParts[2] || '',
+                          postalCode: locationParts[3] || ''
+                        }
+                        
+                        setForm({ 
+                          name: p.name, 
+                          location: locationObj, 
+                          pm: p.pm, 
+                          phone: p.phone || '', 
+                          deadline: p.deadline, 
+                          rab: Number(p.rab).toLocaleString('id-ID'), 
+                          status: p.status 
+                        }); 
+                        setOpen(true) 
+                      }}
+                        className="flex-1 flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 rounded-lg font-medium transition-colors">
+                        Edit
+                      </button>
+                    )}
+                    {can(user, 'delete_project') && (
+                      <button onClick={(e) => openDeleteModal(e, p)}
+                        className="flex items-center justify-center text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-sm mb-4">
+            {projects.length === 0 
+              ? 'Belum ada proyek. Gunakan tombol "Tambah Proyek" di atas untuk membuat proyek pertama.'
+              : 'Tidak ada proyek yang sesuai dengan filter.'
+            }
           </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-3 text-center py-12 text-gray-400 text-sm">Tidak ada proyek ditemukan</div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* History Selesai */}
       {filteredCompleted.length > 0 && (
@@ -417,24 +534,23 @@ export default function ProjectsPage() {
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama proyek..." />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Lokasi</label>
-            <LocationSelect
+            <label className="text-xs font-medium text-gray-600 block mb-1">Lokasi Proyek</label>
+            <EnhancedLocationSelect
               value={form.location}
               onChange={(location) => setForm({...form, location})}
-              placeholder="Pilih lokasi proyek..."
               required
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Side Manager</label>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Site Manager</label>
               <input type="text" required value={form.pm} onChange={e => setForm({...form, pm: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama PM..." />
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama Site Manager..." />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Email SM</label>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Email Site Manager</label>
               <input type="email" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="pm@ptamsar.co.id" />
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="sitemanager@ptamsar.co.id" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -449,28 +565,28 @@ export default function ProjectsPage() {
                 return <p className={`text-xs mt-1 ${color}`}>Status otomatis: {status} ({days < 0 ? `${Math.abs(days)} hari lewat` : `${days} hari lagi`})</p>
               })()}
             </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">RAB</label>
-            <input
-              type="text"
-              required
-              value={form.rab}
-              onChange={e => {
-                // Strip semua non-digit, lalu format dengan titik ribuan
-                const raw = e.target.value.replace(/\D/g, '')
-                const formatted = raw ? parseInt(raw).toLocaleString('id-ID') : ''
-                setForm({...form, rab: formatted})
-              }}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Contoh: 7.500.000"
-            />
-            {form.rab && (() => {
-              const num = parseInt(form.rab.replace(/\./g, ''))
-              return !isNaN(num) && num > 0
-                ? <p className="text-xs text-blue-600 mt-1">{formatRupiah(num)}</p>
-                : null
-            })()}
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">RAB</label>
+              <input
+                type="text"
+                required
+                value={form.rab}
+                onChange={e => {
+                  // Strip semua non-digit, lalu format dengan titik ribuan
+                  const raw = e.target.value.replace(/\D/g, '')
+                  const formatted = raw ? parseInt(raw).toLocaleString('id-ID') : ''
+                  setForm({...form, rab: formatted})
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Contoh: 7.500.000"
+              />
+              {form.rab && (() => {
+                const num = parseInt(form.rab.replace(/\./g, ''))
+                return !isNaN(num) && num > 0
+                  ? <p className="text-xs text-blue-600 mt-1">{formatRupiah(num)}</p>
+                  : null
+              })()}
+            </div>
           </div>
           <div className="flex gap-2 justify-end pt-2">
             <button type="button" onClick={() => { setOpen(false); setEditProject(null); setForm(EMPTY_FORM) }} className="btn-secondary">Batal</button>

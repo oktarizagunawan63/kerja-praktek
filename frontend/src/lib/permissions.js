@@ -14,6 +14,13 @@ export const can = (user, action) => {
   }
 
   const rules = {
+    // Project Management
+    create_project:   ['administrator', 'sales_manager', 'site_manager'],
+    edit_project:     ['administrator', 'sales_manager', 'site_manager'],
+    delete_project:   ['administrator', 'sales_manager'],
+    mark_complete:    ['administrator', 'sales_manager', 'site_manager'],
+    view_all_projects: ['administrator', 'sales_manager', 'site_manager'],
+    
     // Visit Management
     access_visit_management: ['sales_manager', 'sales'],
     
@@ -59,21 +66,28 @@ export const can = (user, action) => {
  */
 export const filterProjectsByRole = (projects, user, allUsers = []) => {
   if (!user) return []
-  if (user.role === 'administrator' || user.role === 'direktur' || user.role === 'director') return projects
-
-  const freshUser = allUsers.find(u => u.email === user.email) || user
-  const assigned = (freshUser.assignedProjects || []).map(String)
-
-  if (user.role === 'sales_manager' || user.role === 'site_manager' || user.role === 'project_manager') {
-    // Sales manager/Project manager: proyek yang di-assign manual ATAU proyek yang dia buat (PM = namanya)
-    return projects.filter(p =>
-      assigned.includes(String(p.id)) ||
-      p.pm?.toLowerCase() === user.name?.toLowerCase()
-    )
+  
+  // Administrator lihat semua proyek
+  if (user.role === 'administrator' || user.role === 'direktur' || user.role === 'director') {
+    return projects
   }
 
+  // Site Manager & Sales Manager lihat semua proyek (mereka yang manage proyek)
+  if (user.role === 'sales_manager' || user.role === 'site_manager') {
+    return projects
+  }
+
+  // Engineer hanya lihat proyek yang di-assign ke mereka
   if (user.role === 'engineer') {
-    // Engineer: HANYA proyek yang di-assign manual oleh administrator/sales manager
+    const freshUser = allUsers.find(u => u.email === user.email) || user
+    const assigned = (freshUser.assignedProjects || []).map(String)
+    return projects.filter(p => assigned.includes(String(p.id)))
+  }
+
+  // Sales hanya lihat proyek yang di-assign ke mereka (untuk visit management)
+  if (user.role === 'sales') {
+    const freshUser = allUsers.find(u => u.email === user.email) || user
+    const assigned = (freshUser.assignedProjects || []).map(String)
     return projects.filter(p => assigned.includes(String(p.id)))
   }
 

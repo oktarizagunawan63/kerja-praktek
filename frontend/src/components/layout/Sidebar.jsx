@@ -31,7 +31,6 @@ const DIRECTOR_NAV = [
   ...BASE_NAV,
   { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },
   { to: '/users', icon: Users, label: 'Manajemen User', tourId: 'users' },
-  { to: '/user-approvals', icon: Users, label: 'Persetujuan User', badge: true, tourId: 'user-approvals' },
 ]
 
 function AmsarLogo({ size = 40 }) {

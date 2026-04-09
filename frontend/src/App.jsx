@@ -7,7 +7,6 @@ import { can } from './lib/permissions'
 import { clearErrorNotifications } from './utils/clearErrorNotifications'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
@@ -20,7 +19,6 @@ import ReportsPage from './pages/ReportsPage'
 import ActivityLogPage from './pages/ActivityLogPage'
 import NotificationsPage from './pages/NotificationsPage'
 import UsersPage from './pages/UsersPage'
-import UserApprovalsPage from './pages/UserApprovalsPage'
 // Visit Management Pages
 import CustomersPage from './pages/CustomersPage'
 import PlanVisitsPage from './pages/PlanVisitsPage'
@@ -119,7 +117,6 @@ export default function App() {
       />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
@@ -137,7 +134,6 @@ export default function App() {
           <Route path="notifications"    element={<NotificationsPage />} />
           <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
           <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
-          <Route path="user-approvals"   element={<AdministratorOnly><UserApprovalsPage /></AdministratorOnly>} />
           
           {/* Visit Management Routes */}
           <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />

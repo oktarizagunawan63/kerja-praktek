@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TrendingUp, DollarSign, Package, Wrench } from 'lucide-react'
+import { TrendingUp, DollarSign, Package, Wrench, Bell, AlertTriangle, Clock, CheckCircle, Info } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import KpiCard from '../components/kpi/KpiCard'
 import ProgressBar from '../components/kpi/ProgressBar'
@@ -18,9 +18,16 @@ const statusMap = {
   completed: { label: 'Selesai',   variant: 'info' },
 }
 
+const notificationTypeStyle = {
+  over_budget:      { bg: 'bg-red-50',    icon: 'text-red-500',    border: 'border-red-100',    Icon: AlertTriangle },
+  deadline_warning: { bg: 'bg-yellow-50', icon: 'text-yellow-500', border: 'border-yellow-100', Icon: Clock },
+  success:          { bg: 'bg-green-50',  icon: 'text-green-500',  border: 'border-green-100',  Icon: CheckCircle },
+  info:             { bg: 'bg-blue-50',   icon: 'text-blue-500',   border: 'border-blue-100',   Icon: Info },
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { projects, checkNotifications } = useAppStore()
+  const { projects, checkNotifications, notifications, markNotifRead } = useAppStore()
   const { user } = useAuthStore()
   const { users } = useUserStore()
   const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
@@ -140,6 +147,70 @@ export default function DashboardPage() {
           trendLabel="Kumulatif"
         />
       </div>
+
+      {/* Recent Notifications */}
+      {notifications.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Bell size={16} className="text-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-700">Notifikasi Terbaru</h3>
+              {notifications.filter(n => !n.isRead).length > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {notifications.filter(n => !n.isRead).length}
+                </span>
+              )}
+            </div>
+            <button 
+              onClick={() => navigate('/notifications')} 
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Lihat semua
+            </button>
+          </div>
+          <div className="space-y-3">
+            {notifications.slice(0, 3).map(n => {
+              const style = notificationTypeStyle[n.type] || notificationTypeStyle.info
+              const Icon = style.Icon
+              const project = projects.find(p => String(p.id) === String(n.projectId))
+              
+              return (
+                <div
+                  key={n.id}
+                  onClick={() => {
+                    markNotifRead(n.id)
+                    if (project) {
+                      navigate(`/projects/${project.id}`)
+                    }
+                  }}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors ${style.bg} ${style.border} ${n.isRead ? 'opacity-60' : ''}`}
+                >
+                  <div className={`mt-0.5 shrink-0 ${style.icon}`}>
+                    <Icon size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-gray-800 truncate">{n.title}</p>
+                      {!n.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.message}</p>
+                    {project && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {project.name} · {n.createdAt ? new Date(n.createdAt).toLocaleString('id-ID', { 
+                          day: '2-digit', 
+                          month: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : '-'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* RAB Progress */}
       {active.length > 0 && (

@@ -124,7 +124,6 @@ async function silentRequest(method, path, body = null, isFormData = false) {
 export const api = {
   // Auth
   login:    (data)  => request('POST', '/auth/login', data),
-  register: (data)  => request('POST', '/auth/register', data),
   logout:   ()      => request('POST', '/auth/logout'),
   me:       ()      => request('GET',  '/auth/me'),
 
