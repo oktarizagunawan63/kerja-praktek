@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
+import { getRoleDisplayName } from '../../utils/roleUtils'
 
 export default function Topbar() {
   const { user } = useAuthStore()
@@ -111,7 +112,7 @@ export default function Topbar() {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-800 leading-tight">{user?.name}</p>
-            <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+            <p className="text-xs text-gray-400">{getRoleDisplayName(user?.role)}</p>
           </div>
         </div>
       </div>

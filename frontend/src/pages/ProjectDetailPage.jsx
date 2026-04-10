@@ -51,7 +51,7 @@ export default function ProjectDetailPage() {
   const [rabInput,     setRabInput]     = useState('')
   const [matForm,      setMatForm]      = useState({ qty: '', catatan: '', files: [] })
   const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })
-  const [newMat,       setNewMat]       = useState({ name: '', unit: 'm3', qty_plan: '', qty_terpasang: '' })
+  const [newMat,       setNewMat]       = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
   const [teamOpen,     setTeamOpen]     = useState(false)
 
   const project   = projects.find(p => String(p.id) === String(id))
@@ -94,12 +94,46 @@ export default function ProjectDetailPage() {
 
   const handleAddMat = (e) => {
     e.preventDefault()
-    if (!newMat.name || !newMat.qty_plan) { toast.error('Nama dan qty rencana wajib diisi'); return }
-    if (materials.find(m => m.name.toLowerCase() === newMat.name.toLowerCase())) { toast.error('Material sudah ada'); return }
-    const mat = addMaterial(id, { name: newMat.name, unit: newMat.unit, qty_plan: parseInt(newMat.qty_plan), qty_terpasang: parseInt(newMat.qty_terpasang) || 0 })
-    addHist({ action: 'Tambah Material', detail: `${mat.name} (${mat.qty_plan} ${mat.unit})`, user: currentUser, type: 'material' })
+    if (!newMat.name || !newMat.qty_plan || !newMat.unit) { 
+      toast.error('Nama material, satuan, dan qty rencana wajib diisi'); 
+      return 
+    }
+    if (materials.find(m => m.name.toLowerCase() === newMat.name.toLowerCase())) { 
+      toast.error('Material sudah ada'); 
+      return 
+    }
+    
+    // Parse qty_plan dan qty_terpasang - bisa berupa angka desimal atau integer
+    const qtyPlan = parseFloat(newMat.qty_plan)
+    const qtyTerpasang = parseFloat(newMat.qty_terpasang) || 0
+    
+    if (isNaN(qtyPlan) || qtyPlan <= 0) {
+      toast.error('Qty rencana harus berupa angka yang valid dan lebih dari 0')
+      return
+    }
+    
+    if (isNaN(qtyTerpasang) || qtyTerpasang < 0) {
+      toast.error('Qty awal harus berupa angka yang valid')
+      return
+    }
+    
+    const mat = addMaterial(id, { 
+      name: newMat.name.trim(), 
+      unit: newMat.unit.trim(), 
+      qty_plan: qtyPlan, 
+      qty_terpasang: qtyTerpasang 
+    })
+    
+    addHist({ 
+      action: 'Tambah Material', 
+      detail: `${mat.name} (${mat.qty_plan} ${mat.unit})`, 
+      user: currentUser, 
+      type: 'material' 
+    })
+    
     toast.success(`${mat.name} ditambahkan`)
-    setAddMatOpen(false); setNewMat({ name: '', unit: 'm3', qty_plan: '', qty_terpasang: '' })
+    setAddMatOpen(false)
+    setNewMat({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
   }
 
   const handleDocUpload = async () => {
@@ -177,7 +211,7 @@ export default function ProjectDetailPage() {
               className="flex items-center gap-1.5 text-xs bg-[#0f4c81] hover:bg-[#1a6bb5] text-white px-3 py-2 rounded-lg font-medium transition-colors">
               <Upload size={13}/> Upload Dokumen
             </button>
-            {(user?.role === 'sales_manager' || user?.role === 'site_manager') && (() => {
+            {(user?.role === 'site_manager') && (() => {
               const administrator = useUserStore.getState().users.find(u => u.role === 'administrator' || u.role === 'direktur')
               if (!administrator?.email) return null
               const daysLeft = Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))
@@ -240,8 +274,10 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className="card text-center">
-          <p className="text-xs text-gray-500 mb-1">Teknisi PT Amsar</p>
-          <p className="text-xl font-bold text-gray-900">24 Orang</p>
+          <p className="text-xs text-gray-500 mb-1">Teknisi yang Bekerja</p>
+          <p className="text-xl font-bold text-gray-900">
+            {users.filter(u => u.role === 'engineer' && u.is_active !== false).length} Orang
+          </p>
           <p className="text-xs text-gray-400 mt-0.5">Aktif hari ini</p>
         </div>
 
@@ -531,20 +567,21 @@ export default function ProjectDetailPage() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Satuan</label>
-              <select value={newMat.unit} onChange={e => setNewMat({...newMat, unit: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                {SATUAN.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <input type="text" required value={newMat.unit} onChange={e => setNewMat({...newMat, unit: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" 
+                placeholder="Contoh: m3, kg, unit, dll..."/>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Qty Rencana</label>
-              <input type="number" min="1" required value={newMat.qty_plan} onChange={e => setNewMat({...newMat, qty_plan: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="0"/>
+              <input type="text" required value={newMat.qty_plan} onChange={e => setNewMat({...newMat, qty_plan: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" 
+                placeholder="Contoh: 100, 50.5, dll..."/>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Qty Awal</label>
-              <input type="number" min="0" value={newMat.qty_terpasang} onChange={e => setNewMat({...newMat, qty_terpasang: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="0"/>
+              <input type="text" value={newMat.qty_terpasang} onChange={e => setNewMat({...newMat, qty_terpasang: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" 
+                placeholder="0"/>
             </div>
           </div>
           <div className="flex gap-2 justify-end pt-2">

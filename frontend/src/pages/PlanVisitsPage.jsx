@@ -39,7 +39,7 @@ export default function PlanVisitsPage() {
       try {
         const visitsResponse = await api.getPlanVisits({ search: searchQuery })
         const visitsData = visitsResponse.data?.data || visitsResponse.data || []
-        setPlanVisits(visitsData)
+        setPlanVisits(Array.isArray(visitsData) ? visitsData : [])
       } catch (error) {
         console.warn('Plan visits API failed:', error.message)
         setPlanVisits([])
@@ -49,7 +49,7 @@ export default function PlanVisitsPage() {
       try {
         const customersResponse = await api.getCustomers()
         const customersData = customersResponse.data?.data || customersResponse.data || []
-        setCustomers(customersData)
+        setCustomers(Array.isArray(customersData) ? customersData : [])
       } catch (error) {
         console.warn('Customers API failed:', error.message)
         setCustomers([])
@@ -60,7 +60,7 @@ export default function PlanVisitsPage() {
         try {
           const salesResponse = await api.getSalesUsers()
           const salesData = salesResponse.data || []
-          setSalesUsers(salesData)
+          setSalesUsers(Array.isArray(salesData) ? salesData : [])
         } catch (error) {
           console.warn('Sales users API failed:', error.message)
           setSalesUsers([])

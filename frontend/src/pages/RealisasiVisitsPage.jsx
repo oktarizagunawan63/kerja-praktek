@@ -91,7 +91,8 @@ export default function RealisasiVisitsPage() {
       // Fetch pending visits with fallback
       try {
         const pendingResponse = await api.getPendingVisits()
-        setPendingVisits(pendingResponse.data || [])
+        const pendingData = pendingResponse.data?.data || pendingResponse.data || []
+        setPendingVisits(Array.isArray(pendingData) ? pendingData : [])
       } catch (error) {
         console.warn('Pending visits API failed:', error.message)
         setPendingVisits([])
@@ -101,7 +102,7 @@ export default function RealisasiVisitsPage() {
       try {
         const realisasiResponse = await api.getRealisasiVisits()
         const realisasiData = realisasiResponse.data?.data || realisasiResponse.data || []
-        setRealisasiVisits(realisasiData)
+        setRealisasiVisits(Array.isArray(realisasiData) ? realisasiData : [])
       } catch (error) {
         console.warn('Realisasi visits API failed:', error.message)
         setRealisasiVisits([])

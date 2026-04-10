@@ -4,7 +4,9 @@ const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const getToken = () => {
   try {
-    return JSON.parse(localStorage.getItem('amsar-auth') || '{}')?.state?.token
+    const auth = JSON.parse(localStorage.getItem('amsar-auth') || '{}')
+    // Token bisa ada di auth.state.token (zustand persist) atau auth.token
+    return auth?.state?.token || auth?.token
   } catch { return null }
 }
 
@@ -17,30 +19,9 @@ class ApiError extends Error {
   }
 }
 
-// Helper function that returns mock data immediately without HTTP requests
-async function mockRequest(method, path, body = null) {
-  // Mock data for problematic endpoints
-  const mockData = {
-    '/attendance': { success: true, data: [] },
-    '/attendance/today': { success: true, data: null },
-    '/realisasi-visits/pending-visits': { success: true, data: [] },
-    '/warnings': { success: true, data: [] },
-    '/reports/dashboard-stats': { success: true, data: { total_customers: 0, total_plan_visits: 0, completed_visits: 0, total_sales: 0 } },
-    '/plan-visits/sales-users': { success: true, data: [] },
-    '/plan-visits': { success: true, data: [] },
-    '/customers': { success: true, data: [] }
-  }
-  
-  // Return mock data for problematic endpoints immediately
-  for (const endpoint in mockData) {
-    if (path.includes(endpoint)) {
-      console.log(`[MOCK] ${method} ${path} - returning mock data (no HTTP request)`)
-      return Promise.resolve(mockData[endpoint])
-    }
-  }
-  
-  // If not a problematic endpoint, return empty data to avoid errors
-  console.log(`[MOCK] ${method} ${path} - returning empty mock data`)
+// Helper function for graceful fallback when API fails
+async function fallbackRequest(method, path, body = null) {
+  console.log(`[FALLBACK] ${method} ${path} - returning empty data due to API failure`)
   return Promise.resolve({ success: true, data: [] })
 }
 
@@ -49,25 +30,6 @@ async function request(method, path, body = null, isFormData = false, silent = f
   const headers = { Accept: 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
   if (!isFormData && body) headers['Content-Type'] = 'application/json'
-
-  // Completely avoid problematic endpoints - use mock instead
-  const problematicEndpoints = [
-    '/attendance',
-    '/attendance/today',
-    '/realisasi-visits/pending-visits', 
-    '/warnings',
-    '/reports/dashboard-stats',
-    '/plan-visits/sales-users',
-    '/plan-visits',
-    '/customers'
-  ]
-  
-  const shouldUseMock = problematicEndpoints.some(endpoint => path.includes(endpoint))
-  
-  if (shouldUseMock) {
-    console.log(`[MOCK] Intercepting ${method} ${path} - using mock data instead of HTTP request`)
-    return mockRequest(method, path, body)
-  }
 
   const shouldBeSilent = silent
 
@@ -186,10 +148,10 @@ export const api = {
   },
   getProvinces:   ()        => request('GET',    '/locations/provinces'),
 
-  // Visit Management - Customers (completely mocked)
+  // Visit Management - Customers
   getCustomers:     (params = {}) => {
-    console.log('[MOCK] getCustomers - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/customers${q ? '?'+q : ''}`)
   },
   getCustomer:      (id)     => request('GET',    `/customers/${id}`),
   createCustomer:   (data)   => request('POST',   '/customers', data),
@@ -197,85 +159,54 @@ export const api = {
   deleteCustomer:   (id)     => request('DELETE', `/customers/${id}`),
   getCustomerVisitHistory: (id) => request('GET', `/customers/${id}/visit-history`),
 
-  // Visit Management - Plan Visits (completely mocked)
+  // Visit Management - Plan Visits
   getPlanVisits:    (params = {}) => {
-    console.log('[MOCK] getPlanVisits - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/plan-visits${q ? '?'+q : ''}`)
   },
   getPlanVisit:     (id)     => request('GET',    `/plan-visits/${id}`),
   createPlanVisit:  (data)   => request('POST',   '/plan-visits', data),
   updatePlanVisit:  (id, d)  => request('PUT',    `/plan-visits/${id}`, d),
   deletePlanVisit:  (id)     => request('DELETE', `/plan-visits/${id}`),
-  getSalesUsers:    ()       => {
-    console.log('[MOCK] getSalesUsers - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
-  },
+  getSalesUsers:    ()       => request('GET',    '/plan-visits/sales-users'),
 
-  // Visit Management - Realisasi Visits (completely mocked)
+  // Visit Management - Realisasi Visits
   getRealisasiVisits: (params = {}) => {
-    console.log('[MOCK] getRealisasiVisits - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/realisasi-visits${q ? '?'+q : ''}`)
   },
   getRealisasiVisit: (id)    => request('GET',    `/realisasi-visits/${id}`),
   createRealisasiVisit: (data) => request('POST', '/realisasi-visits', data),
   updateRealisasiVisit: (id, d) => request('PUT', `/realisasi-visits/${id}`, d),
   markVisitAsMissed: (planVisitId) => request('POST', `/realisasi-visits/mark-missed/${planVisitId}`),
-  getPendingVisits:  ()      => {
-    console.log('[MOCK] getPendingVisits - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
-  },
+  getPendingVisits:  ()      => request('GET',    '/realisasi-visits/pending-visits'),
 
-  // Visit Management - Attendance (completely mocked)
+  // Visit Management - Attendance
   getAttendance:     (params = {}) => {
-    console.log('[MOCK] getAttendance - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/attendance${q ? '?'+q : ''}`)
   },
   checkIn:          (data)   => request('POST',   '/attendance/check-in', data),
   checkOut:         (data)   => request('POST',   '/attendance/check-out', data),
-  getTodayAttendance: ()     => {
-    console.log('[MOCK] getTodayAttendance - returning null (no HTTP request)')
-    return Promise.resolve({ success: true, data: null })
-  },
-  getAttendanceReport: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/attendance/report${q ? '?'+q : ''}`)
-  },
+  getTodayAttendance: ()     => request('GET',    '/attendance/today'),
+  getAttendanceSummary: ()   => request('GET',    '/attendance/summary'),
+  resetAttendance:  (data)   => request('POST',   '/attendance/reset', data),
 
-  // Visit Management - Warnings (completely mocked)
+  // Visit Management - Warnings
   getWarnings:      (params = {}) => {
-    console.log('[MOCK] getWarnings - returning empty array (no HTTP request)')
-    return Promise.resolve({ success: true, data: [] })
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/warnings${q ? '?'+q : ''}`)
   },
   getWarning:       (id)     => request('GET',    `/warnings/${id}`),
   markWarningRead:  (id)     => request('POST',   `/warnings/${id}/read`),
   markAllWarningsRead: ()    => request('POST',   '/warnings/mark-all-read'),
-  getUnreadWarningsCount: () => {
-    console.log('[MOCK] getUnreadWarningsCount - returning 0 (no HTTP request)')
-    return Promise.resolve({ success: true, data: 0 })
-  },
+  getUnreadWarningsCount: () => request('GET',    '/warnings/unread-count'),
   deleteWarning:    (id)     => request('DELETE', `/warnings/${id}`),
-  getWarningStats:  ()       => {
-    console.log('[MOCK] getWarningStats - returning empty stats (no HTTP request)')
-    return Promise.resolve({ success: true, data: { total: 0, unread: 0 } })
-  },
+  getWarningStats:  ()       => request('GET',    '/warnings/stats'),
 
-  // Visit Management - Reports (completely mocked)
-  getDashboardStats: ()      => {
-    console.log('[MOCK] getDashboardStats - returning default stats (no HTTP request)')
-    return Promise.resolve({ 
-      success: true, 
-      data: { 
-        total_customers: 0, 
-        total_plan_visits: 0, 
-        completed_visits: 0, 
-        total_sales: 0 
-      } 
-    })
-  },
-  getMySalesStats:   ()      => {
-    console.log('[MOCK] getMySalesStats - returning empty stats (no HTTP request)')
-    return Promise.resolve({ success: true, data: { visits: 0, completed: 0 } })
-  },
+  // Visit Management - Reports
+  getDashboardStats: ()      => request('GET',    '/reports/dashboard-stats'),
+  getMySalesStats:   ()      => request('GET',    '/reports/my-sales-stats'),
   getVisitReport:   (params = {}) => {
     const q = new URLSearchParams(params).toString()
     return request('GET', `/reports/visit-report${q ? '?'+q : ''}`)

@@ -47,7 +47,7 @@ export default function CustomersPage() {
       // Handle both paginated and non-paginated responses
       const customersData = response.data?.data || response.data || []
       console.log('Customers data:', customersData)
-      setCustomers(customersData)
+      setCustomers(Array.isArray(customersData) ? customersData : [])
     } catch (error) {
       console.error('Error fetching customers:', error)
       setError(error.message)

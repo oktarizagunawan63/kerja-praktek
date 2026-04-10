@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation } from 'lucide-react'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw } from 'lucide-react'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
@@ -73,7 +73,8 @@ export default function AttendancePage() {
       // Fetch attendance history with fallback
       try {
         const historyResponse = await api.getAttendance()
-        setAttendanceHistory(historyResponse.data?.data || historyResponse.data || [])
+        const historyData = historyResponse.data?.data || historyResponse.data || []
+        setAttendanceHistory(Array.isArray(historyData) ? historyData : [])
       } catch (error) {
         console.warn('Attendance history API failed:', error.message)
         setAttendanceHistory([])
@@ -101,10 +102,19 @@ export default function AttendancePage() {
         check_in_time: new Date().toISOString()
       }
       
-      await api.checkIn(checkInData)
-      toast.success('Check-in berhasil!', { id: 'attendance' })
+      const response = await api.checkIn(checkInData)
       
-      fetchData()
+      if (response.success) {
+        toast.success(response.message || 'Check-in berhasil!', { id: 'attendance' })
+        
+        // Update today's attendance immediately
+        setTodayAttendance(response.data)
+        
+        // Refresh all data
+        fetchData()
+      } else {
+        toast.error(response.message || 'Gagal check-in', { id: 'attendance' })
+      }
       
     } catch (error) {
       toast.error(error.message || 'Gagal check-in', { id: 'attendance' })
@@ -127,13 +137,46 @@ export default function AttendancePage() {
         check_out_time: new Date().toISOString()
       }
       
-      await api.checkOut(checkOutData)
-      toast.success('Check-out berhasil!', { id: 'attendance' })
+      const response = await api.checkOut(checkOutData)
       
-      fetchData()
+      if (response.success) {
+        toast.success(response.message || 'Check-out berhasil!', { id: 'attendance' })
+        
+        // Update today's attendance immediately
+        setTodayAttendance(response.data)
+        
+        // Refresh all data
+        fetchData()
+      } else {
+        toast.error(response.message || 'Gagal check-out', { id: 'attendance' })
+      }
       
     } catch (error) {
       toast.error(error.message || 'Gagal check-out', { id: 'attendance' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleResetAttendance = async () => {
+    try {
+      setActionLoading(true)
+      const today = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
+      
+      const response = await api.resetAttendance({
+        user_id: user.id,
+        date: today
+      })
+      
+      if (response.success) {
+        toast.success('Attendance berhasil direset')
+        setTodayAttendance(null) // Clear today's attendance
+        fetchData() // Refresh data
+      } else {
+        toast.error(response.message || 'Gagal reset attendance')
+      }
+    } catch (error) {
+      toast.error(error.message || 'Gagal reset attendance')
     } finally {
       setActionLoading(false)
     }
@@ -226,16 +269,26 @@ export default function AttendancePage() {
     },
     {
       key: 'location',
-      label: 'Lokasi',
+      label: 'Lokasi Check-in',
       render: (attendance) => (
         <div className="flex items-center gap-1">
           <MapPin size={14} className="text-gray-400" />
-          <span className="text-xs text-gray-600">
-            {attendance.check_in_latitude && attendance.check_in_longitude ? 
-              `${attendance.check_in_latitude.toFixed(4)}, ${attendance.check_in_longitude.toFixed(4)}` : 
-              '-'
-            }
-          </span>
+          <div>
+            {attendance.check_in_latitude && attendance.check_in_longitude ? (
+              <>
+                <span className="text-xs text-gray-600 block">
+                  {attendance.check_in_latitude.toFixed(4)}, {attendance.check_in_longitude.toFixed(4)}
+                </span>
+                {attendance.check_out_latitude && attendance.check_out_longitude && (
+                  <span className="text-xs text-gray-500 block">
+                    Out: {attendance.check_out_latitude.toFixed(4)}, {attendance.check_out_longitude.toFixed(4)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-gray-400">-</span>
+            )}
+          </div>
         </div>
       )
     },
@@ -255,6 +308,7 @@ export default function AttendancePage() {
 
   const canCheckIn = !todayAttendance?.check_in_time
   const canCheckOut = todayAttendance?.check_in_time && !todayAttendance?.check_out_time
+  const isCompleted = todayAttendance?.check_in_time && todayAttendance?.check_out_time
 
   return (
     <div className="p-6">
@@ -294,9 +348,19 @@ export default function AttendancePage() {
                   <div className="flex items-center gap-2">
                     <Clock className="text-blue-500" size={16} />
                     <span className="text-sm">
-                      Total Jam Kerja: <span className="font-medium">
+                      Total Jam Visit: <span className="font-medium">
                         {calculateWorkingHours(todayAttendance.check_in_time, todayAttendance.check_out_time)}
                       </span>
+                    </span>
+                  </div>
+                )}
+                
+                {/* Show GPS coordinates */}
+                {todayAttendance.check_in_latitude && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <MapPin size={12} />
+                    <span>
+                      GPS: {todayAttendance.check_in_latitude.toFixed(6)}, {todayAttendance.check_in_longitude.toFixed(6)}
                     </span>
                   </div>
                 )}
@@ -329,29 +393,68 @@ export default function AttendancePage() {
               </Button>
             )}
             
-            {!canCheckIn && !canCheckOut && (
+            {!canCheckIn && !canCheckOut && isCompleted && (
               <div className="text-center">
                 <CheckCircle className="text-green-500 mx-auto mb-2" size={24} />
                 <p className="text-sm text-green-700 font-medium">Attendance Complete</p>
+                {(user?.role === 'administrator' || user?.role === 'direktur') && (
+                  <Button
+                    onClick={handleResetAttendance}
+                    disabled={actionLoading}
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-700 mt-2"
+                  >
+                    <RotateCcw size={14} />
+                    Reset Attendance
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {todayAttendance?.check_in_time && !todayAttendance?.check_out_time && (
+              <div className="text-center">
+                <Clock className="text-yellow-500 mx-auto mb-2" size={24} />
+                <p className="text-sm text-yellow-700 font-medium">Sedang Bekerja</p>
+                <p className="text-xs text-gray-500">Jangan lupa check-out</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Current Location */}
-      {currentLocation && (
+      {/* Current Location Display */}
+      {(currentLocation || todayAttendance?.check_in_latitude) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <MapPin className="text-blue-600" size={16} />
-            <span className="text-sm font-medium text-blue-800">Lokasi Saat Ini</span>
+            <span className="text-sm font-medium text-blue-800">
+              {currentLocation ? 'Lokasi Saat Ini' : 'Lokasi Check-in Hari Ini'}
+            </span>
           </div>
-          <p className="text-xs text-blue-700 mt-1">
-            GPS: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
-          </p>
-          <p className="text-xs text-blue-600">
-            Akurasi: ±{Math.round(currentLocation.accuracy)}m
-          </p>
+          
+          {currentLocation && (
+            <>
+              <p className="text-xs text-blue-700 mb-1">
+                GPS: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+              </p>
+              <p className="text-xs text-blue-600">
+                Akurasi: ±{Math.round(currentLocation.accuracy)}m
+              </p>
+            </>
+          )}
+          
+          {todayAttendance?.check_in_latitude && !currentLocation && (
+            <>
+              <p className="text-xs text-blue-700 mb-1">
+                Check-in: {todayAttendance.check_in_latitude.toFixed(6)}, {todayAttendance.check_in_longitude.toFixed(6)}
+              </p>
+              {todayAttendance.check_out_latitude && (
+                <p className="text-xs text-blue-700">
+                  Check-out: {todayAttendance.check_out_latitude.toFixed(6)}, {todayAttendance.check_out_longitude.toFixed(6)}
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 

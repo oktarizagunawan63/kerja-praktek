@@ -8,28 +8,26 @@ import { api } from '../lib/api'
 
 const roleLabel = { 
   administrator: 'Administrator', 
-  sales_manager: 'Sales Manager', 
+  site_manager: 'Site Manager', 
   engineer: 'Engineer', 
-  site_manager: 'Site Manager',
   sales: 'Sales',
   direktur: 'Administrator' 
 }
 
 const roleVariant = { 
   administrator: 'info', 
-  sales_manager: 'success', 
+  site_manager: 'success', 
   engineer: 'default', 
-  site_manager: 'warning',
   sales: 'success',
   direktur: 'info' 
 }
 
 const divisionLabel = {
   site_manager: 'Site Manager Division',
-  sales_manager: 'Sales Manager Division'
+  site_manager: 'Site Manager Division'
 }
 
-const EMPTY = { name: '', email: '', password: '', role: 'sales_manager', division: 'sales_manager', assignedProjects: [] }
+const EMPTY = { name: '', email: '', password: '', role: 'site_manager', division: 'site_manager', assignedProjects: [] }
 
 export default function UsersPage() {
   const { projects } = useAppStore()
@@ -264,10 +262,9 @@ export default function UsersPage() {
             <label className="text-xs font-medium text-gray-600 block mb-1">Role</label>
             <select value={form.role} onChange={e => setForm({...form, role: e.target.value})}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-              <option value="sales_manager">Sales Manager</option>
+              <option value="site_manager">Site Manager</option>
               <option value="engineer">Engineer</option>
               <option value="sales">Sales</option>
-              <option value="site_manager">Site Manager</option>
             </select>
           </div>
           <div>
@@ -276,7 +273,6 @@ export default function UsersPage() {
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
               <option value="">Pilih Divisi</option>
               <option value="site_manager">Site Manager Division</option>
-              <option value="sales_manager">Sales Manager Division</option>
             </select>
           </div>
           <div className="flex gap-2 justify-end pt-2">

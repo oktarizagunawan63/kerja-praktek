@@ -9,57 +9,7 @@ import { persist } from 'zustand/middleware'
 const useUserStore = create(
   persist(
     (set, get) => ({
-      users: [
-        // Default administrator — sesuai dengan seeder backend
-        {
-          id: 'administrator-1',
-          name: 'Admin',
-          email: 'direktur@ptamsar.co.id',
-          password: 'password',
-          role: 'administrator',
-          assignedProjects: [], // administrator lihat semua, tidak perlu assign
-        },
-        {
-          id: 'sm-1',
-          name: 'Sales Manager',
-          email: 'budi@ptamsar.co.id',
-          password: 'password',
-          role: 'sales_manager',
-          assignedProjects: [],
-        },
-        {
-          id: 'sm-2',
-          name: 'Sales Manager 2',
-          email: 'siti@ptamsar.co.id',
-          password: 'password',
-          role: 'sales_manager',
-          assignedProjects: [],
-        },
-        {
-          id: 'eng-1',
-          name: 'Ahmad Fauzi',
-          email: 'ahmad@ptamsar.co.id',
-          password: 'password',
-          role: 'engineer',
-          assignedProjects: [],
-        },
-        {
-          id: 'sales-1',
-          name: 'Sales 1',
-          email: 'sales1@ptamsar.co.id',
-          password: 'password',
-          role: 'sales',
-          assignedProjects: [],
-        },
-        {
-          id: 'sales-2',
-          name: 'Sales 2',
-          email: 'sales2@ptamsar.co.id',
-          password: 'password',
-          role: 'sales',
-          assignedProjects: [],
-        }
-      ],
+      users: [], // Users now fetched from backend API, no hardcoded data
 
       addUser: (userData) => {
         const newUser = {
@@ -100,6 +50,31 @@ const useUserStore = create(
       // Login check
       loginCheck: (email, password) =>
         get().users.find(u => u.email === email && u.password === password) || null,
+
+      // Fetch users from backend API
+      fetchUsers: async () => {
+        try {
+          const response = await fetch('/api/users', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const users = data.data || data;
+            set({ users: Array.isArray(users) ? users : [] });
+            return users;
+          }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+        return [];
+      },
+
+      // Set users from external source (like API)
+      setUsers: (users) => set({ users: Array.isArray(users) ? users : [] }),
     }),
     { name: 'amsar-users' }
   )

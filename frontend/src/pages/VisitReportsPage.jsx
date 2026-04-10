@@ -36,7 +36,7 @@ export default function VisitReportsPage() {
     try {
       const response = await api.getSalesUsers()
       const salesData = response.data || []
-      setSalesUsers(salesData)
+      setSalesUsers(Array.isArray(salesData) ? salesData : [])
     } catch (error) {
       console.warn('Sales users API failed:', error.message)
       setSalesUsers([])
@@ -57,7 +57,8 @@ export default function VisitReportsPage() {
           start_date: filters.start_date,
           end_date: filters.end_date
         })
-        setSalesPerformance(performanceResponse.data || [])
+        const performanceData = performanceResponse.data || []
+        setSalesPerformance(Array.isArray(performanceData) ? performanceData : [])
       }
       
     } catch (error) {
@@ -135,8 +136,8 @@ export default function VisitReportsPage() {
       label: 'Sales',
       render: (item) => (
         <div>
-          <p className="font-medium text-gray-900">{item.sales.name}</p>
-          <p className="text-sm text-gray-500">{item.sales.email}</p>
+          <p className="font-medium text-gray-900">{item.name || 'Unknown'}</p>
+          <p className="text-sm text-gray-500">{item.role || 'Sales'}</p>
         </div>
       )
     },
@@ -319,7 +320,7 @@ export default function VisitReportsPage() {
           
           <DataTable
             columns={periodColumns}
-            data={reportData.period_data}
+            data={reportData?.period_data || []}
             loading={loading}
             emptyMessage="Tidak ada data untuk periode ini"
           />
@@ -336,7 +337,7 @@ export default function VisitReportsPage() {
           
           <DataTable
             columns={salesColumns}
-            data={salesPerformance}
+            data={salesPerformance || []}
             loading={loading}
             emptyMessage="Tidak ada data performance sales"
           />

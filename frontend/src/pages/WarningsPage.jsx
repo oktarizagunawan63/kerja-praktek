@@ -33,7 +33,8 @@ export default function WarningsPage() {
       
       // Fetch warnings
       const warningsResponse = await api.getWarnings(filters)
-      setWarnings(warningsResponse.data.data || [])
+      const warningsData = warningsResponse.data?.data || warningsResponse.data || []
+      setWarnings(Array.isArray(warningsData) ? warningsData : [])
       
       // Fetch warning stats
       const statsResponse = await api.getWarningStats()

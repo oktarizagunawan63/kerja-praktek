@@ -26,10 +26,9 @@ export default function WelcomeModal({
             { icon: Settings, title: 'Pengaturan Sistem', desc: 'Konfigurasi dan manajemen sistem' }
           ]
         }
-      case 'sales_manager':
       case 'site_manager':
         return {
-          title: 'Selamat Datang, Sales Manager!',
+          title: 'Selamat Datang, Site Manager!',
           subtitle: 'Kelola customer dan visit management dengan efisien',
           features: [
             { icon: FolderOpen, title: 'Kelola Proyek', desc: 'Monitor dan update progress proyek' },

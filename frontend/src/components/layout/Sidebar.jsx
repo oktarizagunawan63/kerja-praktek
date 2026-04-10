@@ -2,35 +2,43 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, LogOut, Users,
-  MapPin, Calendar, CheckSquare, Clock, AlertTriangle
+  MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
-import { getRoleDisplayName } from '../../utils/roleUtils'
-import { can } from '../../lib/permissions'
+import { getRoleDisplayName, normalizeRole } from '../../utils/roleUtils'
+import { can, isAdministrator, canAccessVisitManagement, canManageProjects } from '../../lib/permissions'
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
+// Base navigation for all users
 const BASE_NAV = [
   { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
-  { to: '/projects',      icon: FolderKanban,    label: 'Proyek', tourId: 'projects' },
-  { to: '/documents',     icon: FileText,        label: 'Dokumen', tourId: 'documents' },
-  { to: '/reports',       icon: BarChart3,       label: 'Laporan', tourId: 'reports' },
   { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true, tourId: 'notifications' },
 ]
 
+// Project management navigation (Site Manager + Administrator)
+const PROJECT_MANAGEMENT_NAV = [
+  { to: '/projects',      icon: FolderKanban,    label: 'Proyek', tourId: 'projects' },
+  { to: '/documents',     icon: FileText,        label: 'Dokumen', tourId: 'documents' },
+  { to: '/reports',       icon: BarChart3,       label: 'Laporan', tourId: 'reports' },
+]
+
+// Visit management navigation (Sales Manager + Sales + Administrator)
 const VISIT_MANAGEMENT_NAV = [
   { to: '/customers',       icon: Users,         label: 'Customer List', tourId: 'customers' },
   { to: '/plan-visits',     icon: Calendar,      label: 'Plan Visit', tourId: 'plan-visits' },
   { to: '/realisasi-visits', icon: CheckSquare,  label: 'Realisasi Visit', tourId: 'realisasi-visits' },
   { to: '/attendance',      icon: Clock,         label: 'Attendance', tourId: 'attendance' },
   { to: '/visit-reports',   icon: BarChart3,     label: 'Visit Reports', tourId: 'visit-reports' },
+  { to: '/warnings',        icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' },
 ]
 
-const DIRECTOR_NAV = [
-  ...BASE_NAV,
-  { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },
-  { to: '/users', icon: Users, label: 'Manajemen User', tourId: 'users' },
+// Administrator-only navigation
+const ADMIN_ONLY_NAV = [
+  { to: '/activity',           icon: Activity, label: 'Activity Log', tourId: 'activity' },
+  { to: '/users',              icon: Users,    label: 'Manajemen User', tourId: 'users' },
+  { to: '/attendance-monitor', icon: Clock,    label: 'Attendance Monitor', tourId: 'attendance-monitor' },
 ]
 
 function AmsarLogo({ size = 40 }) {
@@ -48,32 +56,60 @@ export default function Sidebar() {
   const { notifications } = useAppStore()
   const unread = notifications.filter(n => !n.isRead).length
 
-  // Determine navigation based on role - SIMPLE & DIRECT
+  // Determine navigation based on role - CLEAR ROLE SEPARATION
   let navItems = []
+  let sections = []
   
-  // Check if user is administrator (any variant)
-  const isAdministratorUser = user?.role === 'administrator' || user?.role === 'Administrator' || user?.role === 'direktur' || user?.role === 'Direktur' || user?.role === 'director' || user?.role === 'Director'
+  const role = normalizeRole(user?.role)
   
-  if (isAdministratorUser) {
-    // ADMINISTRATOR gets full admin navigation
-    navItems = DIRECTOR_NAV
-  } else if (user?.role === 'sales_manager') {
-    // Sales Manager gets visit management navigation with correct dashboard route
-    navItems = [
-      { to: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
-      ...VISIT_MANAGEMENT_NAV,
-      { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' },
+  if (role === 'administrator') {
+    // ADMINISTRATOR: Full access to everything
+    sections = [
+      { title: 'Dashboard', items: BASE_NAV },
+      { title: 'Project Management', items: PROJECT_MANAGEMENT_NAV },
+      { title: 'Visit Management', items: VISIT_MANAGEMENT_NAV },
+      { title: 'Administration', items: ADMIN_ONLY_NAV }
     ]
-  } else if (user?.role === 'sales') {
-    // Sales gets visit management navigation with correct dashboard route
-    navItems = [
-      { to: '/sales/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
-      ...VISIT_MANAGEMENT_NAV,
-      { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' },
+  } else if (role === 'site_manager') {
+    // SITE MANAGER: Construction projects only
+    sections = [
+      { title: 'Dashboard', items: BASE_NAV },
+      { title: 'Project Management', items: PROJECT_MANAGEMENT_NAV }
+    ]
+  } else if (role === 'sales_manager') {
+    // SALES MANAGER: Visit management + team oversight
+    sections = [
+      { title: 'Dashboard', items: [{ to: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' }] },
+      { title: 'Visit Management', items: VISIT_MANAGEMENT_NAV },
+      { title: 'Notifications', items: [{ to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }] }
+    ]
+  } else if (role === 'sales') {
+    // SALES: Visit execution only
+    sections = [
+      { title: 'Dashboard', items: [{ to: '/sales/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' }] },
+      { title: 'Visit Management', items: [
+        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
+        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
+        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
+        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' }
+      ]},
+      { title: 'Notifications', items: [{ to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }] }
+    ]
+  } else if (role === 'engineer') {
+    // ENGINEER: Project execution only
+    sections = [
+      { title: 'Dashboard', items: BASE_NAV },
+      { title: 'Projects', items: [
+        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
+        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' }
+      ]}
     ]
   } else {
-    // Regular users (Engineer) get base navigation
-    navItems = BASE_NAV
+    // DEFAULT: Basic navigation
+    sections = [
+      { title: 'Dashboard', items: BASE_NAV }
+    ]
   }
 
   return (
@@ -89,62 +125,45 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {/* Visit Management Section */}
-        {can(user, 'access_visit_management') && (
-          <>
-            <div className="px-3 py-2">
-              <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider">
-                Visit Management
-              </p>
-            </div>
-          </>
-        )}
-        
-        {navItems.map(({ to, icon: Icon, label, badge, tourId }) => (
-          <NavLink
-            key={to}
-            to={to}
-            data-tour={tourId}
-            className={({ isActive }) =>
-              clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-white/15 text-white'
-                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
-              )
-            }
-          >
-            <div className="relative shrink-0">
-              <Icon size={18} />
-              {badge && unread > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-bold px-0.5">
-                  {unread > 9 ? '9+' : unread}
-                </span>
-              )}
-            </div>
-            {label}
-          </NavLink>
+        {sections.map((section, sectionIndex) => (
+          <div key={sectionIndex}>
+            {/* Section Header */}
+            {section.title && sections.length > 1 && (
+              <div className="px-3 py-2 mt-4 first:mt-0">
+                <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider">
+                  {section.title}
+                </p>
+              </div>
+            )}
+            
+            {/* Section Items */}
+            {section.items.map(({ to, icon: Icon, label, badge, tourId }) => (
+              <NavLink
+                key={to}
+                to={to}
+                data-tour={tourId}
+                className={({ isActive }) =>
+                  clsx(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-white/15 text-white'
+                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                  )
+                }
+              >
+                <div className="relative shrink-0">
+                  <Icon size={18} />
+                  {badge && unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-bold px-0.5">
+                      {unread > 9 ? '9+' : unread}
+                    </span>
+                  )}
+                </div>
+                {label}
+              </NavLink>
+            ))}
+          </div>
         ))}
-
-        {/* Warnings for Sales Manager */}
-        {can(user, 'view_all_warnings') && (
-          <NavLink
-            to="/warnings"
-            className={({ isActive }) =>
-              clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-white/15 text-white'
-                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
-              )
-            }
-          >
-            <div className="relative shrink-0">
-              <AlertTriangle size={18} />
-            </div>
-            Warnings
-          </NavLink>
-        )}
       </nav>
 
       {/* User */}

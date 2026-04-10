@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Frontend Storage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #c82333; }
+        .success { color: green; margin: 10px 0; }
+        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Frontend Storage</h1>
+        
+        <div class="info">
+            <p><strong>Masalah:</strong> Database backend sudah bersih (7 users), tapi frontend masih ada data lama di localStorage.</p>
+            <p><strong>Solusi:</strong> Clear localStorage frontend agar sinkron dengan database backend yang baru.</p>
+        </div>
+        
+        <button onclick="clearStorage()">Clear All Frontend Storage</button>
+        <button onclick="checkStorage()">Check Current Storage</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Clear all localStorage
+                localStorage.clear();
+                
+                // Clear sessionStorage juga
+                sessionStorage.clear();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Frontend storage berhasil dibersihkan!<br>
+                        <strong>Sekarang refresh aplikasi React (F5) untuk load data baru dari backend.</strong>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: red;">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function checkStorage() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let html = '<h3>Current Storage:</h3>';
+                
+                if (localStorage.length === 0) {
+                    html += '<div class="success">✅ localStorage kosong</div>';
+                } else {
+                    html += '<div>localStorage keys:</div><ul>';
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        const size = localStorage.getItem(key).length;
+                        html += `<li><strong>${key}</strong> (${size} chars)</li>`;
+                    }
+                    html += '</ul>';
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: red;">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-check on load
+        setTimeout(checkStorage, 500);
+    </script>
+</body>
+</html>

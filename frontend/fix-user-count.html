@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix User Count Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 15px 0; }
+        .btn { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #dc3545; }
+        .btn:hover { opacity: 0.9; }
+        .success { color: #28a745; background: #d4edda; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .info { color: #0c5460; background: #d1ecf1; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .step { margin: 15px 0; padding: 15px; border-left: 4px solid #007bff; background: #f8f9fa; }
+        .count { font-size: 24px; font-weight: bold; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔧 Fix User Count Issue</h1>
+            <p><strong>Problem:</strong> Backend database has 7 users, but frontend console shows 24+ users due to cached localStorage data.</p>
+        </div>
+
+        <div class="card">
+            <h2>📊 Current Status</h2>
+            <div id="status-check">
+                <button class="btn" onclick="checkStatus()">Check Current Status</button>
+            </div>
+            <div id="status-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>🛠️ Fix Steps</h2>
+            
+            <div class="step">
+                <h3>Step 1: Clear Frontend Storage</h3>
+                <p>Remove all cached user data from localStorage and sessionStorage.</p>
+                <button class="btn btn-danger" onclick="clearStorage()">Clear All Storage</button>
+                <div id="clear-result"></div>
+            </div>
+
+            <div class="step">
+                <h3>Step 2: Verify Backend Database</h3>
+                <p>Check that backend has exactly 7 users as expected.</p>
+                <button class="btn" onclick="checkBackend()">Check Backend Users</button>
+                <div id="backend-result"></div>
+            </div>
+
+            <div class="step">
+                <h3>Step 3: Test Frontend Sync</h3>
+                <p>After clearing storage, test that frontend syncs with backend.</p>
+                <div class="info">
+                    <strong>Manual Steps:</strong><br>
+                    1. Clear storage using Step 1<br>
+                    2. Refresh your React app (F5)<br>
+                    3. Login again<br>
+                    4. Go to "Manajemen User" page<br>
+                    5. Check that it shows 7 users, not 24+
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Expected Results</h2>
+            <ul>
+                <li><strong>Backend Database:</strong> 7 users total</li>
+                <li><strong>Frontend Display:</strong> 7 users in Manajemen User</li>
+                <li><strong>Console Logs:</strong> No more "24 users" messages</li>
+                <li><strong>User Roles:</strong> 1 Admin, 1 Site Manager, 2 Engineers, 1 Sales Manager, 2 Sales</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            const resultDiv = document.getElementById('status-result');
+            
+            try {
+                // Check localStorage
+                let frontendUserCount = 0;
+                const userStore = localStorage.getItem('amsar-users');
+                
+                if (userStore) {
+                    try {
+                        const parsed = JSON.parse(userStore);
+                        if (parsed.state && parsed.state.users) {
+                            frontendUserCount = parsed.state.users.length;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user store:', e);
+                    }
+                }
+
+                const storageKeys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    storageKeys.push(localStorage.key(i));
+                }
+
+                resultDiv.innerHTML = `
+                    <div style="margin-top: 15px;">
+                        <h4>Frontend Status:</h4>
+                        <p>User Count in Storage: <span class="count">${frontendUserCount}</span> 
+                           <span class="status ${frontendUserCount <= 7 ? 'status-ok' : 'status-error'}">
+                               ${frontendUserCount <= 7 ? 'OK' : 'NEEDS FIX'}
+                           </span>
+                        </p>
+                        <p>LocalStorage Keys: ${storageKeys.length} items</p>
+                        <details>
+                            <summary>Storage Keys (click to expand)</summary>
+                            <ul>${storageKeys.map(key => `<li>${key}</li>`).join('')}</ul>
+                        </details>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error checking status: ${error.message}</div>`;
+            }
+        }
+
+        function clearStorage() {
+            const resultDiv = document.getElementById('clear-result');
+            
+            try {
+                const beforeCount = localStorage.length;
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    keys.push(localStorage.key(i));
+                }
+                
+                // Clear everything
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Successfully cleared all storage!<br>
+                        <strong>Cleared ${beforeCount} items:</strong><br>
+                        ${keys.map(key => `• ${key}`).join('<br>')}<br><br>
+                        <strong>Next:</strong> Refresh your React app and login again.
+                    </div>
+                `;
+                
+                // Update status
+                setTimeout(checkStatus, 500);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function checkBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    🔄 To check backend users, visit: 
+                    <a href="/test-users-api.php" target="_blank" style="color: #007bff; text-decoration: underline;">
+                        /test-users-api.php
+                    </a><br>
+                    This will show the exact user count in the database.
+                </div>
+            `;
+        }
+
+        // Auto-check status on load
+        setTimeout(checkStatus, 500);
+    </script>
+</body>
+</html>

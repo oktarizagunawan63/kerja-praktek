@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TrendingUp, DollarSign, Package, Wrench, Bell, AlertTriangle, Clock, CheckCircle, Info } from 'lucide-react'
+import { TrendingUp, DollarSign, Package, Wrench, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import KpiCard from '../components/kpi/KpiCard'
 import ProgressBar from '../components/kpi/ProgressBar'
@@ -10,6 +10,7 @@ import useAuthStore from '../store/authStore'
 import useUserStore from '../store/userStore'
 import { formatRupiah } from '../lib/formatRupiah'
 import { filterProjectsByRole } from '../lib/permissions'
+import { api } from '../lib/api'
 
 const statusMap = {
   on_track:  { label: 'On Track',  variant: 'success' },
@@ -18,23 +19,29 @@ const statusMap = {
   completed: { label: 'Selesai',   variant: 'info' },
 }
 
-const notificationTypeStyle = {
-  over_budget:      { bg: 'bg-red-50',    icon: 'text-red-500',    border: 'border-red-100',    Icon: AlertTriangle },
-  deadline_warning: { bg: 'bg-yellow-50', icon: 'text-yellow-500', border: 'border-yellow-100', Icon: Clock },
-  success:          { bg: 'bg-green-50',  icon: 'text-green-500',  border: 'border-green-100',  Icon: CheckCircle },
-  info:             { bg: 'bg-blue-50',   icon: 'text-blue-500',   border: 'border-blue-100',   Icon: Info },
-}
-
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { projects, checkNotifications, notifications, markNotifRead } = useAppStore()
+  const { projects, checkNotifications } = useAppStore()
   const { user } = useAuthStore()
   const { users } = useUserStore()
   const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [attendanceSummary, setAttendanceSummary] = useState(null)
 
   useEffect(() => { 
     checkNotifications()
+    
+    // Load attendance summary for Administrator
+    if (user?.role === 'administrator' || user?.role === 'direktur') {
+      loadAttendanceSummary()
+      
+      // Auto-refresh attendance data every 30 seconds
+      const interval = setInterval(() => {
+        loadAttendanceSummary()
+      }, 30000)
+      
+      return () => clearInterval(interval)
+    }
     
     // Show welcome card for new users (created within last 24 hours)
     if (user?.created_at) {
@@ -49,6 +56,17 @@ export default function DashboardPage() {
     }
   }, [projects, user])
 
+  const loadAttendanceSummary = async () => {
+    try {
+      const response = await api.getAttendanceSummary()
+      if (response.success) {
+        setAttendanceSummary(response.data)
+      }
+    } catch (error) {
+      console.warn('Failed to load attendance summary:', error.message)
+    }
+  }
+
   const isNewUser = () => {
     if (!user) return false
     
@@ -61,8 +79,8 @@ export default function DashboardPage() {
     return userProjects.length === 0
   }
 
-  // Sales managers list untuk filter
-  const siteManagers = users.filter(u => u.role === 'sales_manager' || u.role === 'site_manager')
+  // Site managers list untuk filter
+  const siteManagers = users.filter(u => u.role === 'site_manager')
 
   const projects_visible = filterProjectsByRole(projects, user, users)
 
@@ -100,7 +118,7 @@ export default function DashboardPage() {
         {(user?.role === 'administrator' || user?.role === 'direktur') && siteManagers.length > 0 && (
           <select value={filterSM} onChange={e => setFilterSM(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-            <option value="all">Semua Sales Manager</option>
+            <option value="all">Semua Site Manager</option>
             {siteManagers.map(sm => (
               <option key={sm.id} value={sm.id}>{sm.name}</option>
             ))}
@@ -148,66 +166,101 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Recent Notifications */}
-      {notifications.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Bell size={16} className="text-gray-600" />
-              <h3 className="text-sm font-semibold text-gray-700">Notifikasi Terbaru</h3>
-              {notifications.filter(n => !n.isRead).length > 0 && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  {notifications.filter(n => !n.isRead).length}
-                </span>
+      {/* Attendance Section - Administrator Only */}
+      {(user?.role === 'administrator' || user?.role === 'direktur') && attendanceSummary && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Attendance Stats */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">Kehadiran Hari Ini</h3>
+              <button 
+                onClick={() => navigate('/attendance')}
+                className="text-xs text-blue-600 hover:text-blue-700"
+              >
+                Lihat Detail
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <CheckCircle className="text-green-600" size={16} />
+                  <span className="text-xs font-medium text-gray-600">Check In</span>
+                </div>
+                <p className="text-lg font-bold text-green-700">
+                  {attendanceSummary.today_stats.checked_in}
+                </p>
+                <p className="text-xs text-gray-500">
+                  dari {attendanceSummary.today_stats.total_employees} karyawan
+                </p>
+              </div>
+              
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Clock className="text-blue-600" size={16} />
+                  <span className="text-xs font-medium text-gray-600">Sedang Kerja</span>
+                </div>
+                <p className="text-lg font-bold text-blue-700">
+                  {attendanceSummary.today_stats.currently_working}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {attendanceSummary.today_stats.attendance_rate}% tingkat kehadiran
+                </p>
+              </div>
+            </div>
+            
+            {/* Attendance Rate Progress */}
+            <div className="mb-2">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span>Tingkat Kehadiran</span>
+                <span>{attendanceSummary.today_stats.attendance_rate}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${attendanceSummary.today_stats.attendance_rate}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Attendance Activities */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">Aktivitas Terbaru</h3>
+              <span className="text-xs text-gray-500">Real-time</span>
+            </div>
+            
+            <div className="space-y-3 max-h-48 overflow-y-auto">
+              {attendanceSummary.latest_activities.length > 0 ? (
+                attendanceSummary.latest_activities.map((activity, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      activity.check_out_time ? 'bg-red-100' : 'bg-green-100'
+                    }`}>
+                      {activity.check_out_time ? (
+                        <XCircle className="text-red-600" size={14} />
+                      ) : (
+                        <CheckCircle className="text-green-600" size={14} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900">
+                        {activity.user_name} • {activity.check_out_time ? 'Check Out' : 'Check In'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID')} • {new Date(activity.date).toLocaleDateString('id-ID')}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-400">
+                  <Clock size={24} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">Belum ada aktivitas hari ini</p>
+                </div>
               )}
             </div>
-            <button 
-              onClick={() => navigate('/notifications')} 
-              className="text-xs text-blue-600 hover:underline"
-            >
-              Lihat semua
-            </button>
-          </div>
-          <div className="space-y-3">
-            {notifications.slice(0, 3).map(n => {
-              const style = notificationTypeStyle[n.type] || notificationTypeStyle.info
-              const Icon = style.Icon
-              const project = projects.find(p => String(p.id) === String(n.projectId))
-              
-              return (
-                <div
-                  key={n.id}
-                  onClick={() => {
-                    markNotifRead(n.id)
-                    if (project) {
-                      navigate(`/projects/${project.id}`)
-                    }
-                  }}
-                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors ${style.bg} ${style.border} ${n.isRead ? 'opacity-60' : ''}`}
-                >
-                  <div className={`mt-0.5 shrink-0 ${style.icon}`}>
-                    <Icon size={16} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-800 truncate">{n.title}</p>
-                      {!n.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.message}</p>
-                    {project && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        {project.name} · {n.createdAt ? new Date(n.createdAt).toLocaleString('id-ID', { 
-                          day: '2-digit', 
-                          month: '2-digit', 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        }) : '-'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       )}
