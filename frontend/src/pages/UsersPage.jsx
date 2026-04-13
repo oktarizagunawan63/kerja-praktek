@@ -8,9 +8,10 @@ import { api } from '../lib/api'
 
 const roleLabel = { 
   administrator: 'Administrator', 
+  sales_manager: 'Sales Manager',
+  sales: 'Sales',
   site_manager: 'Site Manager', 
   engineer: 'Engineer', 
-  sales: 'Sales',
   direktur: 'Administrator' 
 }
 
@@ -23,11 +24,11 @@ const roleVariant = {
 }
 
 const divisionLabel = {
-  site_manager: 'Site Manager Division',
-  site_manager: 'Site Manager Division'
+  sales: 'Sales',
+  engineering: 'Engineering'
 }
 
-const EMPTY = { name: '', email: '', password: '', role: 'site_manager', division: 'site_manager', assignedProjects: [] }
+const EMPTY = { name: '', email: '', password: '', role: '', division: '', assignedProjects: [] }
 
 export default function UsersPage() {
   const { projects } = useAppStore()
@@ -65,7 +66,7 @@ export default function UsersPage() {
 
   const handleAdd = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.email || !form.password) { 
+    if (!form.name || !form.email || !form.password || !form.division || !form.role) { 
       toast.error('Semua field wajib diisi')
       return 
     }
@@ -91,6 +92,27 @@ export default function UsersPage() {
       console.error('Error creating user:', error)
       toast.error(error.message || 'Gagal menambahkan user')
     }
+  }
+
+  // Handle division change and reset role
+  const handleDivisionChange = (division) => {
+    setForm({...form, division, role: ''})
+  }
+
+  // Get available roles based on selected division
+  const getAvailableRoles = () => {
+    if (form.division === 'sales') {
+      return [
+        { value: 'sales_manager', label: 'Sales Manager' },
+        { value: 'sales', label: 'Sales' }
+      ]
+    } else if (form.division === 'engineering') {
+      return [
+        { value: 'site_manager', label: 'Site Manager' },
+        { value: 'engineer', label: 'Engineer' }
+      ]
+    }
+    return []
   }
 
   const handleDelete = async (u) => {
@@ -246,34 +268,40 @@ export default function UsersPage() {
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Nama Lengkap</label>
             <input type="text" required value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama user..."/>
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Masukkan nama lengkap..."/>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Email</label>
             <input type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="email@ptamsar.co.id"/>
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="contoh@ptamsar.co.id"/>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Password</label>
-            <input type="password" required value={form.password} onChange={e => setForm({...form, password: e.target.value})}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Min. 6 karakter"/>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Role</label>
-            <select value={form.role} onChange={e => setForm({...form, role: e.target.value})}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-              <option value="site_manager">Site Manager</option>
-              <option value="engineer">Engineer</option>
-              <option value="sales">Sales</option>
-            </select>
+            <input type="password" required minLength="6" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Minimal 6 karakter"/>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Divisi</label>
-            <select value={form.division} onChange={e => setForm({...form, division: e.target.value})}
+            <select value={form.division} onChange={e => handleDivisionChange(e.target.value)} required
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-              <option value="">Pilih Divisi</option>
-              <option value="site_manager">Site Manager Division</option>
+              <option value="">Pilih divisi...</option>
+              <option value="sales">Sales</option>
+              <option value="engineering">Engineering</option>
             </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Role</label>
+            <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} required
+              disabled={!form.division}
+              className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white ${!form.division ? 'bg-gray-100 cursor-not-allowed' : ''}`}>
+              <option value="">
+                {!form.division ? 'Pilih divisi terlebih dahulu' : 'Pilih role...'}
+              </option>
+              {getAvailableRoles().map(role => (
+                <option key={role.value} value={role.value}>{role.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Role akan menyesuaikan dengan divisi yang dipilih</p>
           </div>
           <div className="flex gap-2 justify-end pt-2">
             <button type="button" onClick={() => setOpen(false)} className="btn-secondary">Batal</button>

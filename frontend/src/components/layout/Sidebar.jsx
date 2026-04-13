@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useMemo } from 'react'
 import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, LogOut, Users,
@@ -11,35 +12,117 @@ import { can, isAdministrator, canAccessVisitManagement, canManageProjects } fro
 import clsx from 'clsx'
 import amsarLogo from '../../assets/amsar.png?url'
 
-// Base navigation for all users
-const BASE_NAV = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
-  { to: '/notifications', icon: Bell,            label: 'Notifikasi', badge: true, tourId: 'notifications' },
-]
-
-// Project management navigation (Site Manager + Administrator)
-const PROJECT_MANAGEMENT_NAV = [
-  { to: '/projects',      icon: FolderKanban,    label: 'Proyek', tourId: 'projects' },
-  { to: '/documents',     icon: FileText,        label: 'Dokumen', tourId: 'documents' },
-  { to: '/reports',       icon: BarChart3,       label: 'Laporan', tourId: 'reports' },
-]
-
-// Visit management navigation (Sales Manager + Sales + Administrator)
-const VISIT_MANAGEMENT_NAV = [
-  { to: '/customers',       icon: Users,         label: 'Customer List', tourId: 'customers' },
-  { to: '/plan-visits',     icon: Calendar,      label: 'Plan Visit', tourId: 'plan-visits' },
-  { to: '/realisasi-visits', icon: CheckSquare,  label: 'Realisasi Visit', tourId: 'realisasi-visits' },
-  { to: '/attendance',      icon: Clock,         label: 'Attendance', tourId: 'attendance' },
-  { to: '/visit-reports',   icon: BarChart3,     label: 'Visit Reports', tourId: 'visit-reports' },
-  { to: '/warnings',        icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' },
-]
-
-// Administrator-only navigation
-const ADMIN_ONLY_NAV = [
-  { to: '/activity',           icon: Activity, label: 'Activity Log', tourId: 'activity' },
-  { to: '/users',              icon: Users,    label: 'Manajemen User', tourId: 'users' },
-  { to: '/attendance-monitor', icon: Clock,    label: 'Attendance Monitor', tourId: 'attendance-monitor' },
-]
+// Pre-defined navigation sections for better performance
+const NAV_SECTIONS = {
+  administrator: [
+    { 
+      title: 'Dashboard', 
+      items: [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
+      ]
+    },
+    { 
+      title: 'Project Management', 
+      items: [
+        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
+        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
+        { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
+      ]
+    },
+    { 
+      title: 'Visit Management', 
+      items: [
+        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
+        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
+        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
+        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
+        { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
+      ]
+    },
+    { 
+      title: 'Administration', 
+      items: [
+        { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },
+        { to: '/users', icon: Users, label: 'Manajemen User', tourId: 'users' },
+        { to: '/attendance-monitor', icon: Clock, label: 'Attendance Monitor', tourId: 'attendance-monitor' }
+      ]
+    }
+  ],
+  site_manager: [
+    { 
+      title: 'Dashboard', 
+      items: [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
+      ]
+    },
+    { 
+      title: 'Project Management', 
+      items: [
+        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
+        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
+        { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
+      ]
+    }
+  ],
+  sales_manager: [
+    { 
+      title: 'Dashboard', 
+      items: [
+        { to: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
+      ]
+    },
+    { 
+      title: 'Visit Management', 
+      items: [
+        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
+        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
+        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
+        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
+        { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
+      ]
+    }
+  ],
+  sales: [
+    { 
+      title: 'Dashboard', 
+      items: [
+        { to: '/sales/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
+      ]
+    },
+    { 
+      title: 'Visit Management', 
+      items: [
+        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
+        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
+        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
+        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' }
+      ]
+    }
+  ],
+  engineer: [
+    { 
+      title: 'Dashboard', 
+      items: [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
+      ]
+    },
+    { 
+      title: 'Projects', 
+      items: [
+        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
+        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' }
+      ]
+    }
+  ]
+}
 
 function AmsarLogo({ size = 40 }) {
   return (
@@ -54,63 +137,17 @@ function AmsarLogo({ size = 40 }) {
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
   const { notifications } = useAppStore()
-  const unread = notifications.filter(n => !n.isRead).length
-
-  // Determine navigation based on role - CLEAR ROLE SEPARATION
-  let navItems = []
-  let sections = []
   
-  const role = normalizeRole(user?.role)
-  
-  if (role === 'administrator') {
-    // ADMINISTRATOR: Full access to everything
-    sections = [
-      { title: 'Dashboard', items: BASE_NAV },
-      { title: 'Project Management', items: PROJECT_MANAGEMENT_NAV },
-      { title: 'Visit Management', items: VISIT_MANAGEMENT_NAV },
-      { title: 'Administration', items: ADMIN_ONLY_NAV }
-    ]
-  } else if (role === 'site_manager') {
-    // SITE MANAGER: Construction projects only
-    sections = [
-      { title: 'Dashboard', items: BASE_NAV },
-      { title: 'Project Management', items: PROJECT_MANAGEMENT_NAV }
-    ]
-  } else if (role === 'sales_manager') {
-    // SALES MANAGER: Visit management + team oversight
-    sections = [
-      { title: 'Dashboard', items: [{ to: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' }] },
-      { title: 'Visit Management', items: VISIT_MANAGEMENT_NAV },
-      { title: 'Notifications', items: [{ to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }] }
-    ]
-  } else if (role === 'sales') {
-    // SALES: Visit execution only
-    sections = [
-      { title: 'Dashboard', items: [{ to: '/sales/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' }] },
-      { title: 'Visit Management', items: [
-        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
-        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
-        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
-        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
-        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' }
-      ]},
-      { title: 'Notifications', items: [{ to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }] }
-    ]
-  } else if (role === 'engineer') {
-    // ENGINEER: Project execution only
-    sections = [
-      { title: 'Dashboard', items: BASE_NAV },
-      { title: 'Projects', items: [
-        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
-        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' }
-      ]}
-    ]
-  } else {
-    // DEFAULT: Basic navigation
-    sections = [
-      { title: 'Dashboard', items: BASE_NAV }
-    ]
-  }
+  // Memoize expensive calculations
+  const { sections, unreadCount } = useMemo(() => {
+    const role = normalizeRole(user?.role)
+    const unread = notifications.filter(n => !n.isRead).length
+    
+    return {
+      sections: NAV_SECTIONS[role] || NAV_SECTIONS.engineer,
+      unreadCount: unread
+    }
+  }, [user?.role, notifications])
 
   return (
     <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0" data-tour="sidebar">
@@ -153,9 +190,9 @@ export default function Sidebar() {
               >
                 <div className="relative shrink-0">
                   <Icon size={18} />
-                  {badge && unread > 0 && (
+                  {badge && unreadCount > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-bold px-0.5">
-                      {unread > 9 ? '9+' : unread}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </div>

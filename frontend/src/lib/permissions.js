@@ -34,12 +34,12 @@ export const can = (user, action) => {
   }
 
   const rules = {
-    // Project Management - Site Manager handles construction projects
+    // Project Management - Site Manager handles construction projects, Engineer can view assigned
     create_project:   ['administrator', 'site_manager'],
-    edit_project:     ['administrator', 'site_manager'],
+    edit_project:     ['administrator', 'site_manager', 'engineer'], // Engineer can update assigned projects
     delete_project:   ['administrator', 'site_manager'],
     mark_complete:    ['administrator', 'site_manager'],
-    view_all_projects: ['administrator', 'site_manager'],
+    view_all_projects: ['administrator', 'site_manager', 'engineer'], // Engineer can view assigned projects
     assign_project:   ['administrator', 'site_manager'], // Site manager assigns to engineers
     
     // Visit Management - Sales Manager handles visits and sales
@@ -109,9 +109,11 @@ export const filterProjectsByRole = (projects, user, allUsers = []) => {
 
   // Engineer hanya lihat proyek yang di-assign ke mereka
   if (role === 'engineer') {
-    const freshUser = allUsers.find(u => u.email === user.email) || user
-    const assigned = (freshUser.assignedProjects || []).map(String)
-    return projects.filter(p => assigned.includes(String(p.id)))
+    // Check projects where this engineer is assigned in assigned_engineers field
+    return projects.filter(p => {
+      const assignedEngineers = p.assignedEngineers || []
+      return assignedEngineers.includes(String(user.id))
+    })
   }
 
   // Sales Manager dan Sales tidak lihat construction projects (mereka fokus visit management)
@@ -139,5 +141,5 @@ export const canAccessVisitManagement = (user) => {
 export const canManageProjects = (user) => {
   if (!user) return false
   const role = normalizeRole(user.role)
-  return ['administrator', 'site_manager'].includes(role)
+  return ['administrator', 'site_manager', 'engineer'].includes(role)
 }

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Auth & Auto Login</title>
+</head>
+<body>
+    <h1>🔧 Clear Auth & Auto Login</h1>
+    <div id="status">Processing...</div>
+    
+    <script>
+        async function clearAuthAndLogin() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // 1. Clear all storage
+                statusDiv.innerHTML = '🧹 Clearing localStorage...';
+                localStorage.clear();
+                
+                statusDiv.innerHTML = '🧹 Clearing sessionStorage...';
+                sessionStorage.clear();
+                
+                // 2. Auto login as Administrator
+                statusDiv.innerHTML = '🔐 Logging in as Administrator...';
+                
+                const loginResponse = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@ptamsar.co.id',
+                        password: 'password'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                
+                if (loginData.success && loginData.token) {
+                    // 3. Store auth data
+                    const authData = {
+                        state: {
+                            token: loginData.token,
+                            user: loginData.user
+                        },
+                        version: 0
+                    };
+                    
+                    localStorage.setItem('amsar-auth', JSON.stringify(authData));
+                    
+                    statusDiv.innerHTML = `
+                        ✅ <strong>SUCCESS!</strong><br>
+                        👤 Logged in as: ${loginData.user.name} (${loginData.user.role})<br>
+                        🔑 Token: ${loginData.token.substring(0, 20)}...<br>
+                        <br>
+                        <a href="http://localhost:5173" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                            🚀 Go to Dashboard
+                        </a>
+                    `;
+                } else {
+                    throw new Error('Login response invalid');
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    ❌ <strong>ERROR:</strong> ${error.message}<br>
+                    <br>
+                    <strong>Manual Login:</strong><br>
+                    1. Go to <a href="http://localhost:5173">http://localhost:5173</a><br>
+                    2. Login with: admin@ptamsar.co.id / password<br>
+                    <br>
+                    <strong>Available Users:</strong><br>
+                    • admin@ptamsar.co.id / password (Administrator)<br>
+                    • sitemanager@ptamsar.co.id / password (Site Manager)<br>
+                    • salesmanager@ptamsar.co.id / password (Sales Manager)<br>
+                `;
+            }
+        }
+        
+        // Auto run
+        clearAuthAndLogin();
+    </script>
+</body>
+</html>

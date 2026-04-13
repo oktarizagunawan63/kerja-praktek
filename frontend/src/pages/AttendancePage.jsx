@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw } from 'lucide-react'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, Camera } from 'lucide-react'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import DataTable from '../components/ui/DataTable'
+import CameraAttendance from '../components/ui/CameraAttendance'
 import toast from 'react-hot-toast'
 
 const getCurrentLocation = () => {
@@ -52,6 +53,8 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [currentLocation, setCurrentLocation] = useState(null)
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const [attendanceType, setAttendanceType] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -89,6 +92,14 @@ export default function AttendancePage() {
   }
 
   const handleCheckIn = async () => {
+    // For Sales Manager and Sales, use camera attendance
+    if (user?.role === 'sales_manager' || user?.role === 'sales') {
+      setAttendanceType('check-in')
+      setShowCameraModal(true)
+      return
+    }
+    
+    // For other roles, use regular GPS attendance
     try {
       setActionLoading(true)
       toast.loading('Mendapatkan lokasi...', { id: 'attendance' })
@@ -124,6 +135,14 @@ export default function AttendancePage() {
   }
 
   const handleCheckOut = async () => {
+    // For Sales Manager and Sales, use camera attendance
+    if (user?.role === 'sales_manager' || user?.role === 'sales') {
+      setAttendanceType('check-out')
+      setShowCameraModal(true)
+      return
+    }
+    
+    // For other roles, use regular GPS attendance
     try {
       setActionLoading(true)
       toast.loading('Mendapatkan lokasi...', { id: 'attendance' })
@@ -155,6 +174,47 @@ export default function AttendancePage() {
       toast.error(error.message || 'Gagal check-out', { id: 'attendance' })
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const handleCameraAttendance = async (attendanceData) => {
+    try {
+      setActionLoading(true)
+      setShowCameraModal(false)
+      
+      toast.loading('Memproses attendance...', { id: 'attendance' })
+      
+      const submitData = {
+        latitude: attendanceData.gps.latitude,
+        longitude: attendanceData.gps.longitude,
+        photo: attendanceData.photo,
+        gps_data: attendanceData.gps,
+        gps_warnings: attendanceData.gps_warnings,
+        device_info: attendanceData.device_info,
+        [attendanceType === 'check-in' ? 'check_in_time' : 'check_out_time']: attendanceData.timestamp
+      }
+      
+      const response = attendanceType === 'check-in' 
+        ? await api.checkIn(submitData)
+        : await api.checkOut(submitData)
+      
+      if (response.success) {
+        toast.success(response.message || `${attendanceType === 'check-in' ? 'Check-in' : 'Check-out'} berhasil!`, { id: 'attendance' })
+        
+        // Update today's attendance immediately
+        setTodayAttendance(response.data)
+        
+        // Refresh all data
+        fetchData()
+      } else {
+        toast.error(response.message || `Gagal ${attendanceType}`, { id: 'attendance' })
+      }
+      
+    } catch (error) {
+      toast.error(error.message || `Gagal ${attendanceType}`, { id: 'attendance' })
+    } finally {
+      setActionLoading(false)
+      setAttendanceType(null)
     }
   }
 
@@ -472,6 +532,18 @@ export default function AttendancePage() {
           emptyMessage="Belum ada riwayat kehadiran"
         />
       </div>
+
+      {/* Camera Modal */}
+      {showCameraModal && (
+        <CameraAttendance
+          type={attendanceType}
+          onCapture={handleCameraAttendance}
+          onCancel={() => {
+            setShowCameraModal(false)
+            setAttendanceType(null)
+          }}
+        />
+      )}
     </div>
   )
 }

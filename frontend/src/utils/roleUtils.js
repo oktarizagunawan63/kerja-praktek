@@ -13,9 +13,9 @@ export function normalizeRole(role) {
     'administrator': 'administrator',
     'Administrator': 'administrator',
     'Director': 'administrator',
-    'project_manager': 'sales_manager',
-    'site_manager': 'sales_manager',
-    'Site Manager': 'sales_manager',
+    'project_manager': 'site_manager',
+    'site_manager': 'site_manager',
+    'Site Manager': 'site_manager',
     'sales_manager': 'sales_manager',
     'Sales Manager': 'sales_manager',
     'engineer': 'engineer',
@@ -43,11 +43,11 @@ export function isSalesManager(user) {
   return role === 'sales_manager'
 }
 
-// Check if user is site manager (alias for sales manager for backward compatibility)
+// Check if user is site manager
 export function isSiteManager(user) {
   if (!user?.role) return false
   const role = normalizeRole(user.role)
-  return role === 'sales_manager'
+  return role === 'site_manager'
 }
 
 // Check if user is engineer
@@ -71,8 +71,8 @@ export function getRoleDisplayName(role) {
     'direktur': 'Administrator',
     'director': 'Administrator',
     'sales_manager': 'Sales Manager',
-    'site_manager': 'Sales Manager',
-    'project_manager': 'Sales Manager',
+    'site_manager': 'Site Manager',
+    'project_manager': 'Site Manager',
     'engineer': 'Engineer',
     'sales': 'Sales'
   }
