@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { TrendingUp, DollarSign, Package, Wrench, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import KpiCard from '../components/kpi/KpiCard'
 import ProgressBar from '../components/kpi/ProgressBar'
 import Badge from '../components/ui/Badge'
 import WelcomeCard from '../components/ui/WelcomeCard'
@@ -170,7 +169,7 @@ export default function DashboardPage() {
   }).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Welcome Card for New Users */}
       {(showWelcome || isNewUser()) && (
         <WelcomeCard 
@@ -179,14 +178,20 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* Greeting Card */}
+      <div className="greeting-card">
+        <h2>Selamat datang, {user?.name}!</h2>
+        <p>Dashboard monitoring proyek PT Amsar Prima Mandiri</p>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Monitoring proyek PT Amsar Prima Mandiri</p>
+          <p className="text-sm text-gray-500 mt-0.5">Real-time project monitoring</p>
         </div>
         {(user?.role === 'administrator' || user?.role === 'direktur') && siteManagers.length > 0 && (
           <select value={filterSM} onChange={e => setFilterSM(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+            className="form-select">
             <option value="all">Semua Site Manager</option>
             {siteManagers.map(sm => (
               <option key={sm.id} value={sm.id}>{sm.name}</option>
@@ -196,43 +201,42 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard
-          title="Total Proyek Aktif"
-          value={projectStats.active}
-          subtitle={`${nearDeadline} mendekati deadline`}
-          icon={<TrendingUp size={20} className="text-blue-600" />}
-          iconBg="bg-blue-100"
-          trend="up"
-          trendLabel={`${projectStats.total} total proyek`}
-        />
-        <KpiCard
-          title="Total RAB"
-          value={formatRupiah(rabStats.total)}
-          subtitle={`RAB Terealisasi: ${formatRupiah(rabStats.realisasi)}`}
-          icon={<DollarSign size={20} className="text-green-600" />}
-          iconBg="bg-green-100"
-          trend="neutral"
-          trendLabel={`${rabStats.percentage}% terealisasi`}
-        />
-        <KpiCard
-          title="Avg Progress Aktif"
-          value={`${avgProg}%`}
-          subtitle={`${projectStats.delayed} proyek delayed`}
-          icon={<Package size={20} className="text-yellow-600" />}
-          iconBg="bg-yellow-100"
-          trend={projectStats.delayed > 0 ? 'down' : 'up'}
-          trendLabel={projectStats.delayed > 0 ? 'Perlu perhatian' : 'Berjalan baik'}
-        />
-        <KpiCard
-          title="Proyek Selesai"
-          value={projectStats.completed}
-          subtitle={`dari ${projectStats.total} total proyek`}
-          icon={<Wrench size={20} className="text-purple-600" />}
-          iconBg="bg-purple-100"
-          trend="up"
-          trendLabel="Kumulatif"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="stat-card fade-in">
+          <div className="stat-card-icon primary">
+            <TrendingUp size={24} />
+          </div>
+          <div className="stat-card-number">{projectStats.active}</div>
+          <div className="stat-card-label">Total Proyek Aktif</div>
+          <div className="text-xs text-gray-500 mt-1">{nearDeadline} mendekati deadline</div>
+        </div>
+
+        <div className="stat-card fade-in">
+          <div className="stat-card-icon success">
+            <DollarSign size={24} />
+          </div>
+          <div className="stat-card-number">{formatRupiah(rabStats.total)}</div>
+          <div className="stat-card-label">Total RAB</div>
+          <div className="text-xs text-gray-500 mt-1">{rabStats.percentage}% terealisasi</div>
+        </div>
+
+        <div className="stat-card fade-in">
+          <div className="stat-card-icon warning">
+            <Package size={24} />
+          </div>
+          <div className="stat-card-number">{avgProg}%</div>
+          <div className="stat-card-label">Avg Progress Aktif</div>
+          <div className="text-xs text-gray-500 mt-1">{projectStats.delayed} proyek delayed</div>
+        </div>
+
+        <div className="stat-card fade-in">
+          <div className="stat-card-icon primary">
+            <Wrench size={24} />
+          </div>
+          <div className="stat-card-number">{projectStats.completed}</div>
+          <div className="stat-card-label">Proyek Selesai</div>
+          <div className="text-xs text-gray-500 mt-1">dari {projectStats.total} total</div>
+        </div>
       </div>
 
       {/* Attendance Section - Administrator Only */}

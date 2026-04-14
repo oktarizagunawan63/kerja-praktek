@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Redirect</title>
+</head>
+<body>
+    <h1>Admin Redirect Test</h1>
+    
+    <h2>Test Steps:</h2>
+    <ol>
+        <li><strong>Login as Admin:</strong> Use admin credentials</li>
+        <li><strong>Navigate to Attendance:</strong> Go to /attendance</li>
+        <li><strong>Check Console:</strong> Should see "Admin user detected, redirecting..."</li>
+        <li><strong>Verify Redirect:</strong> Should automatically go to /admin/attendance-monitor</li>
+        <li><strong>Check Sidebar:</strong> Click "Attendance Monitor" under Administration</li>
+        <li><strong>Verify Data:</strong> Should see employee attendance data, not personal attendance</li>
+    </ol>
+    
+    <h2>Expected Results:</h2>
+    <ul>
+        <li>✅ Admin cannot access personal attendance page</li>
+        <li>✅ Admin is redirected to attendance monitor</li>
+        <li>✅ Attendance monitor shows all employee data</li>
+        <li>✅ Summary cards show correct counts</li>
+        <li>✅ Photos are clickable for full view</li>
+        <li>✅ Date filter and search work</li>
+    </ul>
+    
+    <h2>Admin Roles Supported:</h2>
+    <ul>
+        <li>administrator</li>
+        <li>direktur</li>
+        <li>director</li>
+        <li>Administrator</li>
+        <li>Direktur</li>
+        <li>Director</li>
+    </ul>
+    
+    <script>
+        console.log('Admin redirect test page loaded');
+        console.log('Check browser console for redirect messages when testing');
+    </script>
+</body>
+</html>

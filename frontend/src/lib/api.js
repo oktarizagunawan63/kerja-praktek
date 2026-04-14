@@ -104,6 +104,8 @@ export const api = {
   restoreProject:  (id)     => request('POST',   `/projects/${id}/restore`),
   getTrash:        ()       => request('GET',    '/projects/trash'),
   getKpi:          ()       => request('GET',    '/projects/kpi'),
+  assignEngineer:  (projectId, engineerId) => request('POST', `/projects/${projectId}/assign-engineer`, { engineer_id: engineerId }),
+  getProjectEngineers: () => request('GET', '/projects/engineers'),
 
   // Materials
   getMaterials:    (pid)          => request('GET',    `/projects/${pid}/materials`),
@@ -235,4 +237,12 @@ export const api = {
   getSalesCustomers: ()      => request('GET',    '/sales/customers'),
   getSalesPlanVisits: ()     => request('GET',    '/sales/plan-visits'),
   getSalesVisitRealizations: () => request('GET', '/sales/visit-realizations'),
+
+  // Engineer APIs
+  getEngineerDashboard: () => request('GET', '/engineer/dashboard'),
+  getEngineerProjects: () => request('GET', '/engineer/my-projects'),
+  submitProgressReport: (data) => request('POST', '/engineer/progress-report', data),
+  getProgressReports: () => request('GET', '/engineer/progress-reports'),
+  assignEngineer: (data) => request('POST', '/engineer/assign', data),
+  getAvailableEngineers: () => request('GET', '/engineer/available'),
 }

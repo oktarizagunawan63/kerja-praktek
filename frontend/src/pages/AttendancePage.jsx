@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, Camera, User } from 'lucide-react'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, User } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
-import Button from '../components/ui/Button'
+import { isAdministrator } from '../utils/roleUtils'
 import DataTable from '../components/ui/DataTable'
 import CameraAttendance from '../components/ui/CameraAttendance'
 import toast from 'react-hot-toast'
@@ -74,6 +75,7 @@ const getCurrentLocation = () => {
 
 export default function AttendancePage() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [todayAttendance, setTodayAttendance] = useState(null)
   const [attendanceHistory, setAttendanceHistory] = useState([])
   const [loading, setLoading] = useState(true)
@@ -81,6 +83,34 @@ export default function AttendancePage() {
   const [currentLocation, setCurrentLocation] = useState(null)
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [attendanceType, setAttendanceType] = useState(null)
+
+  // Redirect non-sales users appropriately
+  useEffect(() => {
+    if (!user?.role) return
+    
+    const adminRoles = ['admin', 'administrator', 'direktur', 'director']
+    const salesRoles = ['sales_manager', 'sales']
+    
+    if (adminRoles.includes(user.role) || isAdministrator(user)) {
+      console.log('Admin user detected, redirecting to attendance monitor:', user?.role)
+      navigate('/admin/attendance-monitor', { replace: true })
+      return
+    }
+    
+    if (!salesRoles.includes(user.role)) {
+      console.log('Non-sales user detected, redirecting to dashboard:', user?.role)
+      navigate('/dashboard', { replace: true })
+      return
+    }
+  }, [user, navigate])
+
+  // Legacy admin redirect (backup)
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin/attendance-monitor')
+      return
+    }
+  }, [user, navigate])
   
   // Work locations for sales team (in real app, this would come from API)
   const workLocations = [
@@ -296,25 +326,16 @@ export default function AttendancePage() {
     }
   }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
   const getStatusBadge = (attendance) => {
     if (!attendance.check_in_time) {
-      return <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Tidak Hadir</span>
+      return <span className="status-badge cancelled">Tidak Hadir</span>
     }
     
     if (!attendance.check_out_time) {
-      return <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">Sedang Bekerja</span>
+      return <span className="status-badge warning">Sedang Bekerja</span>
     }
     
-    return <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Selesai</span>
+    return <span className="status-badge success">Selesai</span>
   }
 
   const columns = [
@@ -341,7 +362,7 @@ export default function AttendancePage() {
             <img 
               src={getPhotoSrc(attendance.check_in_photo)} 
               alt="Foto Check-In"
-              onError={(e) => console.log('Photo src was:', e.target.src)}
+              onError={(e) => e.target.src = '/placeholder-avatar.png'}
               className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
             />
           ) : (
@@ -427,6 +448,23 @@ export default function AttendancePage() {
   const canCheckOut = todayAttendance?.check_in_time && !todayAttendance?.check_out_time
   const isCompleted = todayAttendance?.check_in_time && todayAttendance?.check_out_time
 
+  // Don't render anything for non-sales users - they should be redirected
+  const salesRoles = ['sales_manager', 'sales']
+  if (!salesRoles.includes(user?.role) && user?.role) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <p className="text-gray-600">
+            {isAdministrator(user) 
+              ? 'Redirecting to attendance monitor...' 
+              : 'Redirecting to dashboard...'
+            }
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -435,126 +473,122 @@ export default function AttendancePage() {
       </div>
 
       {/* Today's Status */}
-      <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 md:p-6 mb-6 md:mb-8 border border-red-100">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${
+        todayAttendance?.check_in_time ? 'attendance-today-card checked-in' : 'attendance-today-card'
+      }`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Kehadiran Hari Ini</h2>
-            <p className="text-red-700 font-medium text-sm md:text-base">{today}</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Kehadiran Hari Ini</h2>
+            <p className="text-gray-700 font-medium mb-4">{today}</p>
             
             {todayAttendance ? (
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="text-green-500" size={16} />
-                    <span className="text-sm">
-                      Check In: <span className="font-medium">{formatTime(todayAttendance.check_in_time)}</span>
-                    </span>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle className="text-green-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Check In</p>
+                      <p className="font-bold text-green-700">{formatTime(todayAttendance.check_in_time)}</p>
+                    </div>
                   </div>
                   
                   {todayAttendance.check_out_time && (
-                    <div className="flex items-center gap-2">
-                      <XCircle className="text-red-500" size={16} />
-                      <span className="text-sm">
-                        Check Out: <span className="font-medium">{formatTime(todayAttendance.check_out_time)}</span>
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <XCircle className="text-red-600" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Check Out</p>
+                        <p className="font-bold text-red-700">{formatTime(todayAttendance.check_out_time)}</p>
+                      </div>
                     </div>
                   )}
                 </div>
                 
                 {todayAttendance.check_in_time && todayAttendance.check_out_time && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="text-blue-500" size={16} />
-                    <span className="text-sm">
-                      Total Jam Visit: <span className="font-medium">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Clock className="text-blue-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Jam Kerja</p>
+                      <p className="font-bold text-blue-700">
                         {calculateDuration(todayAttendance.check_in_time, todayAttendance.check_out_time)}
-                      </span>
-                    </span>
-                  </div>
-                )}
-                
-                {/* Show GPS coordinates */}
-                {todayAttendance.check_in_latitude && (
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <MapPin size={12} />
-                    <span>
-                      GPS: {todayAttendance.check_in_latitude && todayAttendance.check_in_longitude ? 
-                        `${parseFloat(todayAttendance.check_in_latitude).toFixed(6)}, ${parseFloat(todayAttendance.check_in_longitude).toFixed(6)}` : 
-                        'GPS tidak tersedia'
-                      }
-                    </span>
+                      </p>
+                    </div>
                   </div>
                 )}
                 
                 {/* Check-in Photo */}
                 {todayAttendance?.check_in_photo && (
-                  <div style={{marginTop: '12px'}}>
-                    <p style={{fontSize: '12px', color: '#666', marginBottom: '4px'}}>Foto Check-In:</p>
-                    <img 
-                      src={getPhotoSrc(todayAttendance.check_in_photo)} 
-                      alt="Foto Check-In"
-                      onError={(e) => console.log('Photo src was:', e.target.src)}
-                      style={{
-                        width: '120px', 
-                        height: '120px', 
-                        objectFit: 'cover', 
-                        borderRadius: '8px',
-                        border: '2px solid #e5e7eb'
-                      }} 
-                    />
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Foto Check-In:</p>
+                      <img 
+                        src={getPhotoSrc(todayAttendance.check_in_photo)} 
+                        alt="Foto Check-In"
+                        className="attendance-photo-frame"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-gray-600 mt-2">Belum melakukan check-in hari ini</p>
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="text-gray-400" size={24} />
+                </div>
+                <p className="text-gray-600 font-medium">
+                  {['sales_manager', 'sales'].includes(user?.role)
+                    ? 'Belum melakukan check-in hari ini' 
+                    : 'Halaman ini hanya untuk sales team'
+                  }
+                </p>
+              </div>
             )}
           </div>
           
-          <div className="flex flex-col gap-3 w-full md:w-auto">
-            {canCheckIn && (
-              <Button
+          <div className="flex flex-col gap-3 w-full lg:w-auto">
+            {['sales_manager', 'sales'].includes(user?.role) && canCheckIn && (
+              <button
                 onClick={handleCheckIn}
                 disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700 h-12 md:h-auto text-base md:text-sm w-full md:w-auto"
+                className="btn-professional btn-primary w-full lg:w-auto"
               >
                 <Navigation size={16} />
                 Check In
-              </Button>
+              </button>
             )}
             
-            {canCheckOut && (
-              <Button
+            {['sales_manager', 'sales'].includes(user?.role) && canCheckOut && (
+              <button
                 onClick={handleCheckOut}
                 disabled={actionLoading}
-                className="bg-red-600 hover:bg-red-700 h-12 md:h-auto text-base md:text-sm w-full md:w-auto"
+                className="btn-professional btn-danger w-full lg:w-auto"
               >
                 <Navigation size={16} />
                 Check Out
-              </Button>
+              </button>
             )}
             
             {!canCheckIn && !canCheckOut && isCompleted && (
               <div className="text-center">
-                <CheckCircle className="text-green-500 mx-auto mb-2" size={24} />
-                <p className="text-sm text-green-700 font-medium">Attendance Complete</p>
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="text-green-600" size={24} />
+                </div>
+                <p className="text-sm text-green-700 font-medium mb-3">Attendance Complete</p>
                 {(user?.role === 'administrator' || user?.role === 'direktur') && (
-                  <Button
+                  <button
                     onClick={handleResetAttendance}
                     disabled={actionLoading}
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 mt-2"
+                    className="btn-professional btn-danger text-sm"
                   >
                     <RotateCcw size={14} />
                     Reset Attendance
-                  </Button>
+                  </button>
                 )}
-              </div>
-            )}
-            
-            {todayAttendance?.check_in_time && !todayAttendance?.check_out_time && (
-              <div className="text-center">
-                <Clock className="text-yellow-500 mx-auto mb-2" size={24} />
-                <p className="text-sm text-yellow-700 font-medium">Sedang Bekerja</p>
-                <p className="text-xs text-gray-500">Jangan lupa check-out</p>
               </div>
             )}
           </div>

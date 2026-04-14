@@ -46,7 +46,7 @@ const NAV_SECTIONS = {
       items: [
         { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },
         { to: '/users', icon: Users, label: 'Manajemen User', tourId: 'users' },
-        { to: '/attendance-monitor', icon: Clock, label: 'Attendance Monitor', tourId: 'attendance-monitor' }
+        { to: '/admin/attendance-monitor', icon: Clock, label: 'Attendance Monitor', tourId: 'admin-attendance-monitor' }
       ]
     }
   ],
@@ -64,12 +64,6 @@ const NAV_SECTIONS = {
         { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
         { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
-      ]
-    },
-    { 
-      title: 'Attendance', 
-      items: [
-        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' }
       ]
     }
   ],
@@ -116,21 +110,15 @@ const NAV_SECTIONS = {
     { 
       title: 'Dashboard', 
       items: [
-        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
+        { to: '/engineer/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
         { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
       ]
     },
     { 
       title: 'Projects', 
       items: [
-        { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
-        { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' }
-      ]
-    },
-    { 
-      title: 'Attendance', 
-      items: [
-        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' }
+        { to: '/engineer/projects', icon: FolderKanban, label: 'Proyek Saya', tourId: 'projects' },
+        { to: '/engineer/progress-reports', icon: FileText, label: 'Laporan Progress', tourId: 'progress-reports' }
       ]
     }
   ]

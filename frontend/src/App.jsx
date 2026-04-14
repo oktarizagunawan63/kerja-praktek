@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
+import './styles/professional.css'
 import useAuthStore from './store/authStore'
 import { isAdministrator, isSiteManager, isSalesManager, isSales } from './utils/roleUtils'
 import { can, canAccessVisitManagement, canManageProjects } from './lib/permissions'
@@ -25,10 +26,15 @@ import PlanVisitsPage from './pages/PlanVisitsPage'
 import RealisasiVisitsPage from './pages/RealisasiVisitsPage'
 import AttendancePage from './pages/AttendancePage'
 import AttendanceMonitorPage from './pages/AttendanceMonitorPage'
+import AdminAttendanceMonitorPage from './pages/AdminAttendanceMonitorPage'
+import EngineerDashboard from './pages/EngineerDashboard'
+import EngineerProjectsPage from './pages/EngineerProjectsPage'
+import EngineerProgressReportsPage from './pages/EngineerProgressReportsPage'
 import VisitReportsPage from './pages/VisitReportsPage'
 import WarningsPage from './pages/WarningsPage'
 import WelcomeModal from './components/ui/WelcomeModal'
 import './styles/animations.css'
+import './styles/professional.css'
 
 function PrivateRoute({ children }) {
   const { token } = useAuthStore()
@@ -53,9 +59,29 @@ function VisitManagementOnly({ children }) {
   return children
 }
 
+function EngineerOnly({ children }) {
+  const { user } = useAuthStore()
+  if (user?.role !== 'engineer') return <Navigate to="/dashboard" replace />
+  return children
+}
+
+function SalesOnly({ children }) {
+  const { user } = useAuthStore()
+  const allowedRoles = ['sales_manager', 'sales']
+  if (!allowedRoles.includes(user?.role)) {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
+}
+
 function SiteManagerDashboard() {
   // Site Manager gets regular dashboard with project focus
   return <DashboardPage />
+}
+
+function EngineerDashboardComponent() {
+  // Engineer gets their own dashboard
+  return <EngineerDashboard />
 }
 
 function RoleBasedDashboardRedirect() {
@@ -67,6 +93,8 @@ function RoleBasedDashboardRedirect() {
     return <Navigate to="/sales/dashboard" replace />
   } else if (isSiteManager(user)) {
     return <Navigate to="/site/dashboard" replace />
+  } else if (user?.role === 'engineer') {
+    return <Navigate to="/engineer/dashboard" replace />
   } else {
     return <DashboardPage />
   }
@@ -141,6 +169,11 @@ export default function App() {
           <Route path="site/dashboard"    element={<ProjectManagementOnly><SiteManagerDashboard /></ProjectManagementOnly>} />
           <Route path="manager/dashboard" element={<VisitManagementOnly><SalesManagerDashboard /></VisitManagementOnly>} />
           <Route path="sales/dashboard"   element={<VisitManagementOnly><SalesDashboard /></VisitManagementOnly>} />
+          <Route path="engineer/dashboard" element={<EngineerOnly><EngineerDashboardComponent /></EngineerOnly>} />
+          
+          {/* Engineer Routes */}
+          <Route path="engineer/projects" element={<EngineerOnly><EngineerProjectsPage /></EngineerOnly>} />
+          <Route path="engineer/progress-reports" element={<EngineerOnly><EngineerProgressReportsPage /></EngineerOnly>} />
           
           {/* Project Management Routes - Site Manager + Administrator */}
           <Route path="projects"         element={<ProjectManagementOnly><ProjectsPage /></ProjectManagementOnly>} />
@@ -155,12 +188,13 @@ export default function App() {
           <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
           <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
           <Route path="attendance-monitor" element={<AdministratorOnly><AttendanceMonitorPage /></AdministratorOnly>} />
+          <Route path="admin/attendance-monitor" element={<AdministratorOnly><AdminAttendanceMonitorPage /></AdministratorOnly>} />
           
           {/* Visit Management Routes - Sales Manager + Sales + Administrator */}
           <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
           <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
           <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
-          <Route path="attendance"       element={<AttendancePage />} />
+          <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
           <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
           <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
         </Route>

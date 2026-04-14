@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
-  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail
+  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail, 
+  Calendar, MapPin, DollarSign, TrendingUp, User, Camera, Edit
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -15,6 +16,7 @@ import { fileToBase64, downloadFile } from '../lib/fileUtils'
 import { formatRupiah } from '../lib/formatRupiah'
 import { can } from '../lib/permissions'
 import { exportProyekPDF } from '../lib/exportPdf'
+import { api } from '../lib/api'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const SATUAN = ['m3','m2','m','ton','kg','btg','unit','set','ls','buah','liter','zak']
@@ -48,6 +50,64 @@ export default function ProjectDetailPage() {
   const [previewDoc,   setPreviewDoc]   = useState(null)
   const [docTab,       setDocTab]       = useState('semua')
   const [completeNote, setCompleteNote] = useState('')
+  
+  // New state for enhanced features
+  const [assignEngineerOpen, setAssignEngineerOpen] = useState(false)
+  const [availableEngineers, setAvailableEngineers] = useState([])
+  const [selectedEngineer, setSelectedEngineer] = useState('')
+  const [progressReports, setProgressReports] = useState([])
+  const [rabRealisasi, setRabRealisasi] = useState([])
+  const [addRabOpen, setAddRabOpen] = useState(false)
+  const [rabForm, setRabForm] = useState({
+    description: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0]
+  })
+  const [loading, setLoading] = useState(false)
+
+  // Load additional data on component mount
+  useEffect(() => {
+    if (project) {
+      loadProgressReports()
+      loadRabRealisasi()
+      if (user?.role === 'site_manager') {
+        loadAvailableEngineers()
+      }
+    }
+  }, [project, user])
+
+  const loadProgressReports = async () => {
+    try {
+      const response = await api.getProjectProgressReports(id)
+      if (response.success) {
+        setProgressReports(response.data)
+      }
+    } catch (error) {
+      console.warn('Failed to load progress reports:', error.message)
+    }
+  }
+
+  const loadRabRealisasi = async () => {
+    try {
+      const response = await api.getProjectRabRealisasi(id)
+      if (response.success) {
+        setRabRealisasi(response.data)
+      }
+    } catch (error) {
+      console.warn('Failed to load RAB realisasi:', error.message)
+    }
+  }
+
+  const loadAvailableEngineers = async () => {
+    try {
+      const response = await api.getProjectEngineers()
+      if (response.success) {
+        setAvailableEngineers(response.data)
+      }
+    } catch (error) {
+      console.warn('Failed to load engineers:', error.message)
+    }
+  }
   const [rabInput,     setRabInput]     = useState('')
   const [matForm,      setMatForm]      = useState({ qty: '', catatan: '', files: [] })
   const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })

@@ -16,6 +16,9 @@ export default function NotificationsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
+  // Calculate unread notifications count
+  const unread = notifications?.filter(n => !n.isRead)?.length || 0
+
   const getStyle = (type) => typeStyle[type] || typeStyle.info
 
   const getProject = (projectId) => projects.find(p => String(p.id) === String(projectId))
