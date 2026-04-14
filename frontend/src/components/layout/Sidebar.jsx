@@ -65,6 +65,12 @@ const NAV_SECTIONS = {
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
         { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
       ]
+    },
+    { 
+      title: 'Attendance', 
+      items: [
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' }
+      ]
     }
   ],
   sales_manager: [
@@ -119,6 +125,12 @@ const NAV_SECTIONS = {
       items: [
         { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' }
+      ]
+    },
+    { 
+      title: 'Attendance', 
+      items: [
+        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' }
       ]
     }
   ]

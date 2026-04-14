@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock, Users } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -38,7 +38,7 @@ const EMPTY_FORM = {
 export default function ProjectsPage() {
   const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash } = useAppStore()
   const { user } = useAuthStore()
-  const { users, updateUser } = useUserStore()
+  const { users, updateUser, fetchUsers } = useUserStore()
   
 
   
@@ -63,6 +63,14 @@ export default function ProjectsPage() {
   const [assignModal, setAssignModal] = useState(null) // { projectId, projectName }
   const [selectedEngineers, setSelectedEngineers] = useState([])
   const navigate = useNavigate()
+
+  // Fetch users when component mounts
+  useEffect(() => {
+    console.log('ProjectsPage: Fetching users...')
+    fetchUsers().then(fetchedUsers => {
+      console.log('ProjectsPage: Users fetched:', fetchedUsers)
+    })
+  }, []) // Remove fetchUsers dependency
 
   const active    = visibleProjects.filter(p => p.status !== 'completed')
   const completed = visibleProjects.filter(p => p.status === 'completed')

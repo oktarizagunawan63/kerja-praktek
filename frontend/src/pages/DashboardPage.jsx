@@ -27,23 +27,50 @@ export default function DashboardPage() {
   const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
   const [showWelcome, setShowWelcome] = useState(false)
   const [attendanceSummary, setAttendanceSummary] = useState(null)
+  const [dashboardStats, setDashboardStats] = useState(null)
 
   useEffect(() => { 
     checkNotifications()
+    loadDashboardData()
     
-    // Load attendance summary for Administrator
-    if (user?.role === 'administrator' || user?.role === 'direktur') {
-      loadAttendanceSummary()
+    // Auto-refresh data every 60 seconds
+    const interval = setInterval(() => {
+      loadDashboardData()
+    }, 60000)
+    
+    return () => clearInterval(interval)
+  }, [user])
+
+  const loadDashboardData = async () => {
+    if (!user) return
+    
+    try {
+      // Load role-specific dashboard data
+      let dashboardResponse = null
       
-      // Auto-refresh attendance data every 30 seconds
-      const interval = setInterval(() => {
-        loadAttendanceSummary()
-      }, 30000)
+      if (user.role === 'administrator' || user.role === 'direktur') {
+        dashboardResponse = await api.getAdminDashboard()
+        // Also load attendance summary for admin
+        const attendanceResponse = await api.getAttendanceSummary()
+        if (attendanceResponse.success) {
+          setAttendanceSummary(attendanceResponse.data)
+        }
+      } else if (user.role === 'site_manager') {
+        dashboardResponse = await api.getSiteDashboard()
+      } else if (user.role === 'sales_manager') {
+        dashboardResponse = await api.getSalesDashboard()
+      }
       
-      return () => clearInterval(interval)
+      if (dashboardResponse && dashboardResponse.success) {
+        setDashboardStats(dashboardResponse.data)
+      }
+    } catch (error) {
+      console.warn('Failed to load dashboard data:', error.message)
     }
-    
-    // Show welcome card for new users (created within last 24 hours)
+  }
+
+  // Show welcome card for new users (created within last 24 hours)
+  useEffect(() => {
     if (user?.created_at) {
       const createdAt = new Date(user.created_at)
       const now = new Date()
@@ -54,18 +81,7 @@ export default function DashboardPage() {
         setShowWelcome(true)
       }
     }
-  }, [projects, user])
-
-  const loadAttendanceSummary = async () => {
-    try {
-      const response = await api.getAttendanceSummary()
-      if (response.success) {
-        setAttendanceSummary(response.data)
-      }
-    } catch (error) {
-      console.warn('Failed to load attendance summary:', error.message)
-    }
-  }
+  }, [user])
 
   const isNewUser = () => {
     if (!user) return false
@@ -79,22 +95,75 @@ export default function DashboardPage() {
     return userProjects.length === 0
   }
 
+  // Use dashboard stats if available, otherwise fallback to existing logic
+  const getProjectStats = () => {
+    if (dashboardStats?.projects) {
+      return {
+        active: dashboardStats.projects.active,
+        completed: dashboardStats.projects.completed,
+        delayed: dashboardStats.projects.delayed,
+        total: dashboardStats.projects.total
+      }
+    }
+    
+    // Fallback to existing logic
+    const projects_visible = filterProjectsByRole(projects, user, users)
+    const projects_filtered = (user?.role === 'administrator' || user?.role === 'direktur') && filterSM !== 'all'
+      ? projects_visible.filter(p => p.pm?.toLowerCase() === siteManagers.find(sm => sm.id === filterSM)?.name?.toLowerCase())
+      : projects_visible
+
+    const active = projects_filtered.filter(p => p.status !== 'completed')
+    const completed = projects_filtered.filter(p => p.status === 'completed')
+    const delayed = active.filter(p => p.status === 'delayed').length
+    
+    return {
+      active: active.length,
+      completed: completed.length,
+      delayed,
+      total: projects_filtered.length,
+      projects_filtered
+    }
+  }
+
+  const getRabStats = () => {
+    if (dashboardStats?.rab) {
+      return {
+        total: dashboardStats.rab.total,
+        realisasi: dashboardStats.rab.realisasi,
+        percentage: dashboardStats.rab.percentage
+      }
+    }
+    
+    // Fallback to existing logic
+    const projects_visible = filterProjectsByRole(projects, user, users)
+    const projects_filtered = (user?.role === 'administrator' || user?.role === 'direktur') && filterSM !== 'all'
+      ? projects_visible.filter(p => p.pm?.toLowerCase() === siteManagers.find(sm => sm.id === filterSM)?.name?.toLowerCase())
+      : projects_visible
+      
+    const totalRab = projects_filtered.reduce((s, p) => s + (p.rab || 0), 0)
+    const totalReal = projects_filtered.reduce((s, p) => s + (p.realisasi || 0), 0)
+    
+    return {
+      total: totalRab,
+      realisasi: totalReal,
+      percentage: totalRab ? Math.round((totalReal / totalRab) * 100) : 0
+    }
+  }
+
+  const projectStats = getProjectStats()
+  const rabStats = getRabStats()
+
   // Site managers list untuk filter
   const siteManagers = users.filter(u => u.role === 'site_manager')
 
+  // For backward compatibility, still use projects for project list display
   const projects_visible = filterProjectsByRole(projects, user, users)
-
-  // Kalau administrator filter per Sales Manager
   const projects_filtered = (user?.role === 'administrator' || user?.role === 'direktur') && filterSM !== 'all'
     ? projects_visible.filter(p => p.pm?.toLowerCase() === siteManagers.find(sm => sm.id === filterSM)?.name?.toLowerCase())
     : projects_visible
 
-  const active    = projects_filtered.filter(p => p.status !== 'completed')
-  const completed = projects_filtered.filter(p => p.status === 'completed')
-  const totalRab  = projects_filtered.reduce((s, p) => s + (p.rab || 0), 0)
-  const totalReal = projects_filtered.reduce((s, p) => s + (p.realisasi || 0), 0)
-  const avgProg   = active.length ? Math.round(active.reduce((s, p) => s + (p.progress || 0), 0) / active.length) : 0
-  const delayed   = active.filter(p => p.status === 'delayed').length
+  const active = projects_filtered.filter(p => p.status !== 'completed')
+  const avgProg = active.length ? Math.round(active.reduce((s, p) => s + (p.progress || 0), 0) / active.length) : 0
   const nearDeadline = active.filter(p => {
     const d = Math.ceil((new Date(p.deadline) - new Date()) / 86400000)
     return d <= 30 && d > 0
@@ -130,35 +199,35 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
           title="Total Proyek Aktif"
-          value={active.length}
+          value={projectStats.active}
           subtitle={`${nearDeadline} mendekati deadline`}
           icon={<TrendingUp size={20} className="text-blue-600" />}
           iconBg="bg-blue-100"
           trend="up"
-          trendLabel={`${projects.length} total proyek`}
+          trendLabel={`${projectStats.total} total proyek`}
         />
         <KpiCard
           title="Total RAB"
-          value={formatRupiah(totalRab)}
-          subtitle={`RAB Terealisasi: ${formatRupiah(totalReal)}`}
+          value={formatRupiah(rabStats.total)}
+          subtitle={`RAB Terealisasi: ${formatRupiah(rabStats.realisasi)}`}
           icon={<DollarSign size={20} className="text-green-600" />}
           iconBg="bg-green-100"
           trend="neutral"
-          trendLabel={totalRab ? `${Math.round((totalReal / totalRab) * 100)}% terealisasi` : '0% terealisasi'}
+          trendLabel={`${rabStats.percentage}% terealisasi`}
         />
         <KpiCard
           title="Avg Progress Aktif"
           value={`${avgProg}%`}
-          subtitle={`${delayed} proyek delayed`}
+          subtitle={`${projectStats.delayed} proyek delayed`}
           icon={<Package size={20} className="text-yellow-600" />}
           iconBg="bg-yellow-100"
-          trend={delayed > 0 ? 'down' : 'up'}
-          trendLabel={delayed > 0 ? 'Perlu perhatian' : 'Berjalan baik'}
+          trend={projectStats.delayed > 0 ? 'down' : 'up'}
+          trendLabel={projectStats.delayed > 0 ? 'Perlu perhatian' : 'Berjalan baik'}
         />
         <KpiCard
           title="Proyek Selesai"
-          value={completed.length}
-          subtitle={`dari ${projects.length} total proyek`}
+          value={projectStats.completed}
+          subtitle={`dari ${projectStats.total} total proyek`}
           icon={<Wrench size={20} className="text-purple-600" />}
           iconBg="bg-purple-100"
           trend="up"

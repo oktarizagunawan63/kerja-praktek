@@ -32,7 +32,40 @@ export default function NotificationsPage() {
     window.open(`https://mail.google.com/mail/?view=cm&to=${pmEmail}&su=${subject}&body=${body}`, '_blank')
   }
 
-  const unread = notifications.filter(n => !n.isRead).length
+  const handleNotificationClick = (notification) => {
+    markNotifRead(notification.id)
+    
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'project':
+      case 'project_update':
+      case 'project_completed':
+        if (notification.projectId) {
+          navigate(`/projects/${notification.projectId}`)
+        } else {
+          navigate('/projects')
+        }
+        break
+      case 'attendance':
+      case 'attendance_warning':
+        navigate('/attendance')
+        break
+      case 'visit':
+      case 'visit_reminder':
+      case 'visit_completed':
+        navigate('/plan-visits')
+        break
+      case 'customer':
+        navigate('/customers')
+        break
+      case 'warning':
+        navigate('/warnings')
+        break
+      default:
+        // For other types, stay on notifications page
+        break
+    }
+  }
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -71,9 +104,9 @@ export default function NotificationsPage() {
             return (
               <div
                 key={n.id}
-                onClick={() => markNotifRead(n.id)}
+                onClick={() => handleNotificationClick(n)}
                 className={clsx(
-                  'rounded-xl border p-4 transition-opacity',
+                  'rounded-xl border p-4 transition-opacity cursor-pointer hover:bg-gray-50',
                   s.bg, s.border,
                   n.isRead && 'opacity-60'
                 )}

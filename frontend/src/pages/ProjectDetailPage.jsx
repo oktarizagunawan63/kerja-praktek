@@ -33,7 +33,7 @@ export default function ProjectDetailPage() {
   const { user }     = useAuthStore()
   const currentUser  = user?.name || 'Unknown'
   const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc } = useAppStore()
-  const { users, updateUser } = useUserStore()
+  const { users, updateUser, fetchUsers } = useUserStore()
 
   // ── all hooks before any return ──
   const [history,      setHistory]      = useState([])
@@ -53,6 +53,22 @@ export default function ProjectDetailPage() {
   const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })
   const [newMat,       setNewMat]       = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
   const [teamOpen,     setTeamOpen]     = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(false)
+
+  // Fetch users when modal opens
+  const handleOpenTeamModal = async () => {
+    setTeamOpen(true)
+    setLoadingUsers(true)
+    try {
+      console.log('Fetching users for engineer assignment...')
+      const fetchedUsers = await fetchUsers()
+      console.log('Users fetched:', fetchedUsers)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
 
   const project   = projects.find(p => String(p.id) === String(id))
   const materials = getMaterials(id)
@@ -394,7 +410,7 @@ export default function ProjectDetailPage() {
               <h3 className="text-sm font-semibold text-gray-700">Tim Proyek</h3>
             </div>
             {!isCompleted && (
-              <button onClick={() => setTeamOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+              <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
                 <Plus size={13}/> Assign Engineer
               </button>
             )}
@@ -676,10 +692,29 @@ export default function ProjectDetailPage() {
       {/* Modal: Assign Engineer */}
       <Modal open={teamOpen} onClose={() => setTeamOpen(false)} title="Assign Engineer ke Proyek" size="md">
         <div className="space-y-3">
-          <p className="text-xs text-gray-500">Pilih engineer yang akan di-assign ke proyek ini:</p>
-          {users.filter(u => u.role === 'engineer').length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">Belum ada akun engineer.</p>
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-gray-500">Pilih engineer yang akan di-assign ke proyek ini:</p>
+            <button 
+              onClick={handleOpenTeamModal}
+              className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
+              disabled={loadingUsers}
+            >
+              {loadingUsers ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+          
+          {loadingUsers ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500">Memuat data engineer...</p>
+            </div>
           ) : (
+            <>
+              {users.filter(u => u.role === 'engineer').length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-400">Belum ada engineer yang terdaftar.</p>
+                  <p className="text-xs text-gray-300 mt-1">Klik "Refresh" untuk memuat ulang data.</p>
+                </div>
+              ) : (
             users.filter(u => u.role === 'engineer').map(eng => {
               const isAssigned = (eng.assignedProjects || []).includes(String(id))
               return (
@@ -712,9 +747,11 @@ export default function ProjectDetailPage() {
               )
             })
           )}
+            </>
+          )}
 
           {/* Buat akun engineer baru — sales manager & administrator */}
-          {can(user, 'edit_project') && (
+          {!loadingUsers && can(user, 'edit_project') && (
             <NewEngineerInline onCreated={(eng) => {
               updateUser(eng.id, { assignedProjects: [String(id)] })
               toast.success(`${eng.name} dibuat & di-assign`)
@@ -735,14 +772,57 @@ function NewEngineerInline({ onCreated }) {
   const { addUser } = useUserStore()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name || !form.email || !form.password) return
-    const eng = addUser({ ...form, role: 'engineer', assignedProjects: [] })
-    onCreated(eng)
-    setOpen(false)
-    setForm({ name: '', email: '', password: '' })
+    
+    setLoading(true)
+    try {
+      // Create user via API
+      const token = localStorage.getItem('token')
+      const response = await fetch('http://127.0.0.1:8000/api/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: 'engineer',
+          division: 'engineering'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const newEngineer = data.data || data
+        
+        // Add to local store
+        addUser(newEngineer)
+        
+        // Call callback
+        onCreated(newEngineer)
+        
+        // Reset form
+        setOpen(false)
+        setForm({ name: '', email: '', password: '' })
+        
+        toast.success(`Engineer ${form.name} berhasil dibuat!`)
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || 'Gagal membuat engineer')
+      }
+    } catch (error) {
+      console.error('Error creating engineer:', error)
+      toast.error('Terjadi kesalahan saat membuat engineer')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!open) return (
@@ -757,16 +837,20 @@ function NewEngineerInline({ onCreated }) {
       <p className="text-xs font-semibold text-purple-800">Buat Akun Engineer Baru</p>
       <input required type="text" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
         className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-        placeholder="Nama lengkap..."/>
+        placeholder="Nama lengkap..." disabled={loading}/>
       <input required type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))}
         className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-        placeholder="Email..."/>
+        placeholder="Email..." disabled={loading}/>
       <input required type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))}
         className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-        placeholder="Password..."/>
+        placeholder="Password..." disabled={loading}/>
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={() => setOpen(false)} className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 py-1.5 rounded-lg">Batal</button>
-        <button type="submit" className="flex-1 text-xs bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg font-medium">Buat & Assign</button>
+        <button type="button" onClick={() => setOpen(false)} className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 py-1.5 rounded-lg" disabled={loading}>
+          Batal
+        </button>
+        <button type="submit" className="flex-1 text-xs bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg font-medium" disabled={loading}>
+          {loading ? 'Membuat...' : 'Buat & Assign'}
+        </button>
       </div>
     </form>
   )

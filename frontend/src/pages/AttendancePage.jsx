@@ -1,11 +1,37 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, Camera } from 'lucide-react'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, Camera, User } from 'lucide-react'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import DataTable from '../components/ui/DataTable'
 import CameraAttendance from '../components/ui/CameraAttendance'
 import toast from 'react-hot-toast'
+
+// Helper functions for date/time formatting
+const formatTime = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '-'
+  return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
+
+const calculateDuration = (checkIn, checkOut) => {
+  if (!checkIn || !checkOut) return '-'
+  const start = new Date(checkIn)
+  const end = new Date(checkOut)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return '-'
+  const diffMs = end - start
+  const hours = Math.floor(diffMs / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+  return `${hours}j ${minutes}m`
+}
+
+const getPhotoSrc = (photo) => {
+  if (!photo) return null
+  if (photo.startsWith('data:image')) return photo
+  if (photo.startsWith('http')) return photo
+  return `http://127.0.0.1:8000/storage/${photo}`
+}
 
 const getCurrentLocation = () => {
   return new Promise((resolve, reject) => {
@@ -55,6 +81,31 @@ export default function AttendancePage() {
   const [currentLocation, setCurrentLocation] = useState(null)
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [attendanceType, setAttendanceType] = useState(null)
+  
+  // Work locations for sales team (in real app, this would come from API)
+  const workLocations = [
+    {
+      id: 1,
+      name: 'Kantor Pusat PT Amsar',
+      lat: -6.2088,
+      lng: 106.8456,
+      radius: 100 // meters
+    },
+    {
+      id: 2,
+      name: 'Site Proyek RS Cina',
+      lat: -6.1751,
+      lng: 106.8650,
+      radius: 50
+    },
+    {
+      id: 3,
+      name: 'Customer Visit Area',
+      lat: -6.2297,
+      lng: 106.8175,
+      radius: 200
+    }
+  ]
 
   useEffect(() => {
     fetchData()
@@ -92,7 +143,7 @@ export default function AttendancePage() {
   }
 
   const handleCheckIn = async () => {
-    // For Sales Manager and Sales, use camera attendance
+    // For Sales Manager and Sales, use camera attendance with location validation
     if (user?.role === 'sales_manager' || user?.role === 'sales') {
       setAttendanceType('check-in')
       setShowCameraModal(true)
@@ -135,7 +186,7 @@ export default function AttendancePage() {
   }
 
   const handleCheckOut = async () => {
-    // For Sales Manager and Sales, use camera attendance
+    // For Sales Manager and Sales, use camera attendance with location validation
     if (user?.role === 'sales_manager' || user?.role === 'sales') {
       setAttendanceType('check-out')
       setShowCameraModal(true)
@@ -184,13 +235,16 @@ export default function AttendancePage() {
       
       toast.loading('Memproses attendance...', { id: 'attendance' })
       
+      // Handle new data format from fixed camera component
       const submitData = {
-        latitude: attendanceData.gps.latitude,
-        longitude: attendanceData.gps.longitude,
+        latitude: attendanceData.latitude || 0, // Allow null GPS
+        longitude: attendanceData.longitude || 0,
         photo: attendanceData.photo,
-        gps_data: attendanceData.gps,
-        gps_warnings: attendanceData.gps_warnings,
+        gps_data: attendanceData.gps_data,
+        gps_warnings: attendanceData.gps_warnings || [],
         device_info: attendanceData.device_info,
+        status: attendanceData.status, // New: pass status from frontend
+        gps_warning: attendanceData.gps_warning, // New: pass GPS warning flag
         [attendanceType === 'check-in' ? 'check_in_time' : 'check_out_time']: attendanceData.timestamp
       }
       
@@ -242,14 +296,6 @@ export default function AttendancePage() {
     }
   }
 
-  const formatTime = (timeString) => {
-    if (!timeString) return '-'
-    return new Date(timeString).toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -257,18 +303,6 @@ export default function AttendancePage() {
       month: 'long',
       day: 'numeric'
     })
-  }
-
-  const calculateWorkingHours = (checkIn, checkOut) => {
-    if (!checkIn || !checkOut) return '-'
-    
-    const start = new Date(checkIn)
-    const end = new Date(checkOut)
-    const diff = end - start
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    
-    return `${hours}j ${minutes}m`
   }
 
   const getStatusBadge = (attendance) => {
@@ -299,6 +333,26 @@ export default function AttendancePage() {
       )
     },
     {
+      key: 'photo',
+      label: 'Foto',
+      render: (attendance) => (
+        <div className="flex items-center justify-center">
+          {attendance.check_in_photo ? (
+            <img 
+              src={getPhotoSrc(attendance.check_in_photo)} 
+              alt="Foto Check-In"
+              onError={(e) => console.log('Photo src was:', e.target.src)}
+              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+              <User size={16} className="text-gray-400" />
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
       key: 'check_in',
       label: 'Check In',
       render: (attendance) => (
@@ -323,7 +377,7 @@ export default function AttendancePage() {
       label: 'Jam Kerja',
       render: (attendance) => (
         <span className="text-sm font-medium text-gray-900">
-          {calculateWorkingHours(attendance.check_in_time, attendance.check_out_time)}
+          {calculateDuration(attendance.check_in_time, attendance.check_out_time)}
         </span>
       )
     },
@@ -337,11 +391,14 @@ export default function AttendancePage() {
             {attendance.check_in_latitude && attendance.check_in_longitude ? (
               <>
                 <span className="text-xs text-gray-600 block">
-                  {attendance.check_in_latitude.toFixed(4)}, {attendance.check_in_longitude.toFixed(4)}
+                  {attendance.check_in_latitude && attendance.check_in_longitude ? 
+                    `${parseFloat(attendance.check_in_latitude).toFixed(4)}, ${parseFloat(attendance.check_in_longitude).toFixed(4)}` : 
+                    'GPS tidak tersedia'
+                  }
                 </span>
                 {attendance.check_out_latitude && attendance.check_out_longitude && (
                   <span className="text-xs text-gray-500 block">
-                    Out: {attendance.check_out_latitude.toFixed(4)}, {attendance.check_out_longitude.toFixed(4)}
+                    Out: {parseFloat(attendance.check_out_latitude).toFixed(4)}, {parseFloat(attendance.check_out_longitude).toFixed(4)}
                   </span>
                 )}
               </>
@@ -378,11 +435,11 @@ export default function AttendancePage() {
       </div>
 
       {/* Today's Status */}
-      <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-6 mb-8 border border-red-100">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 md:p-6 mb-6 md:mb-8 border border-red-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex-1">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">Kehadiran Hari Ini</h2>
-            <p className="text-red-700 font-medium">{today}</p>
+            <p className="text-red-700 font-medium text-sm md:text-base">{today}</p>
             
             {todayAttendance ? (
               <div className="mt-4 space-y-2">
@@ -409,7 +466,7 @@ export default function AttendancePage() {
                     <Clock className="text-blue-500" size={16} />
                     <span className="text-sm">
                       Total Jam Visit: <span className="font-medium">
-                        {calculateWorkingHours(todayAttendance.check_in_time, todayAttendance.check_out_time)}
+                        {calculateDuration(todayAttendance.check_in_time, todayAttendance.check_out_time)}
                       </span>
                     </span>
                   </div>
@@ -420,8 +477,30 @@ export default function AttendancePage() {
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <MapPin size={12} />
                     <span>
-                      GPS: {todayAttendance.check_in_latitude.toFixed(6)}, {todayAttendance.check_in_longitude.toFixed(6)}
+                      GPS: {todayAttendance.check_in_latitude && todayAttendance.check_in_longitude ? 
+                        `${parseFloat(todayAttendance.check_in_latitude).toFixed(6)}, ${parseFloat(todayAttendance.check_in_longitude).toFixed(6)}` : 
+                        'GPS tidak tersedia'
+                      }
                     </span>
+                  </div>
+                )}
+                
+                {/* Check-in Photo */}
+                {todayAttendance?.check_in_photo && (
+                  <div style={{marginTop: '12px'}}>
+                    <p style={{fontSize: '12px', color: '#666', marginBottom: '4px'}}>Foto Check-In:</p>
+                    <img 
+                      src={getPhotoSrc(todayAttendance.check_in_photo)} 
+                      alt="Foto Check-In"
+                      onError={(e) => console.log('Photo src was:', e.target.src)}
+                      style={{
+                        width: '120px', 
+                        height: '120px', 
+                        objectFit: 'cover', 
+                        borderRadius: '8px',
+                        border: '2px solid #e5e7eb'
+                      }} 
+                    />
                   </div>
                 )}
               </div>
@@ -430,12 +509,12 @@ export default function AttendancePage() {
             )}
           </div>
           
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 w-full md:w-auto">
             {canCheckIn && (
               <Button
                 onClick={handleCheckIn}
                 disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 h-12 md:h-auto text-base md:text-sm w-full md:w-auto"
               >
                 <Navigation size={16} />
                 Check In
@@ -446,7 +525,7 @@ export default function AttendancePage() {
               <Button
                 onClick={handleCheckOut}
                 disabled={actionLoading}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 h-12 md:h-auto text-base md:text-sm w-full md:w-auto"
               >
                 <Navigation size={16} />
                 Check Out
@@ -484,7 +563,7 @@ export default function AttendancePage() {
 
       {/* Current Location Display */}
       {(currentLocation || todayAttendance?.check_in_latitude) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="text-blue-600" size={16} />
             <span className="text-sm font-medium text-blue-800">
@@ -494,8 +573,8 @@ export default function AttendancePage() {
           
           {currentLocation && (
             <>
-              <p className="text-xs text-blue-700 mb-1">
-                GPS: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+              <p className="text-xs text-blue-700 mb-1 break-all">
+                GPS: {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
               </p>
               <p className="text-xs text-blue-600">
                 Akurasi: ±{Math.round(currentLocation.accuracy)}m
@@ -505,12 +584,12 @@ export default function AttendancePage() {
           
           {todayAttendance?.check_in_latitude && !currentLocation && (
             <>
-              <p className="text-xs text-blue-700 mb-1">
-                Check-in: {todayAttendance.check_in_latitude.toFixed(6)}, {todayAttendance.check_in_longitude.toFixed(6)}
+              <p className="text-xs text-blue-700 mb-1 break-all">
+                Check-in: {parseFloat(todayAttendance.check_in_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_in_longitude).toFixed(6)}
               </p>
               {todayAttendance.check_out_latitude && (
-                <p className="text-xs text-blue-700">
-                  Check-out: {todayAttendance.check_out_latitude.toFixed(6)}, {todayAttendance.check_out_longitude.toFixed(6)}
+                <p className="text-xs text-blue-700 break-all">
+                  Check-out: {parseFloat(todayAttendance.check_out_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_out_longitude).toFixed(6)}
                 </p>
               )}
             </>
@@ -525,12 +604,14 @@ export default function AttendancePage() {
           <h2 className="text-lg font-semibold text-gray-900">Riwayat Kehadiran</h2>
         </div>
         
-        <DataTable
-          columns={columns}
-          data={attendanceHistory}
-          loading={loading}
-          emptyMessage="Belum ada riwayat kehadiran"
-        />
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={attendanceHistory}
+            loading={loading}
+            emptyMessage="Belum ada riwayat kehadiran"
+          />
+        </div>
       </div>
 
       {/* Camera Modal */}
@@ -542,6 +623,7 @@ export default function AttendancePage() {
             setShowCameraModal(false)
             setAttendanceType(null)
           }}
+          workLocations={workLocations}
         />
       )}
     </div>

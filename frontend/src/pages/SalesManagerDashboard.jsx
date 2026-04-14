@@ -19,6 +19,13 @@ export default function SalesManagerDashboard() {
 
   useEffect(() => {
     loadDashboardData()
+    
+    // Auto-refresh data every 60 seconds
+    const interval = setInterval(() => {
+      loadDashboardData()
+    }, 60000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const loadDashboardData = async () => {

@@ -160,7 +160,7 @@ export default function App() {
           <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
           <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
           <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
-          <Route path="attendance"       element={<VisitManagementOnly><AttendancePage /></VisitManagementOnly>} />
+          <Route path="attendance"       element={<AttendancePage />} />
           <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
           <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
         </Route>

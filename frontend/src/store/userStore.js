@@ -10,6 +10,7 @@ const useUserStore = create(
   persist(
     (set, get) => ({
       users: [], // Users now fetched from backend API, no hardcoded data
+      lastFetch: null, // Timestamp of last fetch
 
       addUser: (userData) => {
         const newUser = {
@@ -54,21 +55,43 @@ const useUserStore = create(
       // Fetch users from backend API
       fetchUsers: async () => {
         try {
-          const response = await fetch('/api/users', {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            console.warn('UserStore: No token found, cannot fetch users');
+            return [];
+          }
+
+          console.log('UserStore: Fetching users with token:', token.substring(0, 20) + '...');
+
+          const response = await fetch('http://127.0.0.1:8000/api/users', {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           });
           
           if (response.ok) {
             const data = await response.json();
             const users = data.data || data;
+            console.log('UserStore: Fetched users from API:', users);
+            console.log('UserStore: Setting users in store...');
+            
+            // Force update the store
             set({ users: Array.isArray(users) ? users : [] });
+            
+            // Also trigger a re-render by updating a timestamp
+            set(state => ({ ...state, lastFetch: Date.now() }));
+            
+            console.log('UserStore: Users set successfully, count:', users.length);
             return users;
+          } else {
+            console.error('UserStore: Failed to fetch users:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('UserStore: Error response:', errorText);
           }
         } catch (error) {
-          console.error('Error fetching users:', error);
+          console.error('UserStore: Error fetching users:', error);
         }
         return [];
       },

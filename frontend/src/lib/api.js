@@ -215,4 +215,24 @@ export const api = {
     const q = new URLSearchParams(params).toString()
     return request('GET', `/reports/sales-performance${q ? '?'+q : ''}`)
   },
+
+  // Role-based Dashboard Endpoints
+  getAdminDashboard: ()      => request('GET',    '/admin/dashboard-stats'),
+  getSiteDashboard:  ()      => request('GET',    '/site/dashboard-stats'),
+  getSalesDashboard: ()      => request('GET',    '/sales/dashboard-stats'),
+  getAdminUsers:     ()      => request('GET',    '/admin/users'),
+  getAdminAttendanceMonitor: (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/admin/attendance-monitor${q ? '?'+q : ''}`)
+  },
+  getAdminActivityLogs: (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return request('GET', `/admin/activity-logs${q ? '?'+q : ''}`)
+  },
+  getSiteProjects:   ()      => request('GET',    '/site/projects'),
+  createSiteProject: (data)  => request('POST',   '/site/projects', data),
+  updateSiteProject: (id, d) => request('PUT',    `/site/projects/${id}`, d),
+  getSalesCustomers: ()      => request('GET',    '/sales/customers'),
+  getSalesPlanVisits: ()     => request('GET',    '/sales/plan-visits'),
+  getSalesVisitRealizations: () => request('GET', '/sales/visit-realizations'),
 }

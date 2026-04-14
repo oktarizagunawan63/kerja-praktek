@@ -7,26 +7,20 @@ import toast from 'react-hot-toast'
 const MIN_GPS_ACCURACY = 50 // meters
 const MAX_GPS_AGE = 30000 // 30 seconds
 
-// Anti-fake GPS detection
+// Anti-fake GPS detection - FIXED LOGIC
 const detectFakeGPS = (position) => {
   const warnings = []
   
-  // Check accuracy - fake GPS often has perfect accuracy
-  if (position.coords.accuracy < 5) {
-    warnings.push('GPS accuracy suspiciously high')
-  }
-  
-  // Check if coordinates are too precise (fake GPS often uses exact decimals)
-  const lat = position.coords.latitude
-  const lng = position.coords.longitude
-  const latDecimals = lat.toString().split('.')[1]?.length || 0
-  const lngDecimals = lng.toString().split('.')[1]?.length || 0
-  
-  if (latDecimals > 10 || lngDecimals > 10) {
-    warnings.push('GPS coordinates suspiciously precise')
+  // CORRECTED: Check accuracy - fake GPS often has TOO PERFECT accuracy
+  // Normal GPS: 10-200m accuracy is normal for WiFi/cell triangulation
+  // Suspicious: < 5m accuracy AND speed === 0 (too perfect = likely spoofed)
+  if (position.coords.accuracy < 5 && (position.coords.speed === 0 || position.coords.speed === null)) {
+    warnings.push('GPS accuracy suspiciously perfect (possible spoofing)')
   }
   
   // Check for common fake GPS coordinates (0,0 or other obvious fakes)
+  const lat = position.coords.latitude
+  const lng = position.coords.longitude
   if ((lat === 0 && lng === 0) || 
       (Math.abs(lat) < 0.001 && Math.abs(lng) < 0.001)) {
     warnings.push('Invalid GPS coordinates detected')
@@ -42,16 +36,56 @@ const detectFakeGPS = (position) => {
   return warnings
 }
 
-export default function CameraAttendance({ onCapture, onCancel, type = 'check-in' }) {
+export default function CameraAttendance({ onCapture, onCancel, type = 'check-in', workLocations = [] }) {
   const [isCapturing, setIsCapturing] = useState(false)
   const [stream, setStream] = useState(null)
   const [capturedImage, setCapturedImage] = useState(null)
   const [gpsData, setGpsData] = useState(null)
   const [gpsWarnings, setGpsWarnings] = useState([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [validWorkLocation, setValidWorkLocation] = useState(null)
   
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3 // Earth's radius in meters
+    const φ1 = lat1 * Math.PI/180
+    const φ2 = lat2 * Math.PI/180
+    const Δφ = (lat2-lat1) * Math.PI/180
+    const Δλ = (lon2-lon1) * Math.PI/180
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+
+    return R * c // Distance in meters
+  }
+
+  // Check if current location is within any work location
+  const validateWorkLocation = (currentLat, currentLng) => {
+    if (!workLocations || workLocations.length === 0) {
+      return { isValid: true, location: null, distance: 0 }
+    }
+
+    for (const location of workLocations) {
+      const distance = calculateDistance(currentLat, currentLng, location.lat, location.lng)
+      if (distance <= location.radius) {
+        return { isValid: true, location, distance: Math.round(distance) }
+      }
+    }
+
+    // Find closest location for error message
+    const distances = workLocations.map(loc => ({
+      ...loc,
+      distance: calculateDistance(currentLat, currentLng, loc.lat, loc.lng)
+    }))
+    const closest = distances.reduce((min, loc) => loc.distance < min.distance ? loc : min)
+
+    return { isValid: false, location: closest, distance: Math.round(closest.distance) }
+  }
 
   // Start camera
   const startCamera = useCallback(async () => {
@@ -117,12 +151,24 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
             speed: position.coords.speed
           }
           
+          // Validate work location
+          const workLocationCheck = validateWorkLocation(
+            position.coords.latitude, 
+            position.coords.longitude
+          )
+          
+          setValidWorkLocation(workLocationCheck)
           setGpsData(locationData)
           
           if (warnings.length > 0) {
             toast.error(`GPS Warning: ${warnings.join(', ')}`)
+          } else if (!workLocationCheck.isValid) {
+            toast.error(`Anda berada ${workLocationCheck.distance}m dari ${workLocationCheck.location.name}. Harus dalam radius ${workLocationCheck.location.radius}m.`)
           } else {
-            toast.success(`GPS acquired: ±${Math.round(position.coords.accuracy)}m accuracy`)
+            const locationMsg = workLocationCheck.location 
+              ? `di ${workLocationCheck.location.name} (${workLocationCheck.distance}m)`
+              : 'lokasi valid'
+            toast.success(`GPS acquired: ±${Math.round(position.coords.accuracy)}m accuracy, ${locationMsg}`)
           }
           
           resolve(locationData)
@@ -146,19 +192,17 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
         options
       )
     })
-  }, [])
+  }, [workLocations])
 
-  // Capture photo
+  // Capture photo - ALWAYS ALLOW (no GPS/location blocking)
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || !gpsData) {
-      toast.error('Kamera atau GPS belum siap')
+    if (!videoRef.current || !canvasRef.current) {
+      toast.error('Kamera belum siap')
       return
     }
     
-    if (gpsWarnings.length > 0) {
-      toast.error('Tidak dapat melanjutkan karena ada warning GPS')
-      return
-    }
+    // Allow capture even without GPS or outside work area
+    // Warnings will be saved to database but won't block the action
     
     const video = videoRef.current
     const canvas = canvasRef.current
@@ -172,17 +216,37 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
     
     // Add timestamp and GPS overlay
-    context.fillStyle = 'rgba(0, 0, 0, 0.7)'
-    context.fillRect(0, canvas.height - 100, canvas.width, 100)
+    context.fillStyle = 'rgba(0, 0, 0, 0.8)'
+    context.fillRect(0, canvas.height - 120, canvas.width, 120)
     
     context.fillStyle = 'white'
     context.font = '16px Arial'
     const timestamp = new Date().toLocaleString('id-ID')
-    const gpsText = `GPS: ${gpsData.latitude.toFixed(6)}, ${gpsData.longitude.toFixed(6)} (±${Math.round(gpsData.accuracy)}m)`
     
-    context.fillText(`${type.toUpperCase()} - ${timestamp}`, 10, canvas.height - 70)
-    context.fillText(gpsText, 10, canvas.height - 45)
-    context.fillText(`Accuracy: ${Math.round(gpsData.accuracy)}m | Alt: ${gpsData.altitude?.toFixed(1) || 'N/A'}m`, 10, canvas.height - 20)
+    let gpsText = 'GPS: Tidak tersedia'
+    let locationText = 'Lokasi: Tidak diketahui'
+    let statusText = 'Status: Check-in tanpa GPS'
+    
+    if (gpsData) {
+      gpsText = `GPS: ${gpsData.latitude.toFixed(6)}, ${gpsData.longitude.toFixed(6)} (±${Math.round(gpsData.accuracy)}m)`
+      
+      if (validWorkLocation?.location) {
+        locationText = `Lokasi: ${validWorkLocation.location.name} (${validWorkLocation.distance}m)`
+        statusText = validWorkLocation.isValid ? 'Status: Di lokasi kerja' : 'Status: Di luar area kerja'
+      } else {
+        locationText = 'Lokasi: Valid'
+        statusText = 'Status: Lokasi valid'
+      }
+      
+      if (gpsWarnings.length > 0) {
+        statusText = 'Status: GPS Warning - ' + gpsWarnings[0]
+      }
+    }
+    
+    context.fillText(`${type.toUpperCase()} - ${timestamp}`, 10, canvas.height - 90)
+    context.fillText(gpsText, 10, canvas.height - 65)
+    context.fillText(locationText, 10, canvas.height - 40)
+    context.fillText(statusText, 10, canvas.height - 15)
     
     // Convert to blob
     canvas.toBlob((blob) => {
@@ -195,12 +259,12 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
         setStream(null)
       }
     }, 'image/jpeg', 0.9)
-  }, [gpsData, gpsWarnings, stream, type])
+  }, [gpsData, gpsWarnings, validWorkLocation, stream, type])
 
-  // Submit attendance
+  // Submit attendance - ALWAYS ALLOW with proper status
   const submitAttendance = useCallback(async () => {
-    if (!capturedImage || !gpsData) {
-      toast.error('Foto atau data GPS tidak lengkap')
+    if (!capturedImage) {
+      toast.error('Foto tidak tersedia')
       return
     }
     
@@ -215,11 +279,40 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
       reader.onloadend = () => {
         const base64Image = reader.result
         
+        // Determine status and warnings
+        let attendanceStatus = 'present'
+        let hasGpsWarning = false
+        let spoofingSuspected = false
+        
+        if (!gpsData) {
+          attendanceStatus = 'no_gps'
+          hasGpsWarning = true
+        } else {
+          // Check GPS spoofing
+          if (gpsWarnings.length > 0) {
+            spoofingSuspected = true
+            hasGpsWarning = true
+          }
+          
+          // Check work location
+          if (validWorkLocation && !validWorkLocation.isValid) {
+            attendanceStatus = 'outside_area'
+            hasGpsWarning = true
+          }
+        }
+        
         const attendanceData = {
           type,
           photo: base64Image,
-          gps: gpsData,
+          latitude: gpsData?.latitude || null,
+          longitude: gpsData?.longitude || null,
+          gps_data: gpsData ? {
+            ...gpsData,
+            spoofing_suspected: spoofingSuspected
+          } : null,
           gps_warnings: gpsWarnings,
+          status: attendanceStatus,
+          gps_warning: hasGpsWarning,
           timestamp: new Date().toISOString(),
           device_info: {
             userAgent: navigator.userAgent,
@@ -238,7 +331,7 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
       toast.error('Gagal mengirim data attendance')
       setIsProcessing(false)
     }
-  }, [capturedImage, gpsData, gpsWarnings, type, onCapture])
+  }, [capturedImage, gpsData, gpsWarnings, validWorkLocation, type, onCapture])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -262,19 +355,20 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
   }, [capturedImage, startCamera])
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {type === 'check-in' ? 'Check In' : 'Check Out'} dengan Kamera
-          </h3>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={24} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 md:p-4">
+      <div className="bg-white rounded-xl w-full h-full md:h-auto md:max-w-md md:w-full overflow-y-auto">
+        <div className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {type === 'check-in' ? 'Check In' : 'Check Out'} dengan Kamera
+            </h3>
+            <button
+              onClick={onCancel}
+              className="text-gray-400 hover:text-gray-600 p-2"
+            >
+              <X size={24} />
+            </button>
+          </div>
 
         {!isCapturing && !capturedImage && (
           <div className="text-center py-8">
@@ -306,7 +400,15 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
                 <div className="flex items-center gap-1">
                   <MapPin size={12} />
                   {gpsData ? (
-                    <span className="text-green-400">GPS Ready</span>
+                    validWorkLocation?.isValid ? (
+                      <span className="text-green-400">
+                        {validWorkLocation.location ? `At ${validWorkLocation.location.name}` : 'Location Valid'}
+                      </span>
+                    ) : (
+                      <span className="text-red-400">
+                        {validWorkLocation.distance}m from work area
+                      </span>
+                    )
                   ) : (
                     <span className="text-yellow-400">Getting GPS...</span>
                   )}
@@ -339,6 +441,29 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
                   )}
                 </div>
                 
+                {/* Work Location Status */}
+                {validWorkLocation && (
+                  <div className={`mt-2 p-2 border rounded ${
+                    validWorkLocation.isValid 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-red-50 border-red-200'
+                  }`}>
+                    <p className={`text-xs font-medium ${
+                      validWorkLocation.isValid ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {validWorkLocation.isValid ? '✅ Lokasi Kerja Valid' : '❌ Tidak di Lokasi Kerja'}
+                    </p>
+                    {validWorkLocation.location && (
+                      <p className={`text-xs ${
+                        validWorkLocation.isValid ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {validWorkLocation.location.name}: {validWorkLocation.distance}m 
+                        {validWorkLocation.isValid ? ' (dalam radius)' : ` (butuh dalam ${validWorkLocation.location.radius}m)`}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 {gpsWarnings.length > 0 && (
                   <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
                     <p className="text-red-700 text-xs font-medium">Peringatan GPS:</p>
@@ -360,11 +485,19 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
               </Button>
               <Button
                 onClick={capturePhoto}
-                disabled={!gpsData || gpsWarnings.length > 0}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={!gpsData} // Only disable if no GPS data at all
+                className={`flex-1 ${
+                  !gpsData ? 'bg-gray-400 cursor-not-allowed' :
+                  gpsWarnings.length > 0 ? 'bg-orange-500 hover:bg-orange-600' :
+                  (validWorkLocation && !validWorkLocation.isValid) ? 'bg-orange-500 hover:bg-orange-600' :
+                  'bg-green-600 hover:bg-green-700'
+                }`}
               >
                 <Camera size={16} />
-                Ambil Foto
+                {!gpsData ? 'Menunggu GPS...' :
+                 gpsWarnings.length > 0 ? 'Check In (GPS Warning)' :
+                 (validWorkLocation && !validWorkLocation.isValid) ? 'Check In (Di Luar Area)' :
+                 'Check In'}
               </Button>
             </div>
           </div>
@@ -408,6 +541,7 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )
