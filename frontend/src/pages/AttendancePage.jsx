@@ -92,13 +92,11 @@ export default function AttendancePage() {
     const salesRoles = ['sales_manager', 'sales']
     
     if (adminRoles.includes(user.role) || isAdministrator(user)) {
-      console.log('Admin user detected, redirecting to attendance monitor:', user?.role)
       navigate('/admin/attendance-monitor', { replace: true })
       return
     }
     
     if (!salesRoles.includes(user.role)) {
-      console.log('Non-sales user detected, redirecting to dashboard:', user?.role)
       navigate('/dashboard', { replace: true })
       return
     }

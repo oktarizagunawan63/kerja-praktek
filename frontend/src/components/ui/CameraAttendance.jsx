@@ -485,16 +485,16 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
               </Button>
               <Button
                 onClick={capturePhoto}
-                disabled={!gpsData} // Only disable if no GPS data at all
+                disabled={false} // ALWAYS ALLOW - never disable capture
                 className={`flex-1 ${
-                  !gpsData ? 'bg-gray-400 cursor-not-allowed' :
+                  !gpsData ? 'bg-orange-500 hover:bg-orange-600' :
                   gpsWarnings.length > 0 ? 'bg-orange-500 hover:bg-orange-600' :
                   (validWorkLocation && !validWorkLocation.isValid) ? 'bg-orange-500 hover:bg-orange-600' :
                   'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 <Camera size={16} />
-                {!gpsData ? 'Menunggu GPS...' :
+                {!gpsData ? 'Check In (Tanpa GPS)' :
                  gpsWarnings.length > 0 ? 'Check In (GPS Warning)' :
                  (validWorkLocation && !validWorkLocation.isValid) ? 'Check In (Di Luar Area)' :
                  'Check In'}

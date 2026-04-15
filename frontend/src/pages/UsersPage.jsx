@@ -48,7 +48,6 @@ export default function UsersPage() {
     try {
       setLoading(true)
       const response = await api.getUsers()
-      console.log('Users API response:', response) // Debug log
       if (response && (response.data || Array.isArray(response))) {
         setUsers(response.data || response)
       } else {
@@ -76,9 +75,7 @@ export default function UsersPage() {
     }
     
     try {
-      console.log('Creating user with data:', form) // Debug log
       const response = await api.createUser(form)
-      console.log('Create user response:', response) // Debug log
       if (response && (response.data || response.id)) {
         toast.success('User berhasil ditambahkan')
         setOpen(false)
@@ -122,9 +119,7 @@ export default function UsersPage() {
     }
     
     try {
-      console.log('Deleting user:', u.id) // Debug log
       const response = await api.deleteUser(u.id)
-      console.log('Delete user response:', response) // Debug log
       if (response && (response.message || response.success !== false)) {
         toast.success('User berhasil dihapus')
         fetchUsers() // Refresh the list
@@ -142,9 +137,7 @@ export default function UsersPage() {
     if (!selUser) return
     
     try {
-      console.log('Assigning project:', projectId, 'to user:', selUser.id) // Debug log
       const response = await api.assignProject(selUser.id, projectId)
-      console.log('Assign project response:', response) // Debug log
       if (response && (response.data || response.id)) {
         // Update local state
         const updatedUser = response.data || response

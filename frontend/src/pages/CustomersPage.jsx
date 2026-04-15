@@ -40,13 +40,10 @@ export default function CustomersPage() {
     try {
       setLoading(true)
       setError(null)
-      console.log('Fetching customers with search:', searchQuery)
       const response = await api.getCustomers({ search: searchQuery })
-      console.log('API Response:', response)
       
       // Handle both paginated and non-paginated responses
       const customersData = response.data?.data || response.data || []
-      console.log('Customers data:', customersData)
       setCustomers(Array.isArray(customersData) ? customersData : [])
     } catch (error) {
       console.error('Error fetching customers:', error)

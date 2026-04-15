@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
-  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail, 
-  Calendar, MapPin, DollarSign, TrendingUp, User, Camera, Edit
+  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
@@ -19,7 +18,6 @@ import { exportProyekPDF } from '../lib/exportPdf'
 import { api } from '../lib/api'
 
 // ── constants ─────────────────────────────────────────────────────────────────
-const SATUAN = ['m3','m2','m','ton','kg','btg','unit','set','ls','buah','liter','zak']
 
 const HIcon = {
   material: <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center"><Plus size={13} className="text-blue-600"/></div>,
@@ -52,62 +50,12 @@ export default function ProjectDetailPage() {
   const [completeNote, setCompleteNote] = useState('')
   
   // New state for enhanced features
-  const [assignEngineerOpen, setAssignEngineerOpen] = useState(false)
-  const [availableEngineers, setAvailableEngineers] = useState([])
-  const [selectedEngineer, setSelectedEngineer] = useState('')
-  const [progressReports, setProgressReports] = useState([])
-  const [rabRealisasi, setRabRealisasi] = useState([])
-  const [addRabOpen, setAddRabOpen] = useState(false)
-  const [rabForm, setRabForm] = useState({
-    description: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0]
-  })
-  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
 
   // Load additional data on component mount
   useEffect(() => {
-    if (project) {
-      loadProgressReports()
-      loadRabRealisasi()
-      if (user?.role === 'site_manager') {
-        loadAvailableEngineers()
-      }
-    }
+    // Future: Load progress reports and RAB realisasi here
   }, [project, user])
-
-  const loadProgressReports = async () => {
-    try {
-      const response = await api.getProjectProgressReports(id)
-      if (response.success) {
-        setProgressReports(response.data)
-      }
-    } catch (error) {
-      console.warn('Failed to load progress reports:', error.message)
-    }
-  }
-
-  const loadRabRealisasi = async () => {
-    try {
-      const response = await api.getProjectRabRealisasi(id)
-      if (response.success) {
-        setRabRealisasi(response.data)
-      }
-    } catch (error) {
-      console.warn('Failed to load RAB realisasi:', error.message)
-    }
-  }
-
-  const loadAvailableEngineers = async () => {
-    try {
-      const response = await api.getProjectEngineers()
-      if (response.success) {
-        setAvailableEngineers(response.data)
-      }
-    } catch (error) {
-      console.warn('Failed to load engineers:', error.message)
-    }
-  }
   const [rabInput,     setRabInput]     = useState('')
   const [matForm,      setMatForm]      = useState({ qty: '', catatan: '', files: [] })
   const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })
@@ -120,9 +68,7 @@ export default function ProjectDetailPage() {
     setTeamOpen(true)
     setLoadingUsers(true)
     try {
-      console.log('Fetching users for engineer assignment...')
-      const fetchedUsers = await fetchUsers()
-      console.log('Users fetched:', fetchedUsers)
+      await fetchUsers()
     } catch (error) {
       console.error('Error fetching users:', error)
     } finally {
@@ -366,151 +312,291 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Material Terpasang */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-700">Material Terpasang</h3>
-          {!isCompleted && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Tambah Material</button>}
-        </div>
-        <div className="space-y-3">
-          {materials.map(mat => {
-            const pct = Math.round((mat.qty_terpasang / mat.qty_plan) * 100)
-            return (
-              <div key={mat.id} className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{mat.name}</p>
-                    <p className="text-xs text-gray-400">Terpasang: {mat.qty_terpasang} / {mat.qty_plan} {mat.unit}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold ${pct>=100?'text-green-600':'text-gray-600'}`}>{Math.min(pct,100)}%</span>
-                    {!isCompleted && <>
-                      <button onClick={() => { setSelMat(mat); setMatForm({ qty:'', catatan:'', files:[] }); setMatOpen(true) }}
-                        className="flex items-center gap-1 text-xs bg-[#0f4c81] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#1a6bb5]">
-                        <Plus size={12}/> Tambah
-                      </button>
-                      <button onClick={() => { deleteMaterial(id, mat.id); toast.success(`${mat.name} dihapus`) }}
-                        className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={13}/></button>
-                    </>}
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${pct>=100?'bg-green-500':'bg-blue-500'}`} style={{width:`${Math.min(pct,100)}%`}}/>
-                </div>
-              </div>
-            )
-          })}
-          {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material — klik "+ Tambah Material"</p>}
-        </div>
-      </div>
-
-      {/* Dokumen Proyek */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-semibold text-gray-700">Dokumen Proyek</h3>
-            <div className="flex gap-1">
-              {['semua','foto','laporan'].map(tab => (
-                <button key={tab} onClick={() => setDocTab(tab)}
-                  className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${docTab===tab?'bg-[#0f4c81] text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                  {tab==='semua'?'Semua':tab==='foto'?'Foto Progres':'Laporan'}
-                </button>
-              ))}
-            </div>
-          </div>
-          {!isCompleted && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Tambah Dokumen</button>}
+      {/* Tabs Navigation */}
+      <div className="card p-0">
+        <div className="flex border-b border-gray-100">
+          {[
+            { id: 'overview', label: 'Overview', icon: '📊' },
+            { id: 'engineers', label: 'Engineers', icon: '👥' },
+            { id: 'progress', label: 'Progress Reports', icon: '📈' },
+            { id: 'documents', label: 'Documents', icon: '📁' },
+            { id: 'rab', label: 'RAB', icon: '💰' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'text-[#0f4c81] border-b-2 border-[#0f4c81] bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {docTab === 'foto' && (() => {
-          const photos = docs.filter(d => d.fileType === 'image')
-          return photos.length === 0
-            ? <p className="text-sm text-gray-400 text-center py-8">Belum ada foto progres</p>
-            : <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {photos.map(doc => (
-                  <div key={doc.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer" onClick={() => setPreviewDoc(doc)}>
-                    <img src={doc.previewUrl} alt={doc.name} className="w-full h-full object-cover"/>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                      <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100"/>
+        <div className="p-6">
+          {/* Tab Content */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Project Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Description:</span>
+                      <span className="text-sm text-gray-800">{project.description || 'No description'}</span>
                     </div>
-                    {!isCompleted && <button onClick={e => { e.stopPropagation(); deleteDoc(doc.id); toast.success('Foto dihapus') }}
-                      className="absolute top-1.5 right-1.5 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100"><Trash2 size={11}/></button>}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Location:</span>
+                      <span className="text-sm text-gray-800">{project.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Created:</span>
+                      <span className="text-sm text-gray-800">{project.createdAt ? new Date(project.createdAt).toLocaleDateString('id-ID') : '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Site Manager:</span>
+                      <span className="text-sm text-gray-800">{project.pm}</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-        })()}
-
-        {docTab !== 'foto' && (
-          <div className="space-y-2">
-            {docs.filter(d => docTab==='semua' || d.fileType!=='image').map(doc => (
-              <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                {doc.fileType==='image' && doc.previewUrl
-                  ? <img src={doc.previewUrl} alt={doc.name} className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-pointer" onClick={() => setPreviewDoc(doc)}/>
-                  : doc.fileType==='image' ? <Image size={16} className="text-yellow-500 shrink-0"/> : <FileText size={16} className="text-blue-500 shrink-0"/>
-                }
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                  <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
                 </div>
-                {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
-                {!isCompleted && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
-                  className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Stats</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Progress:</span>
+                      <span className="text-sm font-semibold text-gray-800">{progressVal}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Materials:</span>
+                      <span className="text-sm text-gray-800">{materials.length} items</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Documents:</span>
+                      <span className="text-sm text-gray-800">{docs.length} files</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Budget Usage:</span>
+                      <span className="text-sm text-gray-800">{Math.round((project.realisasi || 0) / project.rab * 100)}%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-            {docs.filter(d => docTab==='semua' || d.fileType!=='image').length === 0 && <p className="text-sm text-gray-400 text-center py-4">Belum ada dokumen</p>}
-          </div>
-        )}
-      </div>
 
-      {/* Tim Proyek — assign engineer (hanya administrator & sales_manager) */}
-      {can(user, 'edit_project') && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users size={16} className="text-gray-400"/>
-              <h3 className="text-sm font-semibold text-gray-700">Tim Proyek</h3>
+              {/* Material Terpasang in Overview */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-700">Material Terpasang</h3>
+                  {!isCompleted && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Tambah Material</button>}
+                </div>
+                <div className="space-y-3">
+                  {materials.map(mat => {
+                    const pct = Math.round((mat.qty_terpasang / mat.qty_plan) * 100)
+                    return (
+                      <div key={mat.id} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{mat.name}</p>
+                            <p className="text-xs text-gray-400">Terpasang: {mat.qty_terpasang} / {mat.qty_plan} {mat.unit}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-semibold ${pct>=100?'text-green-600':'text-gray-600'}`}>{Math.min(pct,100)}%</span>
+                            {!isCompleted && <>
+                              <button onClick={() => { setSelMat(mat); setMatForm({ qty:'', catatan:'', files:[] }); setMatOpen(true) }}
+                                className="flex items-center gap-1 text-xs bg-[#0f4c81] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#1a6bb5]">
+                                <Plus size={12}/> Tambah
+                              </button>
+                              <button onClick={() => { deleteMaterial(id, mat.id); toast.success(`${mat.name} dihapus`) }}
+                                className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={13}/></button>
+                            </>}
+                          </div>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${pct>=100?'bg-green-500':'bg-blue-500'}`} style={{width:`${Math.min(pct,100)}%`}}/>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material — klik "+ Tambah Material"</p>}
+                </div>
+              </div>
             </div>
-            {!isCompleted && (
-              <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
-                <Plus size={13}/> Assign Engineer
-              </button>
-            )}
-          </div>
-          {(() => {
-            const engineers = users.filter(u =>
-              u.role === 'engineer' &&
-              (u.assignedProjects || []).includes(String(id))
-            )
-            return engineers.length === 0
-              ? <p className="text-sm text-gray-400 text-center py-4">Belum ada engineer di-assign ke proyek ini</p>
-              : <div className="space-y-2">
-                  {engineers.map(eng => (
-                    <div key={eng.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
-                        {eng.name.charAt(0).toUpperCase()}
-                      </div>
+          )}
+
+          {activeTab === 'engineers' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-700">Assigned Engineers</h3>
+                {!isCompleted && can(user, 'edit_project') && (
+                  <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+                    <Plus size={13}/> Assign Engineer
+                  </button>
+                )}
+              </div>
+              {(() => {
+                const engineers = users.filter(u =>
+                  u.role === 'engineer' &&
+                  (u.assignedProjects || []).includes(String(id))
+                )
+                return engineers.length === 0
+                  ? <p className="text-sm text-gray-400 text-center py-8">Belum ada engineer di-assign ke proyek ini</p>
+                  : <div className="space-y-3">
+                      {engineers.map(eng => (
+                        <div key={eng.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-sm font-bold shrink-0">
+                            {eng.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800">{eng.name}</p>
+                            <p className="text-xs text-gray-400">{eng.email}</p>
+                          </div>
+                          <Badge variant="default">Engineer</Badge>
+                          {!isCompleted && (
+                            <button
+                              onClick={() => {
+                                const assigned = (eng.assignedProjects || []).filter(p => p !== String(id))
+                                updateUser(eng.id, { assignedProjects: assigned })
+                                toast.success(`${eng.name} dilepas dari proyek`)
+                              }}
+                              className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
+                            >
+                              <X size={14}/>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+              })()}
+            </div>
+          )}
+
+          {activeTab === 'progress' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-700">Progress Reports</h3>
+                {!isCompleted && (
+                  <button className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+                    <Plus size={13}/> Add Report
+                  </button>
+                )}
+              </div>
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">Progress reports will be implemented here</p>
+                <p className="text-xs mt-1">Engineers can submit progress with photos</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Project Documents</h3>
+                  <div className="flex gap-1">
+                    {['semua','foto','laporan'].map(tab => (
+                      <button key={tab} onClick={() => setDocTab(tab)}
+                        className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${docTab===tab?'bg-[#0f4c81] text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                        {tab==='semua'?'Semua':tab==='foto'?'Foto Progres':'Laporan'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {!isCompleted && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Upload Document</button>}
+              </div>
+
+              {docTab === 'foto' && (() => {
+                const photos = docs.filter(d => d.fileType === 'image')
+                return photos.length === 0
+                  ? <p className="text-sm text-gray-400 text-center py-8">Belum ada foto progres</p>
+                  : <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {photos.map(doc => (
+                        <div key={doc.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer" onClick={() => setPreviewDoc(doc)}>
+                          <img src={doc.previewUrl} alt={doc.name} className="w-full h-full object-cover"/>
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                            <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100"/>
+                          </div>
+                          {!isCompleted && <button onClick={e => { e.stopPropagation(); deleteDoc(doc.id); toast.success('Foto dihapus') }}
+                            className="absolute top-1.5 right-1.5 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100"><Trash2 size={11}/></button>}
+                        </div>
+                      ))}
+                    </div>
+              })()}
+
+              {docTab !== 'foto' && (
+                <div className="space-y-2">
+                  {docs.filter(d => docTab==='semua' || d.fileType!=='image').map(doc => (
+                    <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      {doc.fileType==='image' && doc.previewUrl
+                        ? <img src={doc.previewUrl} alt={doc.name} className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-pointer" onClick={() => setPreviewDoc(doc)}/>
+                        : doc.fileType==='image' ? <Image size={16} className="text-yellow-500 shrink-0"/> : <FileText size={16} className="text-blue-500 shrink-0"/>
+                      }
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800">{eng.name}</p>
-                        <p className="text-xs text-gray-400">{eng.email}</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
                       </div>
-                      <Badge variant="default">Engineer</Badge>
-                      {!isCompleted && (
-                        <button
-                          onClick={() => {
-                            const assigned = (eng.assignedProjects || []).filter(p => p !== String(id))
-                            updateUser(eng.id, { assignedProjects: assigned })
-                            toast.success(`${eng.name} dilepas dari proyek`)
-                          }}
-                          className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
-                        >
-                          <X size={14}/>
-                        </button>
-                      )}
+                      {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
+                      {!isCompleted && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
+                        className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>}
                     </div>
                   ))}
+                  {docs.filter(d => docTab==='semua' || d.fileType!=='image').length === 0 && <p className="text-sm text-gray-400 text-center py-4">Belum ada dokumen</p>}
                 </div>
-          })()}
+              )}
+            </div>
+          )}
+
+          {activeTab === 'rab' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">RAB Target</h4>
+                  <p className="text-2xl font-bold text-blue-900">{formatRupiah(project.rab)}</p>
+                  <p className="text-xs text-blue-600 mt-1">Budget yang dialokasikan</p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-green-800 mb-2">RAB Realisasi</h4>
+                  <p className="text-2xl font-bold text-green-900">{formatRupiah(project.realisasi || 0)}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {Math.round((project.realisasi || 0) / project.rab * 100)}% dari target
+                  </p>
+                  {!isCompleted && can(user, 'edit_rab') && (
+                    <button onClick={() => { 
+                        const val = project.realisasi || 0
+                        setRabInput(val ? Number(val).toLocaleString('id-ID') : '')
+                        setEditRabOpen(true) 
+                      }}
+                      className="mt-2 text-xs text-green-700 hover:text-green-900 hover:underline">
+                      Edit Realisasi
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Budget Progress</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span>{Math.round((project.realisasi || 0) / project.rab * 100)}%</span>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${(project.realisasi || 0) > project.rab ? 'bg-red-500' : 'bg-green-500'}`}
+                      style={{width: `${Math.min(Math.round((project.realisasi || 0) / project.rab * 100), 100)}%`}}
+                    />
+                  </div>
+                  {(project.realisasi || 0) > project.rab && (
+                    <p className="text-xs text-red-600 mt-1">⚠️ Over budget by {formatRupiah((project.realisasi || 0) - project.rab)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* History */}
       <div className="card">

@@ -105,6 +105,7 @@ export const api = {
   getTrash:        ()       => request('GET',    '/projects/trash'),
   getKpi:          ()       => request('GET',    '/projects/kpi'),
   assignEngineer:  (projectId, engineerId) => request('POST', `/projects/${projectId}/assign-engineer`, { engineer_id: engineerId }),
+  assignEngineersToProject: (data) => request('POST', '/projects/assign-engineers', data),
   getProjectEngineers: () => request('GET', '/projects/engineers'),
 
   // Materials
@@ -136,6 +137,7 @@ export const api = {
     const q = new URLSearchParams(params).toString()
     return request('GET', `/users${q ? '?'+q : ''}`)
   },
+  getEngineers:   ()        => request('GET', '/engineers'),
   createUser:     (data)    => request('POST',   '/users', data),
   updateUser:     (id, d)   => request('PUT',    `/users/${id}`, d),
   deleteUser:     (id)      => request('DELETE', `/users/${id}`),
@@ -245,4 +247,7 @@ export const api = {
   getProgressReports: () => request('GET', '/engineer/progress-reports'),
   assignEngineer: (data) => request('POST', '/engineer/assign', data),
   getAvailableEngineers: () => request('GET', '/engineer/available'),
+
+  // Global Search
+  search: (query) => request('GET', `/search?q=${encodeURIComponent(query)}`),
 }

@@ -36,7 +36,7 @@ const EMPTY_FORM = {
 }
 
 export default function ProjectsPage() {
-  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash } = useAppStore()
+  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash, fetchProjects, projectsLoading } = useAppStore()
   const { user } = useAuthStore()
   const { users, updateUser, fetchUsers } = useUserStore()
   
@@ -62,15 +62,104 @@ export default function ProjectsPage() {
   const [permanentDeleteModal, setPermanentDeleteModal] = useState(null) // { id, name }
   const [assignModal, setAssignModal] = useState(null) // { projectId, projectName }
   const [selectedEngineers, setSelectedEngineers] = useState([])
+  const [availableEngineers, setAvailableEngineers] = useState([])
+  const [loadingEngineers, setLoadingEngineers] = useState(false)
   const navigate = useNavigate()
 
-  // Fetch users when component mounts
+  // Fetch projects and users when component mounts
   useEffect(() => {
-    console.log('ProjectsPage: Fetching users...')
-    fetchUsers().then(fetchedUsers => {
-      console.log('ProjectsPage: Users fetched:', fetchedUsers)
-    })
-  }, []) // Remove fetchUsers dependency
+    fetchProjects()
+    fetchUsers()
+  }, [fetchProjects, fetchUsers])
+
+  // Fetch engineers when assign modal opens
+  const fetchEngineersForAssignment = async () => {
+    if (!assignModal) return
+    
+    setLoadingEngineers(true)
+    try {
+      console.log('Fetching engineers from API...')
+      
+      // Try multiple possible endpoints
+      let response
+      try {
+        console.log('Trying /api/engineers endpoint...')
+        response = await api.getEngineers()
+      } catch (e) {
+        console.log('Trying /api/site/engineers endpoint...')
+        response = await fetch('/api/site/engineers', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Accept': 'application/json'
+          }
+        }).then(res => res.json())
+      }
+      
+      console.log('Full API response:', response)
+      console.log('Response.data:', response?.data)
+      console.log('Response type:', typeof response)
+      
+      // Handle all possible response formats
+      let engineerList = []
+      
+      if (Array.isArray(response)) {
+        // Direct array response
+        engineerList = response
+        console.log('Using direct array response')
+      } else if (Array.isArray(response?.data)) {
+        // Wrapped in data property
+        engineerList = response.data
+        console.log('Using response.data array')
+      } else if (Array.isArray(response?.engineers)) {
+        // Wrapped in engineers property
+        engineerList = response.engineers
+        console.log('Using response.engineers array')
+      } else if (response?.success && Array.isArray(response?.data)) {
+        // Success wrapper with data
+        engineerList = response.data
+        console.log('Using success wrapper response.data')
+      }
+      
+      console.log('Final engineer list:', engineerList)
+      console.log('Engineer count:', engineerList.length)
+      
+      if (engineerList.length > 0) {
+        setAvailableEngineers(engineerList)
+        
+        // Get currently assigned engineers for this project
+        const assignedEngineers = users.filter(u => 
+          u.role === 'engineer' && 
+          u.assignedProjects && 
+          u.assignedProjects.includes(String(assignModal.projectId))
+        ).map(u => u.id)
+        setSelectedEngineers(assignedEngineers)
+      } else {
+        console.warn('No engineers found in response')
+        setAvailableEngineers([])
+      }
+      
+    } catch (error) {
+      console.error('Error fetching engineers:', error)
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        stack: error.stack
+      })
+      setAvailableEngineers([])
+    } finally {
+      setLoadingEngineers(false)
+    }
+  }
+
+  // Fetch engineers when modal opens
+  useEffect(() => {
+    if (assignModal) {
+      fetchEngineersForAssignment()
+    } else {
+      setAvailableEngineers([])
+      setSelectedEngineers([])
+    }
+  }, [assignModal])
 
   const active    = visibleProjects.filter(p => p.status !== 'completed')
   const completed = visibleProjects.filter(p => p.status === 'completed')
@@ -254,45 +343,72 @@ export default function ProjectsPage() {
     setDeletePasswordError('')
   }
 
-  const handleAssignEngineers = () => {
-    if (!assignModal) return
+  const handleAssignEngineers = async () => {
+    if (!assignModal || selectedEngineers.length === 0) {
+      toast.error('Pilih engineer terlebih dahulu')
+      return
+    }
     
     const { projectId, projectName } = assignModal
     
-    // Update assigned projects for all engineers
-    users.forEach(u => {
-      if (u.role === 'engineer') {
-        const currentAssigned = u.assignedProjects || []
-        const isCurrentlyAssigned = currentAssigned.includes(String(projectId))
-        const shouldBeAssigned = selectedEngineers.includes(u.id)
+    try {
+      console.log('Assigning engineers to project:', {
+        project_id: parseInt(projectId),
+        engineer_ids: selectedEngineers.map(id => parseInt(id))
+      })
+      
+      // Send bulk assignment request with correct payload
+      const response = await api.assignEngineersToProject({
+        project_id: parseInt(projectId), // Ensure it's an integer
+        engineer_ids: selectedEngineers.map(id => parseInt(id)) // Ensure all IDs are integers
+      })
+      
+      if (response.success) {
+        // Update local state for each assigned engineer
+        selectedEngineers.forEach(engineerId => {
+          const engineer = availableEngineers.find(u => u.id === engineerId)
+          if (engineer) {
+            const currentAssigned = engineer.assignedProjects || []
+            if (!currentAssigned.includes(String(projectId))) {
+              updateUser(engineerId, { 
+                assignedProjects: [...currentAssigned, String(projectId)] 
+              })
+            }
+          }
+        })
         
-        if (shouldBeAssigned && !isCurrentlyAssigned) {
-          // Add project to engineer
-          updateUser(u.id, { 
-            assignedProjects: [...currentAssigned, String(projectId)] 
-          })
-        } else if (!shouldBeAssigned && isCurrentlyAssigned) {
-          // Remove project from engineer
-          updateUser(u.id, { 
-            assignedProjects: currentAssigned.filter(pid => pid !== String(projectId)) 
-          })
-        }
+        // Add activity log
+        const assignedEngineers = availableEngineers.filter(u => selectedEngineers.includes(u.id))
+        const engineerNames = assignedEngineers.map(u => u.name).join(', ')
+        
+        useAppStore.getState().addActivity({
+          action: 'Assign Engineer',
+          detail: `Engineer ${engineerNames} di-assign ke proyek "${projectName}"`,
+          user: user?.name,
+          projectId
+        })
+        
+        toast.success(`${selectedEngineers.length} engineer berhasil di-assign ke proyek "${projectName}"`)
+        setAssignModal(null)
+        setSelectedEngineers([])
+      } else {
+        toast.error('Gagal assign engineer: ' + (response.message || 'Unknown error'))
       }
-    })
-    
-    // Add activity log
-    const assignedEngineers = users.filter(u => selectedEngineers.includes(u.id))
-    const engineerNames = assignedEngineers.map(u => u.name).join(', ')
-    
-    useAppStore.getState().addActivity({
-      action: 'Assign Engineer',
-      detail: `Proyek "${projectName}" di-assign ke: ${engineerNames || 'Tidak ada'}`,
-      projectId
-    })
-    
-    toast.success(`Engineer berhasil di-assign ke proyek "${projectName}"`)
-    setAssignModal(null)
-    setSelectedEngineers([])
+      
+    } catch (error) {
+      console.error('Error assigning engineers:', error)
+      
+      // Show user-friendly error message
+      if (error.status === 422) {
+        toast.error('Data tidak valid. Pastikan proyek dan engineer dipilih dengan benar.')
+      } else if (error.status === 403) {
+        toast.error('Anda tidak memiliki permission untuk assign engineer.')
+      } else if (error.status === 404) {
+        toast.error('Proyek atau engineer tidak ditemukan.')
+      } else {
+        toast.error('Gagal assign engineer. Silakan coba lagi.')
+      }
+    }
   }
   return (
     <div className="space-y-5">
@@ -782,46 +898,81 @@ export default function ProjectsPage() {
           
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-2">Pilih Engineer:</label>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {users.filter(u => u.role === 'engineer').map(engineer => (
-                <label key={engineer.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedEngineers.includes(engineer.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedEngineers([...selectedEngineers, engineer.id])
-                      } else {
+            
+            {loadingEngineers ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2 text-purple-600">
+                  <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm">Memuat engineer...</span>
+                </div>
+              </div>
+            ) : availableEngineers.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {availableEngineers.map(engineer => (
+                  <div 
+                    key={engineer.id} 
+                    onClick={() => {
+                      if (selectedEngineers.includes(engineer.id)) {
                         setSelectedEngineers(selectedEngineers.filter(id => id !== engineer.id))
+                      } else {
+                        setSelectedEngineers([...selectedEngineers, engineer.id])
                       }
                     }}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">{engineer.name}</p>
-                    <p className="text-xs text-gray-500">{engineer.email}</p>
-                    {engineer.assignedProjects && engineer.assignedProjects.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {engineer.assignedProjects.length} proyek aktif
+                    className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      selectedEngineers.includes(engineer.id)
+                        ? 'border-purple-500 bg-purple-50 shadow-md'
+                        : 'border-gray-200 hover:border-purple-300 hover:bg-purple-25'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                      selectedEngineers.includes(engineer.id) ? 'bg-purple-600' : 'bg-purple-400'
+                    }`}>
+                      {engineer.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-medium text-sm ${
+                        selectedEngineers.includes(engineer.id) ? 'text-purple-900' : 'text-gray-800'
+                      }`}>
+                        {engineer.name}
                       </p>
-                    )}
+                      <p className={`text-xs ${
+                        selectedEngineers.includes(engineer.id) ? 'text-purple-600' : 'text-gray-500'
+                      }`}>
+                        {engineer.email}
+                      </p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedEngineers.includes(engineer.id)
+                        ? 'bg-purple-600 border-purple-600'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedEngineers.includes(engineer.id) && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
                   </div>
-                </label>
-              ))}
-              {users.filter(u => u.role === 'engineer').length === 0 && (
-                <div className="text-center py-4 text-gray-400 text-sm">
-                  Belum ada engineer yang terdaftar
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <Users size={48} className="mx-auto mb-3 opacity-50" />
+                <p className="font-medium">Belum ada engineer yang terdaftar</p>
+                <p className="text-sm mt-1">Hubungi administrator untuk menambah engineer</p>
+              </div>
+            )}
           </div>
           
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={() => { setAssignModal(null); setSelectedEngineers([]) }} className="btn-secondary">
               Batal
             </button>
-            <button onClick={handleAssignEngineers} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
-              <Users size={14}/> Assign Engineer
+            <button 
+              onClick={handleAssignEngineers} 
+              disabled={selectedEngineers.length === 0 || loadingEngineers}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <Users size={14}/> 
+              Assign Engineer {selectedEngineers.length > 0 && `(${selectedEngineers.length})`}
             </button>
           </div>
         </div>

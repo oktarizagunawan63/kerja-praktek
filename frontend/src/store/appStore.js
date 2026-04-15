@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { api } from '../lib/api'
 
 /**
  * Central store — single source of truth
@@ -10,6 +11,35 @@ const useAppStore = create(
     (set, get) => ({
       // ── Projects ──────────────────────────────────────────────
       projects: [],
+      projectsLoading: false,
+      projectsError: null,
+      lastFetch: null,
+
+      // Fetch projects from API
+      fetchProjects: async (force = false) => {
+        const state = get()
+        
+        // Skip if already loading or recently fetched (unless forced)
+        if (state.projectsLoading) return
+        if (!force && state.lastFetch && Date.now() - state.lastFetch < 30000) return // 30 seconds cache
+        
+        set({ projectsLoading: true, projectsError: null })
+        
+        try {
+          const response = await api.getProjects()
+          set({ 
+            projects: response.data || response || [],
+            projectsLoading: false,
+            lastFetch: Date.now()
+          })
+        } catch (error) {
+          console.error('Failed to fetch projects:', error)
+          set({ 
+            projectsError: error.message || 'Failed to fetch projects',
+            projectsLoading: false 
+          })
+        }
+      },
 
       addProject: (project) => {
         const newId = Date.now()
@@ -32,6 +62,10 @@ const useAppStore = create(
         })
         
         setTimeout(() => get().checkNotifications(), 0)
+        
+        // Refresh from API to get server-generated data
+        setTimeout(() => get().fetchProjects(true), 1000)
+        
         return newId
       },
 

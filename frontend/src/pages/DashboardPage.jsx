@@ -322,7 +322,13 @@ export default function DashboardPage() {
                         {activity.user_name} • {activity.check_out_time ? 'Check Out' : 'Check In'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID')} • {new Date(activity.date).toLocaleDateString('id-ID')}
+                        {activity.check_out_time || activity.check_in_time ? 
+                          new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID') : 
+                          'N/A'
+                        } • {activity.date ? 
+                          new Date(activity.date).toLocaleDateString('id-ID') : 
+                          'N/A'
+                        }
                       </p>
                     </div>
                   </div>

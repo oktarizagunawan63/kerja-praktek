@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test All Fixes - PT Amsar Prima Mandiri</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test All Fixes - PT Amsar Prima Mandiri</h1>
+    <p>This page tests all the critical fixes that were implemented.</p>
+
+    <div class="test-section info">
+        <h3>📋 Test Instructions</h3>
+        <ol>
+            <li>Make sure your Laravel server is running: <code>php artisan serve</code></li>
+            <li>Run the critical fixes script: <code>backend/run-critical-fixes.bat</code></li>
+            <li>Click each test button below to verify fixes</li>
+            <li>All tests should return success responses</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>1️⃣ Test Engineers API</h3>
+        <p>Tests if the engineer assignment modal will have data</p>
+        <button onclick="testEngineersAPI()">Test Engineers API</button>
+        <div id="engineers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2️⃣ Test Plan Visits API</h3>
+        <p>Tests if plan visits page loads without 500 errors</p>
+        <button onclick="testPlanVisitsAPI()">Test Plan Visits API</button>
+        <div id="plan-visits-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3️⃣ Test Project Assignment API</h3>
+        <p>Tests if engineer assignment to projects works</p>
+        <button onclick="testProjectAssignmentAPI()">Test Project Assignment</button>
+        <div id="project-assignment-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4️⃣ Test User Authentication</h3>
+        <p>Tests if login works with sample users</p>
+        <button onclick="testUserAuth()">Test Authentication</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5️⃣ Test Database Health</h3>
+        <p>Tests if all required tables exist and have data</p>
+        <button onclick="testDatabaseHealth()">Test Database Health</button>
+        <div id="database-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let authToken = null;
+
+        // Helper function to make API calls
+        async function apiCall(endpoint, options = {}) {
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            const response = await fetch(`${API_BASE}${endpoint}`, {
+                ...options,
+                headers
+            });
+
+            const data = await response.json();
+            return { response, data };
+        }
+
+        // Helper function to display results
+        function displayResult(elementId, success, message, data = null) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${success ? 'success' : 'error'}`;
+            element.innerHTML = `
+                <strong>${success ? '✅ SUCCESS' : '❌ ERROR'}</strong><br>
+                ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+        }
+
+        // Test 1: Engineers API
+        async function testEngineersAPI() {
+            try {
+                // First login to get token
+                const { response: loginResponse, data: loginData } = await apiCall('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: 'admin@ptamsar.co.id',
+                        password: 'password'
+                    })
+                });
+
+                if (loginResponse.ok && loginData.token) {
+                    authToken = loginData.token;
+                    
+                    // Now test engineers API
+                    const { response, data } = await apiCall('/engineers');
+                    
+                    if (response.ok && data.success) {
+                        displayResult('engineers-result', true, 
+                            `Found ${data.total} engineers. Engineer assignment modal should now work!`, 
+                            data.data.slice(0, 2) // Show first 2 engineers
+                        );
+                    } else {
+                        displayResult('engineers-result', false, 
+                            `API returned error: ${data.message || 'Unknown error'}`, data);
+                    }
+                } else {
+                    displayResult('engineers-result', false, 
+                        `Login failed: ${loginData.message || 'Unknown error'}`, loginData);
+                }
+            } catch (error) {
+                displayResult('engineers-result', false, `Network error: ${error.message}`);
+            }
+        }
+
+        // Test 2: Plan Visits API
+        async function testPlanVisitsAPI() {
+            try {
+                if (!authToken) {
+                    displayResult('plan-visits-result', false, 'Please run Engineers API test first to login');
+                    return;
+                }
+
+                const { response, data } = await apiCall('/plan-visits');
+                
+                if (response.ok) {
+                    displayResult('plan-visits-result', true, 
+                        `Plan visits API working! Status: ${response.status}`, 
+                        { 
+                            success: data.success, 
+                            total_visits: data.pagination?.total || 0,
+                            sample_data: data.data?.slice(0, 1) || []
+                        }
+                    );
+                } else {
+                    displayResult('plan-visits-result', false, 
+                        `API returned ${response.status}: ${data.message || 'Unknown error'}`, data);
+                }
+            } catch (error) {
+                displayResult('plan-visits-result', false, `Network error: ${error.message}`);
+            }
+        }
+
+        // Test 3: Project Assignment API
+        async function testProjectAssignmentAPI() {
+            try {
+                if (!authToken) {
+                    displayResult('project-assignment-result', false, 'Please run Engineers API test first to login');
+                    return;
+                }
+
+                // First get engineers to use in assignment
+                const { data: engineersData } = await apiCall('/engineers');
+                
+                if (!engineersData.success || engineersData.data.length === 0) {
+                    displayResult('project-assignment-result', false, 'No engineers found for assignment test');
+                    return;
+                }
+
+                // Test assignment with first engineer
+                const firstEngineer = engineersData.data[0];
+                const { response, data } = await apiCall('/projects/assign-engineers', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        project_id: 1,
+                        engineer_ids: [firstEngineer.id]
+                    })
+                });
+
+                if (response.ok && data.success) {
+                    displayResult('project-assignment-result', true, 
+                        `Project assignment working! ${data.message}`, 
+                        data.data
+                    );
+                } else {
+                    displayResult('project-assignment-result', false, 
+                        `Assignment failed: ${data.message || 'Unknown error'}`, data);
+                }
+            } catch (error) {
+                displayResult('project-assignment-result', false, `Network error: ${error.message}`);
+            }
+        }
+
+        // Test 4: User Authentication
+        async function testUserAuth() {
+            try {
+                const testUsers = [
+                    { email: 'admin@ptamsar.co.id', password: 'password', role: 'Administrator' },
+                    { email: 'timothilois007@gmail.com', password: 'password', role: 'Engineer' },
+                    { email: 'sitemanager@ptamsar.co.id', password: 'password', role: 'Site Manager' }
+                ];
+
+                const results = [];
+
+                for (const user of testUsers) {
+                    const { response, data } = await apiCall('/auth/login', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            email: user.email,
+                            password: user.password
+                        })
+                    });
+
+                    results.push({
+                        email: user.email,
+                        role: user.role,
+                        success: response.ok && data.token,
+                        message: data.message || (response.ok ? 'Login successful' : 'Login failed')
+                    });
+                }
+
+                const successCount = results.filter(r => r.success).length;
+                displayResult('auth-result', successCount === testUsers.length, 
+                    `${successCount}/${testUsers.length} test users can login successfully`, 
+                    results
+                );
+            } catch (error) {
+                displayResult('auth-result', false, `Network error: ${error.message}`);
+            }
+        }
+
+        // Test 5: Database Health
+        async function testDatabaseHealth() {
+            try {
+                if (!authToken) {
+                    displayResult('database-result', false, 'Please run Engineers API test first to login');
+                    return;
+                }
+
+                // Test multiple endpoints to verify database health
+                const endpoints = [
+                    { name: 'Users', endpoint: '/users' },
+                    { name: 'Engineers', endpoint: '/engineers' },
+                    { name: 'Plan Visits', endpoint: '/plan-visits' },
+                    { name: 'Customers', endpoint: '/customers' }
+                ];
+
+                const results = [];
+
+                for (const ep of endpoints) {
+                    try {
+                        const { response, data } = await apiCall(ep.endpoint);
+                        results.push({
+                            name: ep.name,
+                            success: response.ok,
+                            status: response.status,
+                            hasData: data.data && data.data.length > 0
+                        });
+                    } catch (error) {
+                        results.push({
+                            name: ep.name,
+                            success: false,
+                            error: error.message
+                        });
+                    }
+                }
+
+                const successCount = results.filter(r => r.success).length;
+                displayResult('database-result', successCount === endpoints.length, 
+                    `${successCount}/${endpoints.length} database endpoints working`, 
+                    results
+                );
+            } catch (error) {
+                displayResult('database-result', false, `Network error: ${error.message}`);
+            }
+        }
+
+        // Auto-run basic test on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 Test page loaded. Click buttons to run tests.');
+        });
+    </script>
+</body>
+</html>

@@ -14,9 +14,7 @@ export default function ActivityLogPage() {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching activity logs...')
         const data = await api.getActivityLogs()
-        console.log('Activity logs data:', data)
         setActivities(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Error fetching activity logs:', error)

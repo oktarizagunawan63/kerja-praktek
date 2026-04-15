@@ -1,9 +1,23 @@
 import { Bell, Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
 import { getRoleDisplayName } from '../../utils/roleUtils'
+import { api } from '../../lib/api'
+
+// Debounce utility function
+function debounce(func, wait) {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
 
 export default function Topbar() {
   const { user } = useAuthStore()
@@ -13,7 +27,37 @@ export default function Topbar() {
 
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
+  const [searchResults, setSearchResults] = useState({ projects: [], customers: [], users: [] })
+  const [isSearching, setIsSearching] = useState(false)
   const searchRef = useRef(null)
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (searchQuery) => {
+      if (searchQuery.trim().length < 2) {
+        setSearchResults({ projects: [], customers: [], users: [] })
+        setIsSearching(false)
+        return
+      }
+
+      try {
+        setIsSearching(true)
+        const results = await api.search(searchQuery)
+        setSearchResults(results)
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults({ projects: [], customers: [], users: [] })
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300),
+    []
+  )
+
+  // Trigger search when query changes
+  useEffect(() => {
+    debouncedSearch(query)
+  }, [query, debouncedSearch])
 
   // Close on outside click
   useEffect(() => {
@@ -24,14 +68,7 @@ export default function Topbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const q = query.toLowerCase().trim()
-  const matchedProjects = q
-    ? projects.filter(p => p.name.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.pm.toLowerCase().includes(q)).slice(0, 4)
-    : []
-  const matchedDocs = q
-    ? (documents || []).filter(d => d.name?.toLowerCase().includes(q)).slice(0, 3)
-    : []
-  const hasResults = matchedProjects.length > 0 || matchedDocs.length > 0
+  const hasResults = searchResults.projects.length > 0 || searchResults.customers.length > 0 || searchResults.users.length > 0
 
   const handleSelect = (path) => {
     navigate(path)
@@ -59,32 +96,46 @@ export default function Topbar() {
         )}
 
         {/* Dropdown results */}
-        {showResults && q && (
+        {showResults && query.trim().length >= 2 && (
           <div className="absolute top-full mt-1 left-0 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
-            {!hasResults ? (
+            {isSearching ? (
+              <p className="text-xs text-gray-400 px-4 py-3">Mencari...</p>
+            ) : !hasResults ? (
               <p className="text-xs text-gray-400 px-4 py-3">Tidak ada hasil untuk "{query}"</p>
             ) : (
               <>
-                {matchedProjects.length > 0 && (
+                {searchResults.projects.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Proyek</p>
-                    {matchedProjects.map(p => (
-                      <button key={p.id} onClick={() => handleSelect(`/projects/${p.id}`)}
+                    {searchResults.projects.map(p => (
+                      <button key={p.id} onClick={() => handleSelect(p.url)}
                         className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors">
                         <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                        <p className="text-xs text-gray-400">{p.subtitle}</p>
                       </button>
                     ))}
                   </div>
                 )}
-                {matchedDocs.length > 0 && (
+                {searchResults.customers.length > 0 && (
                   <div className="border-t border-gray-50">
-                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Dokumen</p>
-                    {matchedDocs.map(d => (
-                      <button key={d.id} onClick={() => handleSelect('/documents')}
+                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Customers</p>
+                    {searchResults.customers.map(c => (
+                      <button key={c.id} onClick={() => handleSelect(c.url)}
                         className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                        <p className="text-sm font-medium text-gray-800">{d.name}</p>
-                        <p className="text-xs text-gray-400">{d.type}</p>
+                        <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                        <p className="text-xs text-gray-400">{c.subtitle}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.users.length > 0 && (
+                  <div className="border-t border-gray-50">
+                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Users</p>
+                    {searchResults.users.map(u => (
+                      <button key={u.id} onClick={() => handleSelect(u.url)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                        <p className="text-sm font-medium text-gray-800">{u.name}</p>
+                        <p className="text-xs text-gray-400">{u.subtitle} · {u.role}</p>
                       </button>
                     ))}
                   </div>
