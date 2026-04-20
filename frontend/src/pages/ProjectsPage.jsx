@@ -78,15 +78,11 @@ export default function ProjectsPage() {
     
     setLoadingEngineers(true)
     try {
-      console.log('Fetching engineers from API...')
-      
       // Try multiple possible endpoints
       let response
       try {
-        console.log('Trying /api/engineers endpoint...')
         response = await api.getEngineers()
       } catch (e) {
-        console.log('Trying /api/site/engineers endpoint...')
         response = await fetch('/api/site/engineers', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -95,33 +91,22 @@ export default function ProjectsPage() {
         }).then(res => res.json())
       }
       
-      console.log('Full API response:', response)
-      console.log('Response.data:', response?.data)
-      console.log('Response type:', typeof response)
-      
       // Handle all possible response formats
       let engineerList = []
       
       if (Array.isArray(response)) {
         // Direct array response
         engineerList = response
-        console.log('Using direct array response')
       } else if (Array.isArray(response?.data)) {
         // Wrapped in data property
         engineerList = response.data
-        console.log('Using response.data array')
       } else if (Array.isArray(response?.engineers)) {
         // Wrapped in engineers property
         engineerList = response.engineers
-        console.log('Using response.engineers array')
       } else if (response?.success && Array.isArray(response?.data)) {
         // Success wrapper with data
         engineerList = response.data
-        console.log('Using success wrapper response.data')
       }
-      
-      console.log('Final engineer list:', engineerList)
-      console.log('Engineer count:', engineerList.length)
       
       if (engineerList.length > 0) {
         setAvailableEngineers(engineerList)
@@ -273,6 +258,9 @@ export default function ProjectsPage() {
           }
         }
         
+        // Immediately refresh projects list to ensure new project appears
+        await fetchProjects()
+        
         // Show success toast
         toast.success(`Proyek "${newProject.name}" berhasil dibuat!`)
         
@@ -352,11 +340,6 @@ export default function ProjectsPage() {
     const { projectId, projectName } = assignModal
     
     try {
-      console.log('Assigning engineers to project:', {
-        project_id: parseInt(projectId),
-        engineer_ids: selectedEngineers.map(id => parseInt(id))
-      })
-      
       // Send bulk assignment request with correct payload
       const response = await api.assignEngineersToProject({
         project_id: parseInt(projectId), // Ensure it's an integer

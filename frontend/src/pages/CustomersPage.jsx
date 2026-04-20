@@ -22,9 +22,10 @@ export default function CustomersPage() {
     phone: '',
     email: '',
     address: '',
-    latitude: '',
-    longitude: ''
+    latitude: '', // Hidden field
+    longitude: '' // Hidden field
   })
+  const [lokasiAmbil, setLokasiAmbil] = useState(false) // FIX 5: Track location status
 
   useEffect(() => {
     // Check if user has permission to access customers
@@ -93,6 +94,7 @@ export default function CustomersPage() {
       latitude: customer.latitude || '',
       longitude: customer.longitude || ''
     })
+    setLokasiAmbil(!!(customer.latitude && customer.longitude)) // FIX 5: Set location status
     setShowAddForm(true)
   }
 
@@ -108,24 +110,38 @@ export default function CustomersPage() {
     }
   }
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
-            ...prev,
-            latitude: position.coords.latitude.toString(),
-            longitude: position.coords.longitude.toString()
-          }))
-          toast.success('Lokasi berhasil diambil')
-        },
-        (error) => {
-          toast.error('Gagal mengambil lokasi')
-        }
-      )
-    } else {
-      toast.error('Geolocation tidak didukung browser')
+  // FIX 5: Improved location function with user feedback
+  const ambilLokasi = () => {
+    if (!navigator.geolocation) {
+      toast.error('Browser tidak mendukung GPS')
+      return
     }
+
+    toast.loading('Mengambil lokasi...', { id: 'location' })
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString()
+        }))
+        setLokasiAmbil(true)
+        toast.success(
+          `✅ Lokasi berhasil diambil: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
+          { id: 'location' }
+        )
+      },
+      (error) => {
+        toast.error(`Gagal mengambil lokasi: ${error.message}`, { id: 'location' })
+        setLokasiAmbil(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    )
   }
 
   const columns = [
@@ -185,14 +201,18 @@ export default function CustomersPage() {
       label: 'Aksi',
       render: (customer) => (
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleEdit(customer)}
-            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-            title="Edit"
-          >
-            <Edit size={14} />
-          </button>
-          {can(user, 'delete_customer') && (
+          {/* Only sales_manager and admin can edit customers */}
+          {['sales_manager', 'administrator'].includes(user?.role) && (
+            <button
+              onClick={() => handleEdit(customer)}
+              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+              title="Edit"
+            >
+              <Edit size={14} />
+            </button>
+          )}
+          {/* Only sales_manager and admin can delete customers */}
+          {['sales_manager', 'administrator'].includes(user?.role) && (
             <button
               onClick={() => handleDelete(customer)}
               className="p-1 text-red-600 hover:bg-red-50 rounded"
@@ -200,6 +220,12 @@ export default function CustomersPage() {
             >
               <Trash2 size={14} />
             </button>
+          )}
+          {/* Sales role can only view */}
+          {user?.role === 'sales' && (
+            <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
+              View Only
+            </span>
           )}
         </div>
       )
@@ -226,7 +252,8 @@ export default function CustomersPage() {
           <p className="text-gray-600">Kelola data customer untuk visit management</p>
         </div>
         
-        {can(user, 'create_customer') && (
+        {/* Only sales_manager and admin can create customers */}
+        {['sales_manager', 'administrator'].includes(user?.role) && (
           <Button onClick={() => setShowAddForm(true)}>
             <Plus size={16} />
             Tambah Customer
@@ -325,33 +352,28 @@ export default function CustomersPage() {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Latitude"
-                  type="number"
-                  step="any"
-                  value={formData.latitude}
-                  onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
-                />
-                
-                <Input
-                  label="Longitude"
-                  type="number"
-                  step="any"
-                  value={formData.longitude}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
-                />
-              </div>
+              {/* FIX 5: Hidden latitude/longitude fields */}
+              <input type="hidden" value={formData.latitude} />
+              <input type="hidden" value={formData.longitude} />
               
-              <Button
-                type="button"
-                variant="outline"
-                onClick={getCurrentLocation}
-                className="w-full"
-              >
-                <MapPin size={16} />
-                Ambil Lokasi Saat Ini
-              </Button>
+              {/* FIX 5: Location button with status feedback */}
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={ambilLokasi}
+                  className="w-full"
+                >
+                  <MapPin size={16} />
+                  Ambil Lokasi Saat Ini
+                </Button>
+                
+                {lokasiAmbil && (
+                  <div className="text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+                    ✅ Lokasi berhasil diambil: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                  </div>
+                )}
+              </div>
               
               <div className="flex gap-3 pt-4">
                 <Button type="submit" className="flex-1">
@@ -372,6 +394,7 @@ export default function CustomersPage() {
                       latitude: '',
                       longitude: ''
                     })
+                    setLokasiAmbil(false) // FIX 5: Reset location status
                   }}
                 >
                   Batal

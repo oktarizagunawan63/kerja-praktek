@@ -31,17 +31,6 @@ const NAV_SECTIONS = {
       ]
     },
     { 
-      title: 'Visit Management', 
-      items: [
-        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
-        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
-        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
-        { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
-        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
-        { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
-      ]
-    },
-    { 
       title: 'Administration', 
       items: [
         { to: '/activity', icon: Activity, label: 'Activity Log', tourId: 'activity' },

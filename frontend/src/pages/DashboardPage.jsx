@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TrendingUp, DollarSign, Package, Wrench, Clock, Users, CheckCircle, XCircle } from 'lucide-react'
+import { TrendingUp, DollarSign, Package, Clock, Users, CheckCircle, XCircle, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ProgressBar from '../components/kpi/ProgressBar'
 import Badge from '../components/ui/Badge'
@@ -48,23 +48,77 @@ export default function DashboardPage() {
       let dashboardResponse = null
       
       if (user.role === 'administrator' || user.role === 'direktur') {
-        dashboardResponse = await api.getAdminDashboard()
+        try {
+          dashboardResponse = await api.getAdminDashboard()
+        } catch (error) {
+          console.warn('Admin dashboard API failed, using fallback data:', error.message)
+          dashboardResponse = { success: true, data: {} }
+        }
+        
         // Also load attendance summary for admin
-        const attendanceResponse = await api.getAttendanceSummary()
-        if (attendanceResponse.success) {
-          setAttendanceSummary(attendanceResponse.data)
+        try {
+          const attendanceResponse = await api.getAttendanceSummary()
+          if (attendanceResponse?.success) {
+            setAttendanceSummary(attendanceResponse.data)
+          }
+        } catch (error) {
+          console.warn('Failed to load attendance summary:', error.message)
         }
       } else if (user.role === 'site_manager') {
-        dashboardResponse = await api.getSiteDashboard()
+        try {
+          dashboardResponse = await api.getSiteDashboard()
+        } catch (error) {
+          console.warn('Site dashboard API failed, using fallback data:', error.message)
+          dashboardResponse = { success: true, data: {} }
+        }
       } else if (user.role === 'sales_manager') {
-        dashboardResponse = await api.getSalesDashboard()
+        try {
+          dashboardResponse = await api.getSalesDashboard()
+        } catch (error) {
+          console.warn('Sales dashboard API failed, using fallback data:', error.message)
+          dashboardResponse = { success: true, data: {} }
+        }
+      } else if (user.role === 'engineer') {
+        try {
+          dashboardResponse = await api.getEngineerDashboard()
+        } catch (error) {
+          console.warn('Engineer dashboard API failed, using fallback data:', error.message)
+          dashboardResponse = { success: true, data: {} }
+        }
       }
       
-      if (dashboardResponse && dashboardResponse.success) {
-        setDashboardStats(dashboardResponse.data)
+      if (dashboardResponse?.success) {
+        setDashboardStats(dashboardResponse.data || {})
+      } else {
+        // Set fallback stats to prevent errors
+        setDashboardStats({
+          projects: { active: 0, completed: 0, delayed: 0, total: 0 },
+          rab: { total: 0, realisasi: 0, percentage: 0 },
+          users: { total: 0, active: 0 },
+          engineers: { total: 0, assigned: 0, active: 0 },
+          customers: { total: 0, new_this_month: 0 },
+          visits: { this_week: 0, completed: 0, completion_rate: 0, recent: 0 },
+          progress: { average: 0 },
+          reports: { submitted: 0 },
+          tasks: { completed: 0 },
+          deadlines: { upcoming: 0 }
+        })
       }
     } catch (error) {
       console.warn('Failed to load dashboard data:', error.message)
+      // Set fallback stats to prevent errors
+      setDashboardStats({
+        projects: { active: 0, completed: 0, delayed: 0, total: 0 },
+        rab: { total: 0, realisasi: 0, percentage: 0 },
+        users: { total: 0, active: 0 },
+        engineers: { total: 0, assigned: 0, active: 0 },
+        customers: { total: 0, new_this_month: 0 },
+        visits: { this_week: 0, completed: 0, completion_rate: 0, recent: 0 },
+        progress: { average: 0 },
+        reports: { submitted: 0 },
+        tasks: { completed: 0 },
+        deadlines: { upcoming: 0 }
+      })
     }
   }
 
@@ -149,6 +203,136 @@ export default function DashboardPage() {
     }
   }
 
+  // Role-specific KPI cards
+  const getRoleSpecificKPIs = () => {
+    if (user.role === 'site_manager') {
+      return [
+        {
+          icon: TrendingUp,
+          value: dashboardStats?.projects?.active || projectStats.active,
+          label: 'Proyek Aktif',
+          subtitle: `${dashboardStats?.engineers?.assigned || 0} engineer assigned`,
+          color: 'primary'
+        },
+        {
+          icon: Users,
+          value: dashboardStats?.engineers?.total || 0,
+          label: 'Total Engineers',
+          subtitle: `${dashboardStats?.engineers?.active || 0} sedang aktif`,
+          color: 'success'
+        },
+        {
+          icon: Clock,
+          value: dashboardStats?.deadlines?.upcoming || nearDeadline,
+          label: 'Deadline 7 Hari',
+          subtitle: 'perlu perhatian',
+          color: 'warning'
+        },
+        {
+          icon: CheckCircle,
+          value: `${avgProg}%`,
+          label: 'Avg Progress',
+          subtitle: `${projectStats.completed} selesai`,
+          color: 'info'
+        }
+      ]
+    } else if (user.role === 'sales_manager') {
+      return [
+        {
+          icon: Users,
+          value: dashboardStats?.customers?.total || 0,
+          label: 'Total Customers',
+          subtitle: `${dashboardStats?.customers?.new_this_month || 0} baru bulan ini`,
+          color: 'primary'
+        },
+        {
+          icon: Calendar,
+          value: dashboardStats?.visits?.this_week || 0,
+          label: 'Plan Visit Minggu Ini',
+          subtitle: `${dashboardStats?.visits?.completed || 0} selesai`,
+          color: 'success'
+        },
+        {
+          icon: TrendingUp,
+          value: `${dashboardStats?.visits?.completion_rate || 0}%`,
+          label: 'Completion Rate',
+          subtitle: 'tingkat penyelesaian',
+          color: 'info'
+        },
+        {
+          icon: Clock,
+          value: dashboardStats?.visits?.recent || 0,
+          label: 'Aktivitas Terbaru',
+          subtitle: '24 jam terakhir',
+          color: 'warning'
+        }
+      ]
+    } else if (user.role === 'engineer') {
+      return [
+        {
+          icon: Package,
+          value: dashboardStats?.projects?.assigned || 0,
+          label: 'Proyek Assigned',
+          subtitle: `${dashboardStats?.projects?.active || 0} sedang berjalan`,
+          color: 'primary'
+        },
+        {
+          icon: TrendingUp,
+          value: `${dashboardStats?.progress?.average || 0}%`,
+          label: 'Avg Progress',
+          subtitle: 'proyek saya',
+          color: 'success'
+        },
+        {
+          icon: Clock,
+          value: dashboardStats?.reports?.submitted || 0,
+          label: 'Progress Reports',
+          subtitle: 'bulan ini',
+          color: 'info'
+        },
+        {
+          icon: CheckCircle,
+          value: dashboardStats?.tasks?.completed || 0,
+          label: 'Tasks Completed',
+          subtitle: 'minggu ini',
+          color: 'warning'
+        }
+      ]
+    } else {
+      // Administrator/Direktur
+      return [
+        {
+          icon: TrendingUp,
+          value: projectStats.active,
+          label: 'Total Proyek Aktif',
+          subtitle: `${nearDeadline} mendekati deadline`,
+          color: 'primary'
+        },
+        {
+          icon: DollarSign,
+          value: formatRupiah(rabStats.total),
+          label: 'Total RAB',
+          subtitle: `${rabStats.percentage}% terealisasi`,
+          color: 'success'
+        },
+        {
+          icon: Users,
+          value: dashboardStats?.users?.total || users.length,
+          label: 'Total Users',
+          subtitle: `${dashboardStats?.users?.active || 0} aktif`,
+          color: 'info'
+        },
+        {
+          icon: CheckCircle,
+          value: projectStats.completed,
+          label: 'Proyek Selesai',
+          subtitle: `dari ${projectStats.total} total`,
+          color: 'warning'
+        }
+      ]
+    }
+  }
+
   const projectStats = getProjectStats()
   const rabStats = getRabStats()
 
@@ -167,6 +351,8 @@ export default function DashboardPage() {
     const d = Math.ceil((new Date(p.deadline) - new Date()) / 86400000)
     return d <= 30 && d > 0
   }).length
+
+  const roleKPIs = getRoleSpecificKPIs()
 
   return (
     <div className="space-y-6 p-6">
@@ -202,41 +388,19 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="stat-card fade-in">
-          <div className="stat-card-icon primary">
-            <TrendingUp size={24} />
-          </div>
-          <div className="stat-card-number">{projectStats.active}</div>
-          <div className="stat-card-label">Total Proyek Aktif</div>
-          <div className="text-xs text-gray-500 mt-1">{nearDeadline} mendekati deadline</div>
-        </div>
-
-        <div className="stat-card fade-in">
-          <div className="stat-card-icon success">
-            <DollarSign size={24} />
-          </div>
-          <div className="stat-card-number">{formatRupiah(rabStats.total)}</div>
-          <div className="stat-card-label">Total RAB</div>
-          <div className="text-xs text-gray-500 mt-1">{rabStats.percentage}% terealisasi</div>
-        </div>
-
-        <div className="stat-card fade-in">
-          <div className="stat-card-icon warning">
-            <Package size={24} />
-          </div>
-          <div className="stat-card-number">{avgProg}%</div>
-          <div className="stat-card-label">Avg Progress Aktif</div>
-          <div className="text-xs text-gray-500 mt-1">{projectStats.delayed} proyek delayed</div>
-        </div>
-
-        <div className="stat-card fade-in">
-          <div className="stat-card-icon primary">
-            <Wrench size={24} />
-          </div>
-          <div className="stat-card-number">{projectStats.completed}</div>
-          <div className="stat-card-label">Proyek Selesai</div>
-          <div className="text-xs text-gray-500 mt-1">dari {projectStats.total} total</div>
-        </div>
+        {roleKPIs.map((kpi, index) => {
+          const IconComponent = kpi.icon
+          return (
+            <div key={index} className="stat-card fade-in">
+              <div className={`stat-card-icon ${kpi.color}`}>
+                <IconComponent size={24} />
+              </div>
+              <div className="stat-card-number">{kpi.value}</div>
+              <div className="stat-card-label">{kpi.label}</div>
+              <div className="text-xs text-gray-500 mt-1">{kpi.subtitle}</div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Attendance Section - Administrator Only */}

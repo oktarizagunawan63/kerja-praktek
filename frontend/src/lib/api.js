@@ -172,7 +172,8 @@ export const api = {
   createPlanVisit:  (data)   => request('POST',   '/plan-visits', data),
   updatePlanVisit:  (id, d)  => request('PUT',    `/plan-visits/${id}`, d),
   deletePlanVisit:  (id)     => request('DELETE', `/plan-visits/${id}`),
-  getSalesUsers:    ()       => request('GET',    '/plan-visits/sales-users'),
+  completePlanVisit: (id, data) => request('POST', `/plan-visits/${id}/complete`, data),
+  getSalesUsers:    ()       => request('GET',    '/plan-visits/sales-users'), // Fixed endpoint
 
   // Visit Management - Realisasi Visits
   getRealisasiVisits: (params = {}) => {

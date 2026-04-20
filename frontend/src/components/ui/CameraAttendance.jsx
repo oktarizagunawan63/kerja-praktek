@@ -243,7 +243,7 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
       }
     }
     
-    context.fillText(`${type.toUpperCase()} - ${timestamp}`, 10, canvas.height - 90)
+    context.fillText(`${type.toUpperCase().replace('-', ' ')} - ${timestamp}`, 10, canvas.height - 90)
     context.fillText(gpsText, 10, canvas.height - 65)
     context.fillText(locationText, 10, canvas.height - 40)
     context.fillText(statusText, 10, canvas.height - 15)
@@ -360,7 +360,9 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
         <div className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              {type === 'check-in' ? 'Check In' : 'Check Out'} dengan Kamera
+              {type === 'check-in' ? 'Check In' : 
+               type === 'check-out' ? 'Check Out' : 
+               type === 'visit-photo' ? 'Ambil Foto Visit' : 'Kamera'} dengan Kamera
             </h3>
             <button
               onClick={onCancel}
@@ -374,7 +376,9 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
           <div className="text-center py-8">
             <Camera className="mx-auto mb-4 text-gray-400" size={48} />
             <p className="text-gray-600 mb-4">
-              Ambil foto selfie untuk {type === 'check-in' ? 'check in' : 'check out'}
+              Ambil foto {type === 'check-in' ? 'selfie untuk check in' : 
+                         type === 'check-out' ? 'selfie untuk check out' :
+                         type === 'visit-photo' ? 'bukti kunjungan' : 'dengan kamera'}
             </p>
             <Button onClick={startCamera} className="bg-blue-600 hover:bg-blue-700">
               <Camera size={16} />
