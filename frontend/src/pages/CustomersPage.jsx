@@ -7,6 +7,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
+import '../styles/responsive-global.css'
 
 export default function CustomersPage() {
   const { user } = useAuthStore()
@@ -245,35 +246,37 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container-responsive spacing-md">
+      {/* Header */}
+      <div className="header-responsive">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer List</h1>
-          <p className="text-gray-600">Kelola data customer untuk visit management</p>
+          <h1 className="header-title">Customer List</h1>
+          <p className="header-subtitle">Kelola data customer untuk visit management</p>
         </div>
         
         {/* Only sales_manager and admin can create customers */}
         {['sales_manager', 'administrator'].includes(user?.role) && (
-          <Button onClick={() => setShowAddForm(true)}>
+          <button onClick={() => setShowAddForm(true)} className="btn-responsive primary">
             <Plus size={16} />
-            Tambah Customer
-          </Button>
+            <span className="mobile-hidden">Tambah Customer</span>
+            <span className="desktop-hidden tablet-hidden">Tambah</span>
+          </button>
         )}
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="card-compact" style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs">!</span>
             </div>
             <div>
-              <p className="font-medium text-red-800">Error Loading Customers</p>
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-responsive-base font-medium text-red-800">Error Loading Customers</p>
+              <p className="text-responsive-sm text-red-600">{error}</p>
               <button 
                 onClick={fetchCustomers}
-                className="mt-2 text-sm text-red-700 hover:text-red-800 underline"
+                className="mt-2 text-responsive-sm text-red-700 hover:text-red-800 underline"
               >
                 Try Again
               </button>
@@ -283,105 +286,131 @@ export default function CustomersPage() {
       )}
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <Input
+      <div className="card-compact" style={{ padding: '12px' }}>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <input
             placeholder="Cari customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && fetchCustomers()}
-            className="pl-10"
+            className="input-responsive pl-10"
           />
         </div>
       </div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        data={customers}
-        loading={loading}
-        emptyMessage="Belum ada data customer"
-      />
+      <div className="card-compact">
+        <div className="table-responsive">
+          <DataTable
+            columns={columns}
+            data={customers}
+            loading={loading}
+            emptyMessage="Belum ada data customer"
+          />
+        </div>
+      </div>
 
       {/* Add/Edit Form Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingCustomer ? 'Edit Customer' : 'Tambah Customer'}
-            </h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="spacing-lg border-b border-gray-200">
+              <h2 className="text-responsive-xl font-semibold text-gray-900">
+                {editingCustomer ? 'Edit Customer' : 'Tambah Customer'}
+              </h2>
+            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Nama Customer"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
+            <form onSubmit={handleSubmit} className="spacing-lg">
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Nama Customer</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="input-responsive"
+                  placeholder="Nama customer..."
+                />
+              </div>
               
-              <Input
-                label="Perusahaan"
-                value={formData.company}
-                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-              />
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Perusahaan</label>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                  className="input-responsive"
+                  placeholder="Nama perusahaan..."
+                />
+              </div>
               
-              <Input
-                label="Nomor Telepon"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              />
+              <div className="form-row-responsive sm-2">
+                <div className="form-group-responsive">
+                  <label className="text-responsive-sm font-medium text-gray-700">Nomor Telepon</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="input-responsive"
+                    placeholder="08xxxxxxxxxx"
+                  />
+                </div>
+                
+                <div className="form-group-responsive">
+                  <label className="text-responsive-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="input-responsive"
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
               
-              <Input
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              />
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Alamat
-                </label>
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Alamat</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
+                  className="input-responsive"
+                  style={{ minHeight: '80px' }}
+                  placeholder="Alamat lengkap customer..."
                   required
                 />
               </div>
               
-              {/* FIX 5: Hidden latitude/longitude fields */}
+              {/* Hidden latitude/longitude fields */}
               <input type="hidden" value={formData.latitude} />
               <input type="hidden" value={formData.longitude} />
               
-              {/* FIX 5: Location button with status feedback */}
-              <div className="space-y-2">
-                <Button
+              {/* Location button with status feedback */}
+              <div className="form-group-responsive">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={ambilLokasi}
-                  className="w-full"
+                  className="btn-responsive secondary w-full"
                 >
                   <MapPin size={16} />
                   Ambil Lokasi Saat Ini
-                </Button>
+                </button>
                 
                 {lokasiAmbil && (
-                  <div className="text-sm text-green-600 bg-green-50 p-2 rounded-lg">
-                    ✅ Lokasi berhasil diambil: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-responsive-sm text-green-800">
+                      ✅ Lokasi berhasil diambil: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                    </p>
                   </div>
                 )}
               </div>
               
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1">
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <button type="submit" className="btn-responsive primary flex-1">
                   {editingCustomer ? 'Perbarui' : 'Simpan'}
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => {
                     setShowAddForm(false)
                     setEditingCustomer(null)
@@ -394,11 +423,12 @@ export default function CustomersPage() {
                       latitude: '',
                       longitude: ''
                     })
-                    setLokasiAmbil(false) // FIX 5: Reset location status
+                    setLokasiAmbil(false)
                   }}
+                  className="btn-responsive secondary flex-1"
                 >
                   Batal
-                </Button>
+                </button>
               </div>
             </form>
           </div>

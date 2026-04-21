@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, Navigation, RotateCcw, User } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, User, Trash2 } from 'lucide-react'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import { isAdministrator } from '../utils/roleUtils'
 import DataTable from '../components/ui/DataTable'
 import CameraAttendance from '../components/ui/CameraAttendance'
 import toast from 'react-hot-toast'
+import '../styles/responsive-global.css'
 
 // Helper functions for date/time formatting
 const formatTime = (dateString) => {
@@ -50,19 +50,7 @@ const getCurrentLocation = () => {
         })
       },
       (error) => {
-        let message = 'Gagal mendapatkan lokasi'
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            message = 'Akses lokasi ditolak. Mohon izinkan akses lokasi.'
-            break
-          case error.POSITION_UNAVAILABLE:
-            message = 'Lokasi tidak tersedia'
-            break
-          case error.TIMEOUT:
-            message = 'Timeout mendapatkan lokasi'
-            break
-        }
-        reject(new Error(message))
+        reject(error)
       },
       {
         enableHighAccuracy: true,
@@ -73,237 +61,112 @@ const getCurrentLocation = () => {
   })
 }
 
-export default function AttendancePage() {
+function AttendancePage() {
   const { user } = useAuthStore()
-  const navigate = useNavigate()
-  const [todayAttendance, setTodayAttendance] = useState(null)
   const [attendanceHistory, setAttendanceHistory] = useState([])
+  const [todayAttendance, setTodayAttendance] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [currentLocation, setCurrentLocation] = useState(null)
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [attendanceType, setAttendanceType] = useState(null)
-
-  // Redirect non-sales users appropriately
-  useEffect(() => {
-    if (!user?.role) return
-    
-    const adminRoles = ['admin', 'administrator', 'direktur', 'director']
-    const salesRoles = ['sales_manager', 'sales']
-    
-    if (adminRoles.includes(user.role) || isAdministrator(user)) {
-      navigate('/admin/attendance-monitor', { replace: true })
-      return
-    }
-    
-    if (!salesRoles.includes(user.role)) {
-      navigate('/dashboard', { replace: true })
-      return
-    }
-  }, [user, navigate])
-
-  // Legacy admin redirect (backup)
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      navigate('/admin/attendance-monitor')
-      return
-    }
-  }, [user, navigate])
-  
-  // Work locations for sales team (in real app, this would come from API)
-  const workLocations = [
-    {
-      id: 1,
-      name: 'Kantor Pusat PT Amsar',
-      lat: -6.2088,
-      lng: 106.8456,
-      radius: 100 // meters
-    },
-    {
-      id: 2,
-      name: 'Site Proyek RS Cina',
-      lat: -6.1751,
-      lng: 106.8650,
-      radius: 50
-    },
-    {
-      id: 3,
-      name: 'Customer Visit Area',
-      lat: -6.2297,
-      lng: 106.8175,
-      radius: 200
-    }
-  ]
+  const [currentLocation, setCurrentLocation] = useState(null)
+  const [workLocations, setWorkLocations] = useState([])
 
   useEffect(() => {
     fetchData()
+    fetchTodayAttendance()
+    fetchWorkLocations()
+    
+    // Get current location
+    getCurrentLocation()
+      .then(setCurrentLocation)
+      .catch(console.error)
   }, [])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      
-      // Fetch today's attendance with fallback
-      try {
-        const todayResponse = await api.getTodayAttendance()
-        setTodayAttendance(todayResponse.data)
-      } catch (error) {
-        console.warn('Today attendance API failed:', error.message)
-        setTodayAttendance(null)
+      const response = await api.getAttendance()
+      if (response.success) {
+        setAttendanceHistory(response.data || [])
       }
-      
-      // Fetch attendance history with fallback
-      try {
-        const historyResponse = await api.getAttendance()
-        const historyData = historyResponse.data?.data || historyResponse.data || []
-        setAttendanceHistory(Array.isArray(historyData) ? historyData : [])
-      } catch (error) {
-        console.warn('Attendance history API failed:', error.message)
-        setAttendanceHistory([])
-      }
-      
     } catch (error) {
       console.error('Error fetching attendance:', error)
-      // Don't show toast error for attendance loading issues
+      toast.error('Gagal memuat data attendance')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCheckIn = async () => {
-    // For Sales Manager and Sales, use camera attendance with location validation
-    if (user?.role === 'sales_manager' || user?.role === 'sales') {
-      setAttendanceType('check-in')
-      setShowCameraModal(true)
-      return
-    }
-    
-    // For other roles, use regular GPS attendance
+  const fetchTodayAttendance = async () => {
     try {
-      setActionLoading(true)
-      toast.loading('Mendapatkan lokasi...', { id: 'attendance' })
-      
-      const location = await getCurrentLocation()
-      setCurrentLocation(location)
-      
-      const checkInData = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        check_in_time: new Date().toISOString()
-      }
-      
-      const response = await api.checkIn(checkInData)
-      
+      const response = await api.getTodayAttendance()
       if (response.success) {
-        toast.success(response.message || 'Check-in berhasil!', { id: 'attendance' })
-        
-        // Update today's attendance immediately
         setTodayAttendance(response.data)
-        
-        // Refresh all data
-        fetchData()
-      } else {
-        toast.error(response.message || 'Gagal check-in', { id: 'attendance' })
       }
-      
     } catch (error) {
-      toast.error(error.message || 'Gagal check-in', { id: 'attendance' })
-    } finally {
-      setActionLoading(false)
+      console.error('Error fetching today attendance:', error)
+    }
+  }
+
+  const fetchWorkLocations = async () => {
+    try {
+      const response = await api.getLocations()
+      if (response.success) {
+        setWorkLocations(response.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching work locations:', error)
+    }
+  }
+
+  const handleCheckIn = async () => {
+    if (user?.role === 'sales_manager' || user?.role === 'sales') {
+      setAttendanceType('checkin')
+      setShowCameraModal(true)
     }
   }
 
   const handleCheckOut = async () => {
-    // For Sales Manager and Sales, use camera attendance with location validation
     if (user?.role === 'sales_manager' || user?.role === 'sales') {
-      setAttendanceType('check-out')
+      setAttendanceType('checkout')
       setShowCameraModal(true)
-      return
-    }
-    
-    // For other roles, use regular GPS attendance
-    try {
-      setActionLoading(true)
-      toast.loading('Mendapatkan lokasi...', { id: 'attendance' })
-      
-      const location = await getCurrentLocation()
-      setCurrentLocation(location)
-      
-      const checkOutData = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        check_out_time: new Date().toISOString()
-      }
-      
-      const response = await api.checkOut(checkOutData)
-      
-      if (response.success) {
-        toast.success(response.message || 'Check-out berhasil!', { id: 'attendance' })
-        
-        // Update today's attendance immediately
-        setTodayAttendance(response.data)
-        
-        // Refresh all data
-        fetchData()
-      } else {
-        toast.error(response.message || 'Gagal check-out', { id: 'attendance' })
-      }
-      
-    } catch (error) {
-      toast.error(error.message || 'Gagal check-out', { id: 'attendance' })
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const handleCameraAttendance = async (attendanceData) => {
     try {
       setActionLoading(true)
-      setShowCameraModal(false)
       
-      toast.loading('Memproses attendance...', { id: 'attendance' })
-      
-      // Handle new data format from fixed camera component
-      const submitData = {
-        latitude: attendanceData.latitude || 0, // Allow null GPS
-        longitude: attendanceData.longitude || 0,
-        photo: attendanceData.photo,
-        gps_data: attendanceData.gps_data,
-        gps_warnings: attendanceData.gps_warnings || [],
-        device_info: attendanceData.device_info,
-        status: attendanceData.status, // New: pass status from frontend
-        gps_warning: attendanceData.gps_warning, // New: pass GPS warning flag
-        [attendanceType === 'check-in' ? 'check_in_time' : 'check_out_time']: attendanceData.timestamp
+      let response
+      if (attendanceType === 'checkin') {
+        response = await api.checkIn(attendanceData)
+      } else {
+        response = await api.checkOut(attendanceData)
       }
-      
-      const response = attendanceType === 'check-in' 
-        ? await api.checkIn(submitData)
-        : await api.checkOut(submitData)
       
       if (response.success) {
-        toast.success(response.message || `${attendanceType === 'check-in' ? 'Check-in' : 'Check-out'} berhasil!`, { id: 'attendance' })
-        
-        // Update today's attendance immediately
-        setTodayAttendance(response.data)
-        
-        // Refresh all data
+        toast.success(response.message || `${attendanceType === 'checkin' ? 'Check-in' : 'Check-out'} berhasil!`)
+        setShowCameraModal(false)
+        setAttendanceType(null)
         fetchData()
+        fetchTodayAttendance()
       } else {
-        toast.error(response.message || `Gagal ${attendanceType}`, { id: 'attendance' })
+        toast.error(response.message || `Gagal ${attendanceType === 'checkin' ? 'check-in' : 'check-out'}`)
       }
-      
     } catch (error) {
-      toast.error(error.message || `Gagal ${attendanceType}`, { id: 'attendance' })
+      toast.error(error.message || `Gagal ${attendanceType === 'checkin' ? 'check-in' : 'check-out'}`)
     } finally {
       setActionLoading(false)
-      setAttendanceType(null)
     }
   }
 
   const handleResetAttendance = async () => {
+    if (!window.confirm('Reset attendance hari ini? Tindakan ini tidak dapat dibatalkan.')) return
+    
     try {
       setActionLoading(true)
-      const today = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0]
       
       const response = await api.resetAttendance({
         user_id: user.id,
@@ -312,13 +175,39 @@ export default function AttendancePage() {
       
       if (response.success) {
         toast.success('Attendance berhasil direset')
-        setTodayAttendance(null) // Clear today's attendance
-        fetchData() // Refresh data
+        setTodayAttendance(null)
+        fetchData()
       } else {
         toast.error(response.message || 'Gagal reset attendance')
       }
     } catch (error) {
       toast.error(error.message || 'Gagal reset attendance')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDeleteAttendance = async (attendance) => {
+    const confirmMessage = `Hapus attendance ${attendance.user?.name || 'user'} pada ${new Date(attendance.date).toLocaleDateString('id-ID')}?`
+    
+    if (!window.confirm(confirmMessage)) return
+    
+    try {
+      setActionLoading(true)
+      const response = await api.deleteAttendance(attendance.id)
+      
+      if (response.success) {
+        toast.success('Attendance berhasil dihapus')
+        fetchData()
+        
+        if (attendance.user_id === user.id && attendance.date === new Date().toISOString().split('T')[0]) {
+          setTodayAttendance(null)
+        }
+      } else {
+        toast.error(response.message || 'Gagal menghapus attendance')
+      }
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus attendance')
     } finally {
       setActionLoading(false)
     }
@@ -410,10 +299,7 @@ export default function AttendancePage() {
             {attendance.check_in_latitude && attendance.check_in_longitude ? (
               <>
                 <span className="text-xs text-gray-600 block">
-                  {attendance.check_in_latitude && attendance.check_in_longitude ? 
-                    `${parseFloat(attendance.check_in_latitude).toFixed(4)}, ${parseFloat(attendance.check_in_longitude).toFixed(4)}` : 
-                    'GPS tidak tersedia'
-                  }
+                  {`${parseFloat(attendance.check_in_latitude).toFixed(4)}, ${parseFloat(attendance.check_in_longitude).toFixed(4)}`}
                 </span>
                 {attendance.check_out_latitude && attendance.check_out_longitude && (
                   <span className="text-xs text-gray-500 block">
@@ -422,7 +308,7 @@ export default function AttendancePage() {
                 )}
               </>
             ) : (
-              <span className="text-xs text-gray-400">-</span>
+              <span className="text-xs text-red-400">GPS tidak tersedia</span>
             )}
           </div>
         </div>
@@ -432,7 +318,23 @@ export default function AttendancePage() {
       key: 'status',
       label: 'Status',
       render: (attendance) => getStatusBadge(attendance)
-    }
+    },
+    // Actions column - only for sales_manager and administrator
+    ...(user?.role === 'sales_manager' || isAdministrator(user) ? [{
+      key: 'actions',
+      label: 'Aksi',
+      render: (attendance) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleDeleteAttendance(attendance)}
+            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+            title="Hapus attendance"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )
+    }] : [])
   ]
 
   const today = new Date().toLocaleDateString('id-ID', {
@@ -444,7 +346,6 @@ export default function AttendancePage() {
 
   const canCheckIn = !todayAttendance?.check_in_time
   const canCheckOut = todayAttendance?.check_in_time && !todayAttendance?.check_out_time
-  const isCompleted = todayAttendance?.check_in_time && todayAttendance?.check_out_time
 
   // Don't render anything for non-sales users - they should be redirected
   const salesRoles = ['sales_manager', 'sales']
@@ -452,163 +353,124 @@ export default function AttendancePage() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <p className="text-gray-600">
-            {isAdministrator(user) 
-              ? 'Redirecting to attendance monitor...' 
-              : 'Redirecting to dashboard...'
-            }
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">Halaman ini hanya untuk sales team.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-        <p className="text-gray-600">Kelola kehadiran dengan GPS tracking</p>
+    <div className="container-responsive spacing-md">
+      {/* Header */}
+      <div className="header-responsive">
+        <div>
+          <h1 className="header-title">Attendance</h1>
+          <p className="header-subtitle">Kelola kehadiran dengan GPS tracking</p>
+          <p className="text-responsive-sm font-medium text-gray-700">{today}</p>
+        </div>
       </div>
 
-      {/* Today's Status */}
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${
-        todayAttendance?.check_in_time ? 'attendance-today-card checked-in' : 'attendance-today-card'
-      }`}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Kehadiran Hari Ini</h2>
-            <p className="text-gray-700 font-medium mb-4">{today}</p>
-            
-            {todayAttendance ? (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="text-green-600" size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Check In</p>
-                      <p className="font-bold text-green-700">{formatTime(todayAttendance.check_in_time)}</p>
-                    </div>
-                  </div>
-                  
-                  {todayAttendance.check_out_time && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <XCircle className="text-red-600" size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Check Out</p>
-                        <p className="font-bold text-red-700">{formatTime(todayAttendance.check_out_time)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {todayAttendance.check_in_time && todayAttendance.check_out_time && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Clock className="text-blue-600" size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Total Jam Kerja</p>
-                      <p className="font-bold text-blue-700">
-                        {calculateDuration(todayAttendance.check_in_time, todayAttendance.check_out_time)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Check-in Photo */}
-                {todayAttendance?.check_in_photo && (
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Foto Check-In:</p>
-                      <img 
-                        src={getPhotoSrc(todayAttendance.check_in_photo)} 
-                        alt="Foto Check-In"
-                        className="attendance-photo-frame"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="text-gray-400" size={24} />
-                </div>
-                <p className="text-gray-600 font-medium">
-                  {['sales_manager', 'sales'].includes(user?.role)
-                    ? 'Belum melakukan check-in hari ini' 
-                    : 'Halaman ini hanya untuk sales team'
-                  }
-                </p>
-              </div>
-            )}
+      {/* Status Cards */}
+      <div className="grid-responsive sm-2 md-3 spacing-md">
+        <div className="stats-card" style={{ borderLeft: '4px solid #10b981' }}>
+          <div className="stats-card-header">
+            <div>
+              <p className="stats-card-label">Check In</p>
+              <p className="stats-card-value" style={{ color: '#10b981' }}>
+                {todayAttendance?.check_in_time ? formatTime(todayAttendance.check_in_time) : '-'}
+              </p>
+            </div>
+            <div className="stats-card-icon" style={{ background: '#10b981' }}>
+              <CheckCircle size={20} className="text-white" />
+            </div>
           </div>
+        </div>
+
+        <div className="stats-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="stats-card-header">
+            <div>
+              <p className="stats-card-label">Check Out</p>
+              <p className="stats-card-value" style={{ color: '#f59e0b' }}>
+                {todayAttendance?.check_out_time ? formatTime(todayAttendance.check_out_time) : '-'}
+              </p>
+            </div>
+            <div className="stats-card-icon" style={{ background: '#f59e0b' }}>
+              <XCircle size={20} className="text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+          <div className="stats-card-header">
+            <div>
+              <p className="stats-card-label">Jam Kerja</p>
+              <p className="stats-card-value" style={{ color: '#3b82f6' }}>
+                {calculateDuration(todayAttendance?.check_in_time, todayAttendance?.check_out_time)}
+              </p>
+            </div>
+            <div className="stats-card-icon" style={{ background: '#3b82f6' }}>
+              <Clock size={20} className="text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="action-bar-responsive">
+        <div className="form-row-responsive sm-2 md-3">
+          {['sales_manager', 'sales'].includes(user?.role) && canCheckIn && (
+            <button
+              onClick={handleCheckIn}
+              disabled={actionLoading}
+              className="btn-responsive primary"
+            >
+              <CheckCircle size={16} />
+              Check In
+            </button>
+          )}
           
-          <div className="flex flex-col gap-3 w-full lg:w-auto">
-            {['sales_manager', 'sales'].includes(user?.role) && canCheckIn && (
-              <button
-                onClick={handleCheckIn}
-                disabled={actionLoading}
-                className="btn-professional btn-primary w-full lg:w-auto"
-              >
-                <Navigation size={16} />
-                Check In
-              </button>
-            )}
-            
-            {['sales_manager', 'sales'].includes(user?.role) && canCheckOut && (
-              <button
-                onClick={handleCheckOut}
-                disabled={actionLoading}
-                className="btn-professional btn-danger w-full lg:w-auto"
-              >
-                <Navigation size={16} />
-                Check Out
-              </button>
-            )}
-            
-            {!canCheckIn && !canCheckOut && isCompleted && (
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle className="text-green-600" size={24} />
-                </div>
-                <p className="text-sm text-green-700 font-medium mb-3">Attendance Complete</p>
-                {(user?.role === 'administrator' || user?.role === 'direktur') && (
-                  <button
-                    onClick={handleResetAttendance}
-                    disabled={actionLoading}
-                    className="btn-professional btn-danger text-sm"
-                  >
-                    <RotateCcw size={14} />
-                    Reset Attendance
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          {['sales_manager', 'sales'].includes(user?.role) && canCheckOut && (
+            <button
+              onClick={handleCheckOut}
+              disabled={actionLoading}
+              className="btn-responsive secondary"
+            >
+              <XCircle size={16} />
+              Check Out
+            </button>
+          )}
+          
+          {(user?.role === 'administrator' || user?.role === 'sales_manager') && todayAttendance && (
+            <button
+              onClick={handleResetAttendance}
+              disabled={actionLoading}
+              className="btn-responsive danger"
+            >
+              <Clock size={16} />
+              <span className="mobile-hidden">Reset Attendance</span>
+              <span className="desktop-hidden tablet-hidden">Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Current Location Display */}
       {(currentLocation || todayAttendance?.check_in_latitude) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
+        <div className="card-compact" style={{ background: '#eff6ff', borderLeft: '4px solid #3b82f6' }}>
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="text-blue-600" size={16} />
-            <span className="text-sm font-medium text-blue-800">
+            <span className="text-responsive-sm font-medium text-blue-800">
               {currentLocation ? 'Lokasi Saat Ini' : 'Lokasi Check-in Hari Ini'}
             </span>
           </div>
           
           {currentLocation && (
             <>
-              <p className="text-xs text-blue-700 mb-1 break-all">
+              <p className="text-responsive-xs text-blue-700 font-mono">
                 GPS: {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
               </p>
-              <p className="text-xs text-blue-600">
+              <p className="text-responsive-xs text-blue-600">
                 Akurasi: ±{Math.round(currentLocation.accuracy)}m
               </p>
             </>
@@ -616,11 +478,11 @@ export default function AttendancePage() {
           
           {todayAttendance?.check_in_latitude && !currentLocation && (
             <>
-              <p className="text-xs text-blue-700 mb-1 break-all">
+              <p className="text-responsive-xs text-blue-700 font-mono">
                 Check-in: {parseFloat(todayAttendance.check_in_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_in_longitude).toFixed(6)}
               </p>
               {todayAttendance.check_out_latitude && (
-                <p className="text-xs text-blue-700 break-all">
+                <p className="text-responsive-xs text-blue-700 font-mono">
                   Check-out: {parseFloat(todayAttendance.check_out_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_out_longitude).toFixed(6)}
                 </p>
               )}
@@ -630,13 +492,12 @@ export default function AttendancePage() {
       )}
 
       {/* Attendance History */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="text-gray-600" size={20} />
-          <h2 className="text-lg font-semibold text-gray-900">Riwayat Kehadiran</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
+      <div className="card-compact">
+        <h2 className="text-responsive-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Calendar size={20} />
+          Riwayat Kehadiran
+        </h2>
+        <div className="table-responsive">
           <DataTable
             columns={columns}
             data={attendanceHistory}
@@ -658,6 +519,15 @@ export default function AttendancePage() {
           workLocations={workLocations}
         />
       )}
+
+      {/* Loading Overlay */}
+      {actionLoading && (
+        <div className="loading-responsive">
+          <div className="loading-spinner-responsive"></div>
+        </div>
+      )}
     </div>
   )
 }
+
+export default AttendancePage

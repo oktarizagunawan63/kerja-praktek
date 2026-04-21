@@ -28,40 +28,101 @@ const HIcon = {
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function ProjectDetailPage() {
-  const { id }       = useParams()
-  const navigate     = useNavigate()
-  const { user }     = useAuthStore()
-  const currentUser  = user?.name || 'Unknown'
+  // ── All hooks at the very top ──
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc } = useAppStore()
   const { users, updateUser, fetchUsers } = useUserStore()
-
-  // ── all hooks before any return ──
-  const [history,      setHistory]      = useState([])
-  const [uploadOpen,   setUploadOpen]   = useState(false)
-  const [matOpen,      setMatOpen]      = useState(false)
-  const [addMatOpen,   setAddMatOpen]   = useState(false)
-  const [completeOpen, setCompleteOpen] = useState(false)
-  const [editOpen, setEditOpen]   = useState(false)
-  const [editForm, setEditForm]   = useState({})
-  const [editRabOpen, setEditRabOpen] = useState(false)
-  const [selMat,       setSelMat]       = useState(null)
-  const [previewDoc,   setPreviewDoc]   = useState(null)
-  const [docTab,       setDocTab]       = useState('semua')
-  const [completeNote, setCompleteNote] = useState('')
   
-  // New state for enhanced features
+  const [project, setProject] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [engineers, setEngineers] = useState([])
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedEngineers, setSelectedEngineers] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [history, setHistory] = useState([])
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [matOpen, setMatOpen] = useState(false)
+  const [addMatOpen, setAddMatOpen] = useState(false)
+  const [completeOpen, setCompleteOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [editRabOpen, setEditRabOpen] = useState(false)
+  const [selMat, setSelMat] = useState(null)
+  const [previewDoc, setPreviewDoc] = useState(null)
+  const [docTab, setDocTab] = useState('semua')
+  const [completeNote, setCompleteNote] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
+  const [rabInput, setRabInput] = useState('')
+  const [matForm, setMatForm] = useState({ qty: '', catatan: '', files: [] })
+  const [docForm, setDocForm] = useState({ type: 'Laporan Harian', files: [] })
+  const [newMat, setNewMat] = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
+  const [teamOpen, setTeamOpen] = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
-  // Load additional data on component mount
+  // ── Effects ──
+  useEffect(() => {
+    fetchProject()
+    fetchEngineers()
+  }, [id])
+
   useEffect(() => {
     // Future: Load progress reports and RAB realisasi here
   }, [project, user])
-  const [rabInput,     setRabInput]     = useState('')
-  const [matForm,      setMatForm]      = useState({ qty: '', catatan: '', files: [] })
-  const [docForm,      setDocForm]      = useState({ type: 'Laporan Harian', files: [] })
-  const [newMat,       setNewMat]       = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
-  const [teamOpen,     setTeamOpen]     = useState(false)
-  const [loadingUsers, setLoadingUsers] = useState(false)
+
+  // ── Helper functions ──
+  const currentUser = user?.name || 'Unknown'
+  
+  const fetchProject = async () => {
+    try {
+      const res = await api.get('/projects/' + id)
+      setProject(res.data?.data || res.data)
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchEngineers = async () => {
+    try {
+      const res = await api.get('/site/engineers')
+      const data = res.data?.data || res.data || []
+      setEngineers(Array.isArray(data) ? data : [])
+    } catch(e) {
+      setEngineers([])
+    }
+  }
+
+  const handleAssign = async (engineerId, isCurrentlyAssigned) => {
+    try {
+      console.log('Assigning engineers:', [engineerId])
+      const res = await api.post('/projects/' + id + '/assign', {
+        engineer_ids: [engineerId]
+      })
+      console.log('Assign response:', res.data)
+      
+      if (res.data.success) {
+        // Update local state
+        const assigned = users.find(u => u.id === engineerId)?.assignedProjects || []
+        if (isCurrentlyAssigned) {
+          updateUser(engineerId, { assignedProjects: assigned.filter(p => p !== String(id)) })
+          toast.success(`Engineer dilepas dari proyek`)
+        } else {
+          updateUser(engineerId, { assignedProjects: [...assigned, String(id)] })
+          toast.success(`Engineer berhasil di-assign!`)
+        }
+        fetchProject()
+      } else {
+        toast.error('Gagal: ' + (res.data.message || 'Unknown error'))
+      }
+    } catch(e) {
+      console.error('Assign failed:', e.response?.data)
+      toast.error('Gagal: ' + (e.response?.data?.message || e.message))
+    }
+  }
 
   // Fetch users when modal opens
   const handleOpenTeamModal = async () => {
@@ -76,7 +137,20 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const project   = projects.find(p => String(p.id) === String(id))
+  // ── Early returns ──
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-gray-500">Memuat proyek...</div>
+    </div>
+  )
+
+  if (!project) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-gray-500">Proyek tidak ditemukan</div>
+    </div>
+  )
+
+  // ── Derived data ──
   const materials = getMaterials(id)
   const docs      = getDocs(id) // baca dari appStore, otomatis sync
   const isCompleted = project?.status === 'completed'
@@ -865,16 +939,7 @@ export default function ProjectDetailPage() {
               const isAssigned = (eng.assignedProjects || []).includes(String(id))
               return (
                 <div key={eng.id}
-                  onClick={() => {
-                    const assigned = eng.assignedProjects || []
-                    if (isAssigned) {
-                      updateUser(eng.id, { assignedProjects: assigned.filter(p => p !== String(id)) })
-                      toast.success(`${eng.name} dilepas`)
-                    } else {
-                      updateUser(eng.id, { assignedProjects: [...assigned, String(id)] })
-                      toast.success(`${eng.name} di-assign`)
-                    }
-                  }}
+                  onClick={() => handleAssign(eng.id, isAssigned)}
                   className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isAssigned ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}
                 >
                   <div className="flex items-center gap-3">

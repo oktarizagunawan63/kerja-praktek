@@ -66,14 +66,14 @@ export default function DashboardPage() {
         }
       } else if (user.role === 'site_manager') {
         try {
-          dashboardResponse = await api.getSiteDashboard()
+          dashboardResponse = await api.getSiteManagerDashboard()
         } catch (error) {
           console.warn('Site dashboard API failed, using fallback data:', error.message)
           dashboardResponse = { success: true, data: {} }
         }
       } else if (user.role === 'sales_manager') {
         try {
-          dashboardResponse = await api.getSalesDashboard()
+          dashboardResponse = await api.getSalesManagerDashboard()
         } catch (error) {
           console.warn('Sales dashboard API failed, using fallback data:', error.message)
           dashboardResponse = { success: true, data: {} }

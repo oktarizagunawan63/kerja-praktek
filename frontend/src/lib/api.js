@@ -1,254 +1,235 @@
-import { showErrorToast, logSilentError } from '../utils/errorHandler'
-
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
 const getToken = () => {
   try {
-    const auth = JSON.parse(localStorage.getItem('amsar-auth') || '{}')
-    // Token bisa ada di auth.state.token (zustand persist) atau auth.token
-    return auth?.state?.token || auth?.token
-  } catch { return null }
-}
-
-class ApiError extends Error {
-  constructor(message, status, data) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.data = data
+    const authData = localStorage.getItem('amsar-auth')
+    if (!authData) return null
+    const parsed = JSON.parse(authData)
+    return parsed?.state?.token || null
+  } catch (error) {
+    console.error('Error getting token:', error)
+    return null
   }
 }
 
-// Helper function for graceful fallback when API fails
-async function fallbackRequest(method, path, body = null) {
-  console.log(`[FALLBACK] ${method} ${path} - returning empty data due to API failure`)
-  return Promise.resolve({ success: true, data: [] })
-}
-
-async function request(method, path, body = null, isFormData = false, silent = false) {
+const request = async (endpoint, options = {}) => {
+  const url = `${API_BASE}${endpoint}`
   const token = getToken()
-  const headers = { Accept: 'application/json' }
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  if (!isFormData && body) headers['Content-Type'] = 'application/json'
-
-  const shouldBeSilent = silent
+  
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  
+  const config = {
+    ...options,
+    headers
+  }
 
   try {
-    const res = await fetch(`${BASE}${path}`, {
-      method,
-      headers,
-      body: isFormData ? body : (body ? JSON.stringify(body) : null),
-    })
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ message: 'Server error' }))
-      
-      const errorMessage = errorData.message || `HTTP ${res.status}`
-      
-      if (shouldBeSilent) {
-        logSilentError(path, method, errorMessage)
-      } else {
-        showErrorToast(errorMessage, path, method)
-      }
-      
-      throw new ApiError(
-        errorMessage,
-        res.status,
-        errorData
-      )
+    const response = await fetch(url, config)
+    
+    if (response.status === 401) {
+      localStorage.removeItem('amsar-auth')
+      window.location.href = '/login'
+      throw new Error('Session expired. Please login again.')
+    }
+    
+    if (response.status === 403) {
+      throw new Error('You do not have permission to perform this action.')
+    }
+    
+    if (response.status === 422) {
+      const data = await response.json()
+      throw { message: data.message || 'Validation error', errors: data.errors || {}, status: 422 }
+    }
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
     }
 
-    return res.json()
+    return response.json()
   } catch (error) {
-    if (error instanceof ApiError) throw error
-    
-    const errorMessage = error.message || 'Network error occurred'
-    
-    if (shouldBeSilent) {
-      logSilentError(path, method, errorMessage)
-    } else {
-      showErrorToast(errorMessage, path, method)
-    }
-    
-    throw new ApiError(
-      errorMessage,
-      0,
-      null
-    )
+    console.error(`API Error [${config.method || 'GET'} ${url}]:`, error)
+    throw error
   }
 }
 
-// Helper function for silent requests
-async function silentRequest(method, path, body = null, isFormData = false) {
-  return request(method, path, body, isFormData, true)
-}
-
+// Simple API object - just the basics
 export const api = {
-  // Auth
-  login:    (data)  => request('POST', '/auth/login', data),
-  logout:   ()      => request('POST', '/auth/logout'),
-  me:       ()      => request('GET',  '/auth/me'),
-
-  // Password Reset
-  sendResetToken:   (email) => request('POST', '/password/send-token', { email }),
-  verifyResetToken: (email, token) => request('POST', '/password/verify-token', { email, token }),
-  resetPassword:    (data) => request('POST', '/password/reset', data),
-
   // Projects
-  getProjects:     ()       => request('GET',    '/projects'),
-  getProject:      (id)     => request('GET',    `/projects/${id}`),
-  createProject:   (data)   => request('POST',   '/projects', data),
-  updateProject:   (id, d)  => request('PUT',    `/projects/${id}`, d),
-  completeProject: (id, note) => request('POST', `/projects/${id}/complete`, { note }),
-  deleteProject:   (id)     => request('DELETE', `/projects/${id}`),
-  restoreProject:  (id)     => request('POST',   `/projects/${id}/restore`),
-  getTrash:        ()       => request('GET',    '/projects/trash'),
-  getKpi:          ()       => request('GET',    '/projects/kpi'),
-  assignEngineer:  (projectId, engineerId) => request('POST', `/projects/${projectId}/assign-engineer`, { engineer_id: engineerId }),
-  assignEngineersToProject: (data) => request('POST', '/projects/assign-engineers', data),
-  getProjectEngineers: () => request('GET', '/projects/engineers'),
-
-  // Materials
-  getMaterials:    (pid)          => request('GET',    `/projects/${pid}/materials`),
-  addMaterial:     (pid, data)    => request('POST',   `/projects/${pid}/materials`, data),
-  updateMaterial:  (pid, mid, d)  => request('PUT',    `/projects/${pid}/materials/${mid}`, d),
-  deleteMaterial:  (pid, mid)     => request('DELETE', `/projects/${pid}/materials/${mid}`),
-
-  // Documents
-  getDocuments:    (pid)    => request('GET',    `/documents${pid ? `?project_id=${pid}` : ''}`),
-  uploadDocument:  (form)   => request('POST',   '/documents', form, true),
-  deleteDocument:  (id)     => request('DELETE', `/documents/${id}`),
-
-  // Notifications
-  getNotifications:  ()    => request('GET',  '/notifications'),
-  markNotifRead:     (id)  => request('POST', `/notifications/${id}/read`),
-  markAllNotifRead:  ()    => request('POST', '/notifications/mark-all-read'),
-  deleteNotif:       (id)  => request('DELETE', `/notifications/${id}`),
-  clearAllNotif:     ()    => request('DELETE', '/notifications'),
-
-  // Activity Log
-  getActivityLogs: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/activity-logs${q ? '?'+q : ''}`)
-  },
-
+  getProjects: () => request('/projects'),
+  createProject: (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) }),
+  updateProject: (id, data) => request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteProject: (id) => request(`/projects/${id}`, { method: 'DELETE' }),
+  
+  // Test endpoint
+  test: () => request('/test'),
+  
+  login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  getUser: () => request('/auth/me'),
+  register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  
+  // Password reset
+  sendResetToken: (email) => request('/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+  verifyResetToken: (token) => request('/password/verify', { method: 'POST', body: JSON.stringify({ token }) }),
+  resetPassword: (data) => request('/password/reset', { method: 'POST', body: JSON.stringify(data) }),
+  
   // Users
-  getUsers:       (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/users${q ? '?'+q : ''}`)
+  getUsers: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/users${queryString ? '?' + queryString : ''}`)
   },
-  getEngineers:   ()        => request('GET', '/engineers'),
-  createUser:     (data)    => request('POST',   '/users', data),
-  updateUser:     (id, d)   => request('PUT',    `/users/${id}`, d),
-  deleteUser:     (id)      => request('DELETE', `/users/${id}`),
-  assignProject:  (uid, pid) => request('POST',  `/users/${uid}/assign-project`, { project_id: pid }),
-  approveUser:    (id)      => request('POST',   `/users/${id}/approve`),
-  rejectUser:     (id, reason) => request('POST', `/users/${id}/reject`, { reason }),
-
-  // Locations
-  getLocations:   (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/locations${q ? '?'+q : ''}`)
+  getUser: (id) => request(`/users/${id}`),
+  createUser: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  approveUser: (id) => request(`/users/${id}/approve`, { method: 'POST' }),
+  rejectUser: (id, reason) => request(`/users/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
+  
+  // Customers
+  getCustomers: () => request('/customers'),
+  createCustomer: (data) => request('/customers', { method: 'POST', body: JSON.stringify(data) }),
+  updateCustomer: (id, data) => request(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCustomer: (id) => request(`/customers/${id}`, { method: 'DELETE' }),
+  
+  // Plan Visits
+  getPlanVisits: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/plan-visits${queryString ? '?' + queryString : ''}`)
   },
-  getProvinces:   ()        => request('GET',    '/locations/provinces'),
-
-  // Visit Management - Customers
-  getCustomers:     (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/customers${q ? '?'+q : ''}`)
-  },
-  getCustomer:      (id)     => request('GET',    `/customers/${id}`),
-  createCustomer:   (data)   => request('POST',   '/customers', data),
-  updateCustomer:   (id, d)  => request('PUT',    `/customers/${id}`, d),
-  deleteCustomer:   (id)     => request('DELETE', `/customers/${id}`),
-  getCustomerVisitHistory: (id) => request('GET', `/customers/${id}/visit-history`),
-
-  // Visit Management - Plan Visits
-  getPlanVisits:    (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/plan-visits${q ? '?'+q : ''}`)
-  },
-  getPlanVisit:     (id)     => request('GET',    `/plan-visits/${id}`),
-  createPlanVisit:  (data)   => request('POST',   '/plan-visits', data),
-  updatePlanVisit:  (id, d)  => request('PUT',    `/plan-visits/${id}`, d),
-  deletePlanVisit:  (id)     => request('DELETE', `/plan-visits/${id}`),
-  completePlanVisit: (id, data) => request('POST', `/plan-visits/${id}/complete`, data),
-  getSalesUsers:    ()       => request('GET',    '/plan-visits/sales-users'), // Fixed endpoint
-
-  // Visit Management - Realisasi Visits
+  createPlanVisit: (data) => request('/plan-visits', { method: 'POST', body: JSON.stringify(data) }),
+  updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePlanVisit: (id) => request(`/plan-visits/${id}`, { method: 'DELETE' }),
+  completePlanVisit: (id, data) => request(`/plan-visits/${id}/complete`, { method: 'POST', body: JSON.stringify(data) }),
+  
+  // Realisasi Visits
   getRealisasiVisits: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/realisasi-visits${q ? '?'+q : ''}`)
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/realisasi-visits${queryString ? '?' + queryString : ''}`)
   },
-  getRealisasiVisit: (id)    => request('GET',    `/realisasi-visits/${id}`),
-  createRealisasiVisit: (data) => request('POST', '/realisasi-visits', data),
-  updateRealisasiVisit: (id, d) => request('PUT', `/realisasi-visits/${id}`, d),
-  markVisitAsMissed: (planVisitId) => request('POST', `/realisasi-visits/mark-missed/${planVisitId}`),
-  getPendingVisits:  ()      => request('GET',    '/realisasi-visits/pending-visits'),
+  createRealisasiVisit: (data) => request('/realisasi-visits', { method: 'POST', body: JSON.stringify(data) }),
+  updateRealisasiVisit: (id, data) => request(`/realisasi-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteRealisasiVisit: (id) => request(`/realisasi-visits/${id}`, { method: 'DELETE' }),
+  
+  // Attendance
+  getAttendance: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/attendance${queryString ? '?' + queryString : ''}`)
+  },
+  getTodayAttendance: () => request('/attendance/today'),
+  getAttendanceSummary: () => request('/attendance/summary'),
+  checkIn: (data) => request('/attendance/check-in', { method: 'POST', body: JSON.stringify(data) }),
+  checkOut: (data) => request('/attendance/check-out', { method: 'POST', body: JSON.stringify(data) }),
+  
+  // Warnings
+  getWarnings: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/warnings${queryString ? '?' + queryString : ''}`)
+  },
+  createWarning: (data) => request('/warnings', { method: 'POST', body: JSON.stringify(data) }),
+  updateWarning: (id, data) => request(`/warnings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteWarning: (id) => request(`/warnings/${id}`, { method: 'DELETE' }),
+  
+  // Visit Reports
+  getVisitReports: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/visit-reports${queryString ? '?' + queryString : ''}`)
+  },
+  
+  // Locations
+  getLocations: () => request('/locations'),
+  createLocation: (data) => request('/locations', { method: 'POST', body: JSON.stringify(data) }),
+  updateLocation: (id, data) => request(`/locations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteLocation: (id) => request(`/locations/${id}`, { method: 'DELETE' }),
+  
+  // Activity Logs
+  getActivityLogs: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/activity-logs${queryString ? '?' + queryString : ''}`)
+  },
+  
+  // Notifications
+  getNotifications: () => request('/notifications'),
+  getUnreadNotificationCount: () => request('/notifications/unread-count'),
+  markNotificationAsRead: (id) => request(`/notifications/${id}/mark-read`, { method: 'POST' }),
+  markAllNotificationsAsRead: () => request('/notifications/mark-all-read', { method: 'POST' }),
+  
+  // Documents
+  getDocuments: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/documents${queryString ? '?' + queryString : ''}`)
+  },
+  uploadDocument: (data) => request('/documents', { method: 'POST', body: JSON.stringify(data) }),
+  deleteDocument: (id) => request(`/documents/${id}`, { method: 'DELETE' }),
+  
+  // Materials
+  getMaterials: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/materials${queryString ? '?' + queryString : ''}`)
+  },
+  createMaterial: (data) => request('/materials', { method: 'POST', body: JSON.stringify(data) }),
+  updateMaterial: (id, data) => request(`/materials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMaterial: (id) => request(`/materials/${id}`, { method: 'DELETE' }),
+  
+  // Manpower
+  getManpower: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/manpower${queryString ? '?' + queryString : ''}`)
+  },
+  createManpower: (data) => request('/manpower', { method: 'POST', body: JSON.stringify(data) }),
+  updateManpower: (id, data) => request(`/manpower/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteManpower: (id) => request(`/manpower/${id}`, { method: 'DELETE' }),
+  
+  // Progress Reports
+  getProgressReports: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/progress-reports${queryString ? '?' + queryString : ''}`)
+  },
+  createProgressReport: (data) => request('/progress-reports', { method: 'POST', body: JSON.stringify(data) }),
+  
+  // Engineer
+  getEngineerProjects: () => request('/engineer/projects'),
+  getEngineerProgressReports: () => request('/engineer/progress-reports'),
+  createEngineerProgressReport: (data) => request('/engineer/progress-reports', { method: 'POST', body: JSON.stringify(data) }),
+  
+  // Dashboards
+  getAdminDashboard: () => request('/dashboard/admin'),
+  getSalesManagerDashboard: () => request('/dashboard/sales-manager'),
+  getSiteManagerDashboard: () => request('/dashboard/site-manager'),
+  getEngineerDashboard: () => request('/dashboard/engineer'),
+  
+  // Search
+  search: (query) => {
+    const queryString = new URLSearchParams({ q: query }).toString()
+    return request(`/search?${queryString}`)
+  },
+  
+  // Project specific
+  getProjectKpiSummary: () => request('/projects/kpi-summary'),
+  assignEngineer: (projectId, engineerId) => request(`/projects/${projectId}/assign-engineer`, { method: 'POST', body: JSON.stringify({ engineer_id: engineerId }) }),
+  assignEngineersToProject: (projectId, engineerIds) => request('/projects/assign-engineers', { method: 'POST', body: JSON.stringify({ project_id: projectId, engineer_ids: engineerIds }) }),
+  getEngineers: () => request('/projects/engineers/list'),
+  completeProject: (id, note) => request(`/projects/${id}/complete`, { method: 'POST', body: JSON.stringify({ note }) }),
+  restoreProject: (id) => request(`/projects/${id}/restore`, { method: 'POST' }),
 
-  // Visit Management - Attendance
-  getAttendance:     (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/attendance${q ? '?'+q : ''}`)
+  // Check server status (for ServerStatus component)
+  checkServerStatus: async () => {
+    try {
+      const response = await request('/test')
+      return response.success === true
+    } catch (error) {
+      return false
+    }
   },
-  checkIn:          (data)   => request('POST',   '/attendance/check-in', data),
-  checkOut:         (data)   => request('POST',   '/attendance/check-out', data),
-  getTodayAttendance: ()     => request('GET',    '/attendance/today'),
-  getAttendanceSummary: ()   => request('GET',    '/attendance/summary'),
-  resetAttendance:  (data)   => request('POST',   '/attendance/reset', data),
-
-  // Visit Management - Warnings
-  getWarnings:      (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/warnings${q ? '?'+q : ''}`)
-  },
-  getWarning:       (id)     => request('GET',    `/warnings/${id}`),
-  markWarningRead:  (id)     => request('POST',   `/warnings/${id}/read`),
-  markAllWarningsRead: ()    => request('POST',   '/warnings/mark-all-read'),
-  getUnreadWarningsCount: () => request('GET',    '/warnings/unread-count'),
-  deleteWarning:    (id)     => request('DELETE', `/warnings/${id}`),
-  getWarningStats:  ()       => request('GET',    '/warnings/stats'),
-
-  // Visit Management - Reports
-  getDashboardStats: ()      => request('GET',    '/reports/dashboard-stats'),
-  getMySalesStats:   ()      => request('GET',    '/reports/my-sales-stats'),
-  getVisitReport:   (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/reports/visit-report${q ? '?'+q : ''}`)
-  },
-  getSalesPerformance: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/reports/sales-performance${q ? '?'+q : ''}`)
-  },
-
-  // Role-based Dashboard Endpoints
-  getAdminDashboard: ()      => request('GET',    '/admin/dashboard-stats'),
-  getSiteDashboard:  ()      => request('GET',    '/site/dashboard-stats'),
-  getSalesDashboard: ()      => request('GET',    '/sales/dashboard-stats'),
-  getAdminUsers:     ()      => request('GET',    '/admin/users'),
-  getAdminAttendanceMonitor: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/admin/attendance-monitor${q ? '?'+q : ''}`)
-  },
-  getAdminActivityLogs: (params = {}) => {
-    const q = new URLSearchParams(params).toString()
-    return request('GET', `/admin/activity-logs${q ? '?'+q : ''}`)
-  },
-  getSiteProjects:   ()      => request('GET',    '/site/projects'),
-  createSiteProject: (data)  => request('POST',   '/site/projects', data),
-  updateSiteProject: (id, d) => request('PUT',    `/site/projects/${id}`, d),
-  getSalesCustomers: ()      => request('GET',    '/sales/customers'),
-  getSalesPlanVisits: ()     => request('GET',    '/sales/plan-visits'),
-  getSalesVisitRealizations: () => request('GET', '/sales/visit-realizations'),
-
-  // Engineer APIs
-  getEngineerDashboard: () => request('GET', '/engineer/dashboard'),
-  getEngineerProjects: () => request('GET', '/engineer/my-projects'),
-  submitProgressReport: (data) => request('POST', '/engineer/progress-report', data),
-  getProgressReports: () => request('GET', '/engineer/progress-reports'),
-  assignEngineer: (data) => request('POST', '/engineer/assign', data),
-  getAvailableEngineers: () => request('GET', '/engineer/available'),
-
-  // Global Search
-  search: (query) => request('GET', `/search?q=${encodeURIComponent(query)}`),
 }
+
+// Export request function for direct use
+export { request }

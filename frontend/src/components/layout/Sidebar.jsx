@@ -130,7 +130,7 @@ export default function Sidebar() {
   // Memoize expensive calculations
   const { sections, unreadCount } = useMemo(() => {
     const role = normalizeRole(user?.role)
-    const unread = notifications.filter(n => !n.isRead).length
+    const unread = (notifications || []).filter(n => !n.isRead).length
     
     return {
       sections: NAV_SECTIONS[role] || NAV_SECTIONS.engineer,

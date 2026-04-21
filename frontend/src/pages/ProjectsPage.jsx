@@ -12,6 +12,8 @@ import useUserStore from '../store/userStore'
 import { formatRupiah } from '../lib/formatRupiah'
 import { can, filterProjectsByRole } from '../lib/permissions'
 import { api } from '../lib/api'
+import '../styles/responsive-global.css'
+import '../styles/project-cards.css'
 
 const statusMap = {
   on_track:  { label: 'On Track',  variant: 'success' },
@@ -36,7 +38,7 @@ const EMPTY_FORM = {
 }
 
 export default function ProjectsPage() {
-  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash, fetchProjects, projectsLoading } = useAppStore()
+  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash, fetchProjects } = useAppStore()
   const { user } = useAuthStore()
   const { users, updateUser, fetchUsers } = useUserStore()
   
@@ -239,8 +241,8 @@ export default function ProjectsPage() {
           status: autoStatus 
         }
         
-        // Add project to store
-        const newId = addProject(newProject)
+        // Add project to store (now makes API call)
+        const newId = await addProject(newProject)
         
         if (!newId) {
           toast.error('Gagal membuat proyek')
@@ -257,9 +259,6 @@ export default function ProjectsPage() {
             }
           }
         }
-        
-        // Immediately refresh projects list to ensure new project appears
-        await fetchProjects()
         
         // Show success toast
         toast.success(`Proyek "${newProject.name}" berhasil dibuat!`)
@@ -285,23 +284,6 @@ export default function ProjectsPage() {
     }
   }
 
-  const handleDelete = (id, name) => {
-    // Langsung delete dari localStorage (skip API call sementara)
-    deleteProject(id)
-    
-    toast.custom((t) => (
-      <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-          <Trash2 size={13} className="text-red-500" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-800">{name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Dipindahkan ke sampah</p>
-        </div>
-      </div>
-    ), { duration: 3000 })
-  }
-
   const openDeleteModal = (e, p) => {
     e.stopPropagation()
     setDeletePasswordModal({ id: p.id, name: p.name })
@@ -309,26 +291,45 @@ export default function ProjectsPage() {
     setDeletePasswordError('')
   }
 
-  const handleDeleteWithPassword = () => {
-    // Sementara skip API call dan langsung delete dari localStorage
-    // karena ada masalah authentication
-    deleteProject(deletePasswordModal.id)
-    
-    toast.custom((t) => (
-      <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-          <Trash2 size={13} className="text-red-500" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-800">{deletePasswordModal.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Dipindahkan ke sampah</p>
-        </div>
-      </div>
-    ), { duration: 3000 })
-    
-    setDeletePasswordModal(null)
-    setDeletePassword('')
-    setDeletePasswordError('')
+  const handleDeleteWithPassword = async () => {
+    if (!deletePassword.trim()) {
+      setDeletePasswordError('Password wajib diisi')
+      return
+    }
+
+    try {
+      const response = await api.deleteProject(deletePasswordModal.id, { password: deletePassword })
+      
+      if (response.success) {
+        // Remove from local state
+        deleteProject(deletePasswordModal.id)
+        
+        toast.custom((t) => (
+          <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+              <Trash2 size={13} className="text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">{deletePasswordModal.name}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Proyek berhasil dihapus</p>
+            </div>
+          </div>
+        ), { duration: 3000 })
+        
+        setDeletePasswordModal(null)
+        setDeletePassword('')
+        setDeletePasswordError('')
+      } else {
+        setDeletePasswordError(response.message || 'Gagal menghapus proyek')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      if (error.status === 403) {
+        setDeletePasswordError('Password salah')
+      } else {
+        setDeletePasswordError('Terjadi kesalahan saat menghapus proyek')
+      }
+    }
   }
 
   const handleAssignEngineers = async () => {
@@ -394,11 +395,12 @@ export default function ProjectsPage() {
     }
   }
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="container-responsive spacing-md">
+      {/* Header */}
+      <div className="header-responsive">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Daftar Proyek</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="header-title">Daftar Proyek</h1>
+          <p className="header-subtitle">
             {active.length} proyek aktif · {completed.length} selesai
             <span className="ml-2 text-xs text-gray-400">
               (Total: {projects.length} proyek)
@@ -407,68 +409,112 @@ export default function ProjectsPage() {
         </div>
         <div className="flex items-center gap-2">
           {can(user, 'create_project') && (
-            <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
-              <Plus size={16} /> Tambah Proyek
+            <button onClick={() => setOpen(true)} className="btn-responsive primary">
+              <Plus size={16} />
+              <span className="mobile-hidden">Tambah Proyek</span>
+              <span className="desktop-hidden tablet-hidden">Tambah</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Search + Filter */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="card-compact">
+        <div className="flex items-center gap-3 flex-wrap mb-4">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama, lokasi, PM..."
-              className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder="Cari nama, lokasi, PM..."
+              className="input-responsive pl-8"
+            />
           </div>
-          <button onClick={() => setShowFilter(v => !v)}
-            className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors ${hasActiveFilter ? 'bg-[#0f4c81] text-white border-[#0f4c81]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
-            <SlidersHorizontal size={14} /> Filter
-            {hasActiveFilter && <span className="bg-white/30 text-white text-xs px-1.5 py-0.5 rounded-full">{[filterStatus!=='all',filterLokasi,filterBulan,filterTahun].filter(Boolean).length}</span>}
+          <button 
+            onClick={() => setShowFilter(v => !v)}
+            className={`btn-responsive ${hasActiveFilter ? 'primary' : 'secondary'}`}
+          >
+            <SlidersHorizontal size={14} /> 
+            <span className="mobile-hidden">Filter</span>
+            {hasActiveFilter && (
+              <span className="bg-white/30 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
+                {[filterStatus!=='all',filterLokasi,filterBulan,filterTahun].filter(Boolean).length}
+              </span>
+            )}
           </button>
           {hasActiveFilter && (
-            <button onClick={() => { setFilterStatus('all'); setFilterLokasi(''); setFilterBulan(''); setFilterTahun('') }}
-              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"><X size={13} /> Reset</button>
+            <button 
+              onClick={() => { setFilterStatus('all'); setFilterLokasi(''); setFilterBulan(''); setFilterTahun('') }}
+              className="btn-responsive danger"
+            >
+              <X size={13} /> 
+              <span className="mobile-hidden">Reset</span>
+            </button>
           )}
         </div>
 
         {showFilter && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">Status</label>
-              <div className="flex flex-col gap-1">
-                {[{key:'all',label:'Semua'},{key:'on_track',label:'On Track'},{key:'at_risk',label:'At Risk'},{key:'delayed',label:'Delayed'}].map(s => (
-                  <button key={s.key} onClick={() => setFilterStatus(s.key)}
-                    className={`text-left px-2.5 py-1.5 text-xs rounded-lg transition-colors ${filterStatus===s.key ? 'bg-[#0f4c81] text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>
-                    {s.label}
-                  </button>
-                ))}
+          <div className="filter-panel">
+            <h2 className="filter-title">
+              <SlidersHorizontal size={18} />
+              Filter Proyek
+            </h2>
+            
+            <div className="form-row-responsive sm-2 md-4">
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Status</label>
+                <div className="flex flex-col gap-1">
+                  {[{key:'all',label:'Semua'},{key:'on_track',label:'On Track'},{key:'at_risk',label:'At Risk'},{key:'delayed',label:'Delayed'}].map(s => (
+                    <button 
+                      key={s.key} 
+                      onClick={() => setFilterStatus(s.key)}
+                      className={`text-left px-2.5 py-1.5 text-xs rounded-lg transition-colors ${
+                        filterStatus===s.key 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">Lokasi</label>
-              <select value={filterLokasi} onChange={e => setFilterLokasi(e.target.value)}
-                className="w-full px-2.5 py-2 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none">
-                <option value="">Semua Lokasi</option>
-                {lokasiOptions.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">Bulan Deadline</label>
-              <select value={filterBulan} onChange={e => setFilterBulan(e.target.value)}
-                className="w-full px-2.5 py-2 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none">
-                <option value="">Semua Bulan</option>
-                {bulanOptions.map(b => <option key={b.val} value={b.val}>{b.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">Tahun Deadline</label>
-              <select value={filterTahun} onChange={e => setFilterTahun(e.target.value)}
-                className="w-full px-2.5 py-2 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none">
-                <option value="">Semua Tahun</option>
-                {tahunOptions.map(t => <option key={t} value={String(t)}>{t}</option>)}
-              </select>
+              
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Lokasi</label>
+                <select 
+                  value={filterLokasi} 
+                  onChange={e => setFilterLokasi(e.target.value)}
+                  className="input-responsive"
+                >
+                  <option value="">Semua Lokasi</option>
+                  {lokasiOptions.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+              
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Bulan Deadline</label>
+                <select 
+                  value={filterBulan} 
+                  onChange={e => setFilterBulan(e.target.value)}
+                  className="input-responsive"
+                >
+                  <option value="">Semua Bulan</option>
+                  {bulanOptions.map(b => <option key={b.val} value={b.val}>{b.label}</option>)}
+                </select>
+              </div>
+              
+              <div className="form-group-responsive">
+                <label className="text-responsive-sm font-medium text-gray-700">Tahun Deadline</label>
+                <select 
+                  value={filterTahun} 
+                  onChange={e => setFilterTahun(e.target.value)}
+                  className="input-responsive"
+                >
+                  <option value="">Semua Tahun</option>
+                  {tahunOptions.map(t => <option key={t} value={String(t)}>{t}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -476,68 +522,89 @@ export default function ProjectsPage() {
 
       {/* Active Projects Grid */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="project-cards-grid">
           {filtered.map(p => (
-            <div key={p.id} className="card hover:shadow-md transition-shadow">
-              <div>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                    <h3 className="font-semibold text-gray-800 text-sm">{p.name}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{p.location}</p>
-                  </div>
-                  <Badge variant={statusMap[p.status]?.variant || 'default'}>{statusMap[p.status]?.label || p.status}</Badge>
+            <div key={p.id} className="project-card">
+              <div className="project-card-header">
+                <div className="cursor-pointer flex-1 min-w-0" onClick={() => navigate(`/projects/${p.id}`)}>
+                  <h3 className="project-card-title">{p.name}</h3>
+                  <p className="project-card-location">{p.location}</p>
                 </div>
-                <div className="space-y-1.5 mb-4 cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Progress</span>
-                    <span className="font-semibold text-gray-700">{p.progress || 0}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.progress || 0}%` }} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-gray-400">RAB</p>
-                    <p className="font-semibold text-gray-700">{formatRupiah(p.rab)}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-gray-400">RAB Terealisasi</p>
-                    <p className={`font-semibold ${p.realisasi > p.rab ? 'text-red-500' : 'text-gray-700'}`}>{formatRupiah(p.realisasi || 0)}</p>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-400 cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <span>PM: {p.pm}</span>
-                  <span>Deadline: {new Date(p.deadline).toLocaleDateString('id-ID')}</span>
+                <div className="project-card-status">
+                  <Badge variant={statusMap[p.status]?.variant || 'default'}>
+                    {statusMap[p.status]?.label || p.status}
+                  </Badge>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                {/* Konfirmasi selesai */}
-                {confirmId === p.id ? (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
-                    <p className="text-xs font-medium text-green-800">Tandai proyek ini selesai?</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
-                        className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium transition-colors">
-                        Ya, Selesai
-                      </button>
-                      <button onClick={() => setConfirmId(null)}
-                        className="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 py-1.5 rounded-lg font-medium transition-colors">
-                        Batal
-                      </button>
-                    </div>
+              
+              <div className="project-card-divider"></div>
+              
+              <div className="project-card-progress cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                <div className="project-card-progress-header">
+                  <p className="project-card-progress-label">Progress</p>
+                  <p className="project-card-progress-value">{p.progress || 0}%</p>
+                </div>
+                <div className="project-card-progress-bar">
+                  <div className="project-card-progress-fill" style={{ width: `${p.progress || 0}%` }} />
+                </div>
+              </div>
+              
+              <div className="project-card-divider"></div>
+              
+              <div className="project-card-info cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                <div className="project-card-info-item">
+                  <p className="project-card-info-label">RAB</p>
+                  <p className="project-card-info-value">{formatRupiah(p.rab)}</p>
+                </div>
+                <div className="project-card-info-item">
+                  <p className="project-card-info-label">Terealisasi</p>
+                  <p className={`project-card-info-value ${p.realisasi > p.rab ? 'over-budget' : ''}`}>
+                    {formatRupiah(p.realisasi || 0)}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="project-card-meta cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                <span className="project-card-pm">PM: {p.pm}</span>
+                <span className="project-card-deadline">
+                  {new Date(p.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                </span>
+              </div>
+              
+              {/* Konfirmasi selesai */}
+              {confirmId === p.id ? (
+                <div className="project-card-confirm">
+                  <p className="project-card-confirm-title">Tandai proyek ini selesai?</p>
+                  <div className="project-card-confirm-actions">
+                    <button 
+                      onClick={() => { markComplete(p.id); setConfirmId(null); toast.success('Proyek selesai') }}
+                      className="project-card-confirm-btn project-card-confirm-btn-yes"
+                    >
+                      Ya, Selesai
+                    </button>
+                    <button 
+                      onClick={() => setConfirmId(null)}
+                      className="project-card-confirm-btn project-card-confirm-btn-no"
+                    >
+                      Batal
+                    </button>
                   </div>
-                ) : (
-                  /* Tombol normal */
-                  <div className="flex items-center gap-2">
-                    {can(user, 'mark_complete') && (
-                      <button onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 py-2 rounded-lg font-medium transition-colors">
-                        <CheckCircle size={13} /> Selesai
-                      </button>
-                    )}
-                    {can(user, 'edit_project') && (
-                      <button onClick={(e) => { 
+                </div>
+              ) : (
+                /* Tombol normal */
+                <div className="project-card-actions">
+                  {can(user, 'mark_complete') && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setConfirmId(p.id) }}
+                      className="project-card-btn project-card-btn-primary"
+                    >
+                      <CheckCircle size={13} /> 
+                      <span className="mobile-hidden">Selesai</span>
+                    </button>
+                  )}
+                  {can(user, 'edit_project') && (
+                    <button 
+                      onClick={(e) => { 
                         e.stopPropagation(); 
                         setEditProject(p); 
                         
@@ -561,46 +628,73 @@ export default function ProjectsPage() {
                         }); 
                         setOpen(true) 
                       }}
-                        className="flex-1 flex items-center justify-center text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 rounded-lg font-medium transition-colors">
-                        Edit
-                      </button>
-                    )}
-                    {can(user, 'assign_project') && (
-                      <button onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setAssignModal({ projectId: p.id, projectName: p.name })
-                        // Get currently assigned engineers
-                        const assignedEngineers = users.filter(u => 
-                          u.role === 'engineer' && 
-                          u.assignedProjects && 
-                          u.assignedProjects.includes(String(p.id))
-                        ).map(u => u.id)
-                        setSelectedEngineers(assignedEngineers)
-                      }}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-xs text-purple-600 bg-purple-50 hover:bg-purple-100 py-2 rounded-lg font-medium transition-colors">
-                        <Users size={13} /> Assign
-                      </button>
-                    )}
-                    {can(user, 'delete_project') && (
-                      <button onClick={(e) => openDeleteModal(e, p)}
-                        className="flex items-center justify-center text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                      className="project-card-btn project-card-btn-secondary"
+                    >
+                      <span className="mobile-hidden">Edit</span>
+                      <span className="desktop-hidden tablet-hidden">✏️</span>
+                    </button>
+                  )}
+                  {can(user, 'assign_project') && (
+                    (() => {
+                      const isAssigned = (p.assignments_count > 0) || (p.assignedEngineers && p.assignedEngineers.length > 0)
+                      return isAssigned ? (
+                        <button 
+                          disabled
+                          className="project-card-btn project-card-btn-secondary"
+                          title="Proyek sudah di-assign"
+                        >
+                          <Users size={13} /> 
+                          <span className="mobile-hidden">✓ Assigned</span>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setAssignModal({ projectId: p.id, projectName: p.name })
+                            // Get currently assigned engineers
+                            const assignedEngineers = users.filter(u => 
+                              u.role === 'engineer' && 
+                              u.assignedProjects && 
+                              u.assignedProjects.includes(String(p.id))
+                            ).map(u => u.id)
+                            setSelectedEngineers(assignedEngineers)
+                          }}
+                          className="project-card-btn project-card-btn-secondary"
+                        >
+                          <Users size={13} /> 
+                          <span className="mobile-hidden">Assign</span>
+                        </button>
+                      )
+                    })()
+                  )}
+                  {can(user, 'delete_project') && (
+                    <button 
+                      onClick={(e) => openDeleteModal(e, p)}
+                      className="project-card-btn project-card-btn-danger"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-sm mb-4">
+        <div className="empty-state-responsive">
+          <div className="icon opacity-50">📋</div>
+          <h3 className="title">
             {projects.length === 0 
-              ? 'Belum ada proyek. Gunakan tombol "Tambah Proyek" di atas untuk membuat proyek pertama.'
-              : 'Tidak ada proyek yang sesuai dengan filter.'
+              ? 'Belum ada proyek' 
+              : 'Tidak ada proyek yang sesuai dengan filter'
             }
-          </div>
+          </h3>
+          <p className="description">
+            {projects.length === 0 
+              ? 'Gunakan tombol "Tambah Proyek" di atas untuk membuat proyek pertama.'
+              : 'Coba ubah filter atau kata kunci pencarian.'
+            }
+          </p>
         </div>
       )}
 
@@ -621,21 +715,21 @@ export default function ProjectsPage() {
             <div className="mt-4 space-y-3">
               {filteredCompleted.map(p => (
                 <div key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
-                  className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                  className="project-history-item">
+                  <div className="project-history-icon">
                     <CheckCircle size={16} className="text-green-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">{p.name}</p>
-                    <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                  <div className="project-history-content">
+                    <p className="project-history-title">{p.name}</p>
+                    <p className="project-history-meta">{p.location} · PM: {p.pm}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-semibold text-green-600">100%</p>
-                    <p className="text-xs text-gray-400">Selesai {p.completedAt ? new Date(p.completedAt).toLocaleDateString('id-ID') : '-'}</p>
+                  <div className="project-history-progress">
+                    <p className="project-history-progress-value">100%</p>
+                    <p className="project-history-progress-date">Selesai {p.completedAt ? new Date(p.completedAt).toLocaleDateString('id-ID') : '-'}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-gray-500">{formatRupiah(p.realisasi || 0)}</p>
-                    <p className="text-xs text-gray-400">dari {formatRupiah(p.rab)}</p>
+                  <div className="project-history-budget">
+                    <p className="project-history-budget-value">{formatRupiah(p.realisasi || 0)}</p>
+                    <p className="project-history-budget-total">dari {formatRupiah(p.rab)}</p>
                   </div>
                   <Badge variant="info">Selesai</Badge>
                   <button onClick={(e) => { e.stopPropagation(); openDeleteModal(e, p) }}

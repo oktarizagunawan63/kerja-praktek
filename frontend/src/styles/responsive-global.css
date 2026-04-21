@@ -1,0 +1,632 @@
+/* Global Responsive Styles - Compact & Mobile-First */
+
+/* Base responsive utilities - Ultra Compact */
+.container-responsive {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+/* Ultra compact spacing system */
+.spacing-xs { padding: 6px; }
+.spacing-sm { padding: 8px; }
+.spacing-md { padding: 12px; }
+.spacing-lg { padding: 16px; }
+.spacing-xl { padding: 20px; }
+
+/* Responsive grid system */
+.grid-responsive {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive.sm-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-responsive.sm-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .grid-responsive.md-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-responsive.md-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-responsive.md-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive.lg-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-responsive.lg-5 { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Ultra compact cards */
+.card-compact {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.card-compact:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Responsive text sizes */
+.text-responsive-xs { font-size: 12px; }
+.text-responsive-sm { font-size: 14px; }
+.text-responsive-base { font-size: 16px; }
+.text-responsive-lg { font-size: 18px; }
+.text-responsive-xl { font-size: 20px; }
+.text-responsive-2xl { font-size: 24px; }
+
+@media (max-width: 640px) {
+  .text-responsive-2xl { font-size: 20px; }
+  .text-responsive-xl { font-size: 18px; }
+  .text-responsive-lg { font-size: 16px; }
+}
+
+/* Ultra compact buttons */
+.btn-responsive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  min-height: 32px;
+}
+
+@media (max-width: 640px) {
+  .btn-responsive {
+    padding: 8px 10px;
+    font-size: 12px;
+    width: 100%;
+    min-height: 36px;
+  }
+}
+
+.btn-responsive.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-responsive.primary:hover {
+  background: #2563eb;
+}
+
+.btn-responsive.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-responsive.secondary:hover {
+  background: #e5e7eb;
+}
+
+.btn-responsive.danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-responsive.danger:hover {
+  background: #dc2626;
+}
+
+/* Ultra compact stats cards */
+.stats-card {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.stats-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.stats-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.stats-card-label {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 640px) {
+  .stats-card {
+    padding: 10px;
+  }
+  
+  .stats-card-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .stats-card-value {
+    font-size: 18px;
+  }
+  
+  .stats-card-label {
+    font-size: 10px;
+  }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.table-responsive table {
+  width: 100%;
+  min-width: 600px;
+}
+
+@media (max-width: 640px) {
+  .table-responsive table {
+    min-width: 500px;
+  }
+}
+
+/* Responsive form elements */
+.form-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .form-row-responsive.sm-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .form-row-responsive.md-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.input-responsive {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.input-responsive:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Ultra compact header */
+.header-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .header-responsive {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 2px 0 0 0;
+}
+
+@media (max-width: 640px) {
+  .header-title {
+    font-size: 18px;
+  }
+  
+  .header-subtitle {
+    font-size: 12px;
+  }
+}
+
+/* Responsive action bar */
+.action-bar-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 640px) {
+  .action-bar-responsive {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Responsive filter panel */
+.filter-panel {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.filter-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile-specific utilities */
+@media (max-width: 640px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  .mobile-center {
+    text-align: center !important;
+  }
+}
+
+/* Tablet-specific utilities */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-hidden {
+    display: none !important;
+  }
+}
+
+/* Desktop-specific utilities */
+@media (min-width: 1025px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+/* Loading states */
+.loading-responsive {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner-responsive {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty-state-responsive {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.empty-state-responsive .icon {
+  margin: 0 auto 16px;
+  opacity: 0.5;
+}
+
+.empty-state-responsive .title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #374151;
+}
+
+.empty-state-responsive .description {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Ultra compact mode for small screens */
+@media (max-width: 480px) {
+  .container-responsive {
+    padding: 0 8px;
+  }
+  
+  .spacing-md { padding: 8px; }
+  .spacing-lg { padding: 12px; }
+  .spacing-xl { padding: 16px; }
+  
+  .card-compact {
+    padding: 8px;
+    border-radius: 4px;
+  }
+  
+  .stats-card {
+    padding: 8px;
+  }
+  
+  .stats-card-value {
+    font-size: 16px;
+  }
+  
+  .header-title {
+    font-size: 16px;
+  }
+}
+/* Additional responsive utilities for better mobile experience */
+
+/* Line clamp utility for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* Responsive spacing adjustments */
+@media (max-width: 640px) {
+  .container-responsive {
+    padding: 0 8px;
+  }
+  
+  /* Reduce card padding on mobile */
+  .card-compact {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  /* Stack buttons vertically on mobile */
+  .mobile-stack-buttons {
+    flex-direction: column !important;
+  }
+  
+  .mobile-stack-buttons > * {
+    width: 100% !important;
+  }
+  
+  /* Smaller text on mobile */
+  .header-title {
+    font-size: 18px;
+  }
+  
+  .header-subtitle {
+    font-size: 12px;
+  }
+}
+
+/* Compact table styles for mobile */
+@media (max-width: 768px) {
+  .table-responsive table {
+    font-size: 12px;
+  }
+  
+  .table-responsive th,
+  .table-responsive td {
+    padding: 8px 4px;
+  }
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 640px) {
+  .btn-responsive {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+  
+  .input-responsive {
+    min-height: 44px;
+    padding: 12px;
+  }
+}
+
+/* Responsive modal improvements */
+@media (max-width: 640px) {
+  .fixed.inset-0 > div {
+    margin: 8px !important;
+    max-height: calc(100vh - 16px) !important;
+    width: calc(100% - 16px) !important;
+    max-width: none !important;
+  }
+}
+
+/* Status badges responsive */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 640px) {
+  .status-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* Responsive grid improvements */
+.grid-responsive.auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .grid-responsive.auto-fit {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Better scrolling on mobile */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+/* Responsive navigation improvements */
+@media (max-width: 640px) {
+  .mobile-nav-compact {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Better focus states for accessibility */
+.btn-responsive:focus,
+.input-responsive:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Responsive image handling */
+.responsive-image {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+@media (max-width: 640px) {
+  .responsive-image {
+    border-radius: 6px;
+  }
+}
+
+/* Compact notification styles */
+@media (max-width: 640px) {
+  .toast-container {
+    padding: 8px;
+  }
+  
+  .toast-container > div {
+    font-size: 12px;
+    padding: 8px 12px;
+    max-width: calc(100vw - 32px);
+  }
+}
+
+/* Performance optimizations */
+.card-compact,
+.btn-responsive,
+.stats-card {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .card-compact,
+  .btn-responsive,
+  .stats-card {
+    transition: none !important;
+    animation: none !important;
+  }
+}

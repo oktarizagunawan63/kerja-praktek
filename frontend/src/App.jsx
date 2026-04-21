@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import './styles/modern-professional.css'
 import './styles/professional.css'
 import './styles/animations.css'
+import './styles/responsive-global.css'
 import useAuthStore from './store/authStore'
 import { isAdministrator, isSiteManager, isSalesManager, isSales } from './utils/roleUtils'
-import { can, canAccessVisitManagement, canManageProjects } from './lib/permissions'
+import { canAccessVisitManagement, canManageProjects } from './lib/permissions'
 import { clearErrorNotifications } from './utils/clearErrorNotifications'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
@@ -17,6 +18,7 @@ import SalesManagerDashboard from './pages/SalesManagerDashboard'
 import SalesDashboard from './pages/SalesDashboard'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
+import ServerStatus from './components/ServerStatus'
 import DocumentsPage from './pages/DocumentsPage'
 import ReportsPage from './pages/ReportsPage'
 import ActivityLogPage from './pages/ActivityLogPage'
@@ -208,6 +210,9 @@ export default function App() {
         onClose={handleWelcomeClose}
         user={user}
       />
+
+      {/* Server Status Indicator */}
+      <ServerStatus />
     </>
   )
 }

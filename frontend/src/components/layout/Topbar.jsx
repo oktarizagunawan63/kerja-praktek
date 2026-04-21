@@ -23,7 +23,7 @@ export default function Topbar() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const { notifications, projects, documents } = useAppStore()
-  const unread = notifications.filter(n => !n.isRead).length
+  const unread = (notifications || []).filter(n => !n.isRead).length
 
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
@@ -68,7 +68,9 @@ export default function Topbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const hasResults = searchResults.projects.length > 0 || searchResults.customers.length > 0 || searchResults.users.length > 0
+  const hasResults = (searchResults?.projects?.length || 0) > 0 || 
+                    (searchResults?.customers?.length || 0) > 0 || 
+                    (searchResults?.users?.length || 0) > 0
 
   const handleSelect = (path) => {
     navigate(path)
@@ -104,7 +106,7 @@ export default function Topbar() {
               <p className="text-xs text-gray-400 px-4 py-3">Tidak ada hasil untuk "{query}"</p>
             ) : (
               <>
-                {searchResults.projects.length > 0 && (
+                {(searchResults?.projects?.length || 0) > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Proyek</p>
                     {searchResults.projects.map(p => (
@@ -116,7 +118,7 @@ export default function Topbar() {
                     ))}
                   </div>
                 )}
-                {searchResults.customers.length > 0 && (
+                {(searchResults?.customers?.length || 0) > 0 && (
                   <div className="border-t border-gray-50">
                     <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Customers</p>
                     {searchResults.customers.map(c => (
@@ -128,7 +130,7 @@ export default function Topbar() {
                     ))}
                   </div>
                 )}
-                {searchResults.users.length > 0 && (
+                {(searchResults?.users?.length || 0) > 0 && (
                   <div className="border-t border-gray-50">
                     <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Users</p>
                     {searchResults.users.map(u => (

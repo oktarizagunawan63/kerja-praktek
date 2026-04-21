@@ -7,6 +7,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
+import '../styles/responsive-global.css'
 
 export default function WarningsPage() {
   const { user } = useAuthStore()
@@ -199,89 +200,91 @@ export default function WarningsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container-responsive spacing-md">
+      {/* Header */}
+      <div className="header-responsive">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Warning Management</h1>
-          <p className="text-gray-600">Kelola warning dan notifikasi sistem</p>
+          <h1 className="header-title">Warning Management</h1>
+          <p className="header-subtitle">Kelola warning dan notifikasi sistem</p>
         </div>
         
-        <Button 
+        <button 
           onClick={handleMarkAllAsRead}
-          className="bg-green-600 hover:bg-green-700"
+          className="btn-responsive primary"
         >
           <CheckCircle size={16} />
-          Mark All as Read
-        </Button>
+          <span className="mobile-hidden">Mark All as Read</span>
+          <span className="desktop-hidden tablet-hidden">Mark All</span>
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-red-50 rounded-xl p-6 border border-red-100">
-          <div className="flex items-center justify-between">
+      <div className="grid-responsive sm-2 md-4 spacing-md">
+        <div className="stats-card" style={{ borderLeft: '4px solid #ef4444' }}>
+          <div className="stats-card-header">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Warnings</p>
-              <p className="text-2xl font-bold text-red-700">{warningStats.total || 0}</p>
+              <p className="stats-card-label">Total Warnings</p>
+              <p className="stats-card-value" style={{ color: '#ef4444' }}>{warningStats.total || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="text-white" size={24} />
+            <div className="stats-card-icon" style={{ background: '#ef4444' }}>
+              <AlertTriangle className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-100">
-          <div className="flex items-center justify-between">
+        <div className="stats-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="stats-card-header">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Unread</p>
-              <p className="text-2xl font-bold text-yellow-700">{warningStats.unread || 0}</p>
+              <p className="stats-card-label">Unread</p>
+              <p className="stats-card-value" style={{ color: '#f59e0b' }}>{warningStats.unread || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
-              <Clock className="text-white" size={24} />
+            <div className="stats-card-icon" style={{ background: '#f59e0b' }}>
+              <Clock className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="bg-green-50 rounded-xl p-6 border border-green-100">
-          <div className="flex items-center justify-between">
+        <div className="stats-card" style={{ borderLeft: '4px solid #10b981' }}>
+          <div className="stats-card-header">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Read</p>
-              <p className="text-2xl font-bold text-green-700">{warningStats.read || 0}</p>
+              <p className="stats-card-label">Read</p>
+              <p className="stats-card-value" style={{ color: '#10b981' }}>{warningStats.read || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-              <CheckCircle className="text-white" size={24} />
+            <div className="stats-card-icon" style={{ background: '#10b981' }}>
+              <CheckCircle className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-          <div className="flex items-center justify-between">
+        <div className="stats-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+          <div className="stats-card-header">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">High Priority</p>
-              <p className="text-2xl font-bold text-blue-700">{warningStats.high_priority || 0}</p>
+              <p className="stats-card-label">High Priority</p>
+              <p className="stats-card-value" style={{ color: '#3b82f6' }}>{warningStats.high_priority || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="text-white" size={24} />
+            <div className="stats-card-icon" style={{ background: '#3b82f6' }}>
+              <AlertTriangle className="text-white" size={20} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-green-50 rounded-xl p-6 mb-8 border border-green-100">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="text-green-600" size={20} />
-          <h2 className="text-lg font-semibold text-gray-900">Filter Warnings</h2>
-        </div>
+      <div className="filter-panel">
+        <h2 className="filter-title">
+          <Filter size={18} />
+          Filter Warnings
+        </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="form-row-responsive sm-2 md-3">
+          <div className="form-group-responsive">
+            <label className="text-responsive-sm font-medium text-gray-700">
               Status
             </label>
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="input-responsive"
             >
               <option value="all">Semua</option>
               <option value="unread">Belum Dibaca</option>
@@ -289,29 +292,43 @@ export default function WarningsPage() {
             </select>
           </div>
           
-          <Input
-            label="Tanggal Mulai"
-            type="date"
-            value={filters.start_date}
-            onChange={(e) => setFilters(prev => ({ ...prev, start_date: e.target.value }))}
-          />
+          <div className="form-group-responsive">
+            <label className="text-responsive-sm font-medium text-gray-700">
+              Tanggal Mulai
+            </label>
+            <input
+              type="date"
+              value={filters.start_date}
+              onChange={(e) => setFilters(prev => ({ ...prev, start_date: e.target.value }))}
+              className="input-responsive"
+            />
+          </div>
           
-          <Input
-            label="Tanggal Akhir"
-            type="date"
-            value={filters.end_date}
-            onChange={(e) => setFilters(prev => ({ ...prev, end_date: e.target.value }))}
-          />
+          <div className="form-group-responsive">
+            <label className="text-responsive-sm font-medium text-gray-700">
+              Tanggal Akhir
+            </label>
+            <input
+              type="date"
+              value={filters.end_date}
+              onChange={(e) => setFilters(prev => ({ ...prev, end_date: e.target.value }))}
+              className="input-responsive"
+            />
+          </div>
         </div>
       </div>
 
       {/* Warnings Table */}
-      <DataTable
-        columns={columns}
-        data={warnings}
-        loading={loading}
-        emptyMessage="Tidak ada warning"
-      />
+      <div className="card-compact">
+        <div className="table-responsive">
+          <DataTable
+            columns={columns}
+            data={warnings}
+            loading={loading}
+            emptyMessage="Tidak ada warning"
+          />
+        </div>
+      </div>
     </div>
   )
 }
