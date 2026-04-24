@@ -1,31 +1,95 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Users, Calendar, CheckSquare, Clock, TrendingUp, MapPin, Target } from 'lucide-react'
 import useAuthStore from '../store/authStore'
+import { api } from '../lib/api'
+import toast from 'react-hot-toast'
 
 export default function SalesDashboard() {
   const { user } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    my_customers: 0,
+    assigned_visits: 0,
+    completed_visits: 0,
+    monthly_completion: 0
+  })
+  const [myVisits, setMyVisits] = useState([])
+  const [myCustomers, setMyCustomers] = useState([])
+  const [todayAttendance, setTodayAttendance] = useState(null)
 
-  // Mock data untuk sales
-  const stats = {
-    my_customers: 8,
-    assigned_visits: 15,
-    completed_visits: 12,
-    monthly_completion: 80
-  }
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
-  const myVisits = [
-    { id: 1, customer: { name: 'PT Maju Jaya' }, lokasi: 'Jakarta Pusat', tanggal_visit: '2026-04-10', status: 'pending' },
-    { id: 2, customer: { name: 'CV Berkah Mandiri' }, lokasi: 'Jakarta Selatan', tanggal_visit: '2026-04-11', status: 'done' },
-    { id: 3, customer: { name: 'PT Sukses Bersama' }, lokasi: 'Jakarta Timur', tanggal_visit: '2026-04-12', status: 'pending' }
-  ]
-
-  const todayAttendance = {
-    check_in_time: '08:30',
-    check_out_time: null
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch customers (including pending)
+      const customersRes = await api.getCustomers()
+      const allCustomers = customersRes.data || []
+      // Only count approved customers in stats
+      const approvedCustomers = allCustomers.filter(c => c.approval_status === 'approved')
+      
+      // Fetch plan visits
+      const visitsRes = await api.getPlanVisits()
+      const allVisits = visitsRes.data || []
+      
+      // Fetch realisasi visits
+      const realisasiRes = await api.getRealisasiVisits()
+      const completedVisits = realisasiRes.data || []
+      
+      // Fetch today attendance
+      const attendanceRes = await api.getTodayAttendance()
+      setTodayAttendance(attendanceRes.data)
+      
+      // Calculate stats (only approved customers)
+      const assignedVisits = allVisits.filter(v => v.assigned_to === user.id)
+      const completed = completedVisits.filter(v => v.visited_by === user.id && v.status === 'done')
+      const completionRate = assignedVisits.length > 0 
+        ? Math.round((completed.length / assignedVisits.length) * 100) 
+        : 0
+      
+      setStats({
+        my_customers: approvedCustomers.length, // Only approved
+        assigned_visits: assignedVisits.length,
+        completed_visits: completed.length,
+        monthly_completion: completionRate
+      })
+      
+      // Get upcoming visits (next 5)
+      const upcomingVisits = assignedVisits
+        .sort((a, b) => new Date(a.tanggal_visit) - new Date(b.tanggal_visit))
+        .slice(0, 5)
+      
+      setMyVisits(upcomingVisits)
+      
+      // Set all customers (including pending) for display
+      setMyCustomers(allCustomers.slice(0, 5))
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      toast.error('Gagal memuat data dashboard')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const canCheckIn = !todayAttendance?.check_in_time
   const canCheckOut = todayAttendance?.check_in_time && !todayAttendance?.check_out_time
+
+  if (loading) {
+    return (
+      <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 min-h-screen">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 min-h-screen">
@@ -106,7 +170,36 @@ export default function SalesDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* My Customers */}
+        <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="text-red-600" size={20} />
+            <h2 className="text-lg font-semibold text-gray-900">My Customers</h2>
+          </div>
+          
+          <div className="space-y-3">
+            {myCustomers.length > 0 ? (
+              myCustomers.map((customer) => (
+                <div key={customer.id} className="p-3 bg-red-50 rounded-lg border border-red-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-medium text-gray-900">{customer.name}</p>
+                    {customer.approval_status === 'pending' && (
+                      <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">{customer.company || '-'}</p>
+                  <p className="text-xs text-gray-500 mt-1">{customer.phone}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">Belum ada customer</p>
+            )}
+          </div>
+        </div>
+
         {/* My Assigned Visits */}
         <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6">
           <div className="flex items-center gap-2 mb-4">

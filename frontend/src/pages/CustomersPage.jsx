@@ -111,38 +111,74 @@ export default function CustomersPage() {
     }
   }
 
-  // FIX 5: Improved location function with user feedback
-  const ambilLokasi = () => {
-    if (!navigator.geolocation) {
-      toast.error('Browser tidak mendukung GPS')
-      return
-    }
-
-    toast.loading('Mengambil lokasi...', { id: 'location' })
+  // Auto-geocode address to get lat/long
+  const geocodeAddress = async (address) => {
+    if (!address || address.length < 10) return
     
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    try {
+      // Use Nominatim (OpenStreetMap) for free geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      )
+      const data = await response.json()
+      
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0]
         setFormData(prev => ({
           ...prev,
-          latitude: position.coords.latitude.toString(),
-          longitude: position.coords.longitude.toString()
+          latitude: lat,
+          longitude: lon
         }))
         setLokasiAmbil(true)
-        toast.success(
-          `✅ Lokasi berhasil diambil: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
-          { id: 'location' }
-        )
-      },
-      (error) => {
-        toast.error(`Gagal mengambil lokasi: ${error.message}`, { id: 'location' })
+        toast.success(`Koordinat: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}`, {
+          duration: 2000
+        })
+      } else {
         setLokasiAmbil(false)
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
       }
-    )
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      setLokasiAmbil(false)
+    }
+  }
+
+  // Debounce geocoding to avoid too many requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.address && formData.address.length >= 10) {
+        geocodeAddress(formData.address)
+      }
+    }, 1000) // Wait 1 second after user stops typing
+    
+    return () => clearTimeout(timer)
+  }, [formData.address])
+
+  const handleApprove = async (customer) => {
+    if (!window.confirm(`Approve customer ${customer.name}?`)) return
+    
+    try {
+      await api.approveCustomer(customer.id)
+      toast.success('Customer berhasil di-approve')
+      fetchCustomers()
+    } catch (error) {
+      toast.error(error.message || 'Gagal approve customer')
+    }
+  }
+
+  const handleReject = async (customer) => {
+    const reason = window.prompt('Alasan penolakan (min 10 karakter):')
+    if (!reason || reason.length < 10) {
+      toast.error('Alasan penolakan wajib diisi minimal 10 karakter')
+      return
+    }
+    
+    try {
+      await api.rejectCustomer(customer.id, { rejection_reason: reason })
+      toast.success('Customer ditolak')
+      fetchCustomers()
+    } catch (error) {
+      toast.error(error.message || 'Gagal reject customer')
+    }
   }
 
   const columns = [
@@ -151,7 +187,19 @@ export default function CustomersPage() {
       label: 'Nama Customer',
       render: (customer) => (
         <div>
-          <p className="font-medium text-gray-900">{customer.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-gray-900">{customer.name}</p>
+            {customer.approval_status === 'pending' && (
+              <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded">
+                Pending
+              </span>
+            )}
+            {customer.approval_status === 'rejected' && (
+              <span className="px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded">
+                Rejected
+              </span>
+            )}
+          </div>
           {customer.company && (
             <p className="text-sm text-gray-500">{customer.company}</p>
           )}
@@ -202,8 +250,28 @@ export default function CustomersPage() {
       label: 'Aksi',
       render: (customer) => (
         <div className="flex items-center gap-2">
-          {/* Only sales_manager and admin can edit customers */}
-          {['sales_manager', 'administrator'].includes(user?.role) && (
+          {/* Sales Manager approval buttons for pending customers */}
+          {user?.role === 'sales_manager' && customer.approval_status === 'pending' && (
+            <>
+              <button
+                onClick={() => handleApprove(customer)}
+                className="px-2 py-1 text-xs bg-green-600 text-white hover:bg-green-700 rounded"
+                title="Approve"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => handleReject(customer)}
+                className="px-2 py-1 text-xs bg-red-600 text-white hover:bg-red-700 rounded"
+                title="Reject"
+              >
+                Reject
+              </button>
+            </>
+          )}
+          
+          {/* Only sales_manager and admin can edit approved customers */}
+          {['sales_manager', 'administrator'].includes(user?.role) && customer.approval_status === 'approved' && (
             <button
               onClick={() => handleEdit(customer)}
               className="p-1 text-blue-600 hover:bg-blue-50 rounded"
@@ -212,6 +280,7 @@ export default function CustomersPage() {
               <Edit size={14} />
             </button>
           )}
+          
           {/* Only sales_manager and admin can delete customers */}
           {['sales_manager', 'administrator'].includes(user?.role) && (
             <button
@@ -222,8 +291,14 @@ export default function CustomersPage() {
               <Trash2 size={14} />
             </button>
           )}
-          {/* Sales role can only view */}
-          {user?.role === 'sales' && (
+          
+          {/* Sales role can only view, cannot edit pending */}
+          {user?.role === 'sales' && customer.approval_status === 'pending' && (
+            <span className="text-xs text-yellow-700 px-2 py-1 bg-yellow-100 rounded">
+              Menunggu Approval
+            </span>
+          )}
+          {user?.role === 'sales' && customer.approval_status === 'approved' && (
             <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
               View Only
             </span>
@@ -254,8 +329,8 @@ export default function CustomersPage() {
           <p className="header-subtitle">Kelola data customer untuk visit management</p>
         </div>
         
-        {/* Only sales_manager and admin can create customers */}
-        {['sales_manager', 'administrator'].includes(user?.role) && (
+        {/* Sales can create customers (pending approval), sales_manager and admin can create directly */}
+        {['sales', 'sales_manager', 'administrator'].includes(user?.role) && (
           <button onClick={() => setShowAddForm(true)} className="btn-responsive primary">
             <Plus size={16} />
             <span className="mobile-hidden">Tambah Customer</span>
@@ -376,34 +451,21 @@ export default function CustomersPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   className="input-responsive"
                   style={{ minHeight: '80px' }}
-                  placeholder="Alamat lengkap customer..."
+                  placeholder="Alamat lengkap customer... (koordinat akan otomatis terisi)"
                   required
                 />
+                
+                {/* Auto-show coordinates when available */}
+                {lokasiAmbil && formData.latitude && formData.longitude && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                    📍 {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                  </div>
+                )}
               </div>
               
               {/* Hidden latitude/longitude fields */}
               <input type="hidden" value={formData.latitude} />
               <input type="hidden" value={formData.longitude} />
-              
-              {/* Location button with status feedback */}
-              <div className="form-group-responsive">
-                <button
-                  type="button"
-                  onClick={ambilLokasi}
-                  className="btn-responsive secondary w-full"
-                >
-                  <MapPin size={16} />
-                  Ambil Lokasi Saat Ini
-                </button>
-                
-                {lokasiAmbil && (
-                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-responsive-sm text-green-800">
-                      ✅ Lokasi berhasil diambil: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
-                    </p>
-                  </div>
-                )}
-              </div>
               
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button type="submit" className="btn-responsive primary flex-1">

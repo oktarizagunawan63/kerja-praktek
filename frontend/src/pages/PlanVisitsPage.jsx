@@ -332,7 +332,7 @@ export default function PlanVisitsPage() {
           <p className="header-subtitle">Kelola rencana kunjungan sales</p>
         </div>
         
-        {user?.role === 'sales_manager' && (
+        {['sales', 'sales_manager'].includes(user?.role) && (
           <button 
             onClick={() => setShowAddForm(true)}
             className="btn-responsive primary"
@@ -434,7 +434,7 @@ export default function PlanVisitsPage() {
           <p className="description">
             {searchQuery ? 'Tidak ada hasil yang sesuai dengan pencarian' : 'Mulai dengan menambahkan plan visit baru'}
           </p>
-          {user?.role === 'sales_manager' && !searchQuery && (
+          {['sales', 'sales_manager'].includes(user?.role) && !searchQuery && (
             <button 
               onClick={() => setShowAddForm(true)}
               className="btn-responsive primary"
@@ -497,6 +497,15 @@ export default function PlanVisitsPage() {
                     {visit.lokasi}
                   </span>
                 </div>
+
+                {/* Coordinates */}
+                {(visit.customer?.latitude || visit.customer?.longitude) && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-responsive-xs text-gray-500 font-mono">
+                      📍 {visit.customer?.latitude}, {visit.customer?.longitude}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-gray-400 flex-shrink-0" />

@@ -160,16 +160,7 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
           setValidWorkLocation(workLocationCheck)
           setGpsData(locationData)
           
-          if (warnings.length > 0) {
-            toast.error(`GPS Warning: ${warnings.join(', ')}`)
-          } else if (!workLocationCheck.isValid) {
-            toast.error(`Anda berada ${workLocationCheck.distance}m dari ${workLocationCheck.location.name}. Harus dalam radius ${workLocationCheck.location.radius}m.`)
-          } else {
-            const locationMsg = workLocationCheck.location 
-              ? `di ${workLocationCheck.location.name} (${workLocationCheck.distance}m)`
-              : 'lokasi valid'
-            toast.success(`GPS acquired: ±${Math.round(position.coords.accuracy)}m accuracy, ${locationMsg}`)
-          }
+          // Silent - no toast notifications
           
           resolve(locationData)
         },

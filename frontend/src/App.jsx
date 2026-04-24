@@ -18,7 +18,6 @@ import SalesManagerDashboard from './pages/SalesManagerDashboard'
 import SalesDashboard from './pages/SalesDashboard'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
-import ServerStatus from './components/ServerStatus'
 import DocumentsPage from './pages/DocumentsPage'
 import ReportsPage from './pages/ReportsPage'
 import ActivityLogPage from './pages/ActivityLogPage'
@@ -28,6 +27,8 @@ import UsersPage from './pages/UsersPage'
 import CustomersPage from './pages/CustomersPage'
 import PlanVisitsPage from './pages/PlanVisitsPage'
 import RealisasiVisitsPage from './pages/RealisasiVisitsPage'
+import CreateVisitRecordPage from './pages/CreateVisitRecordPage'
+import CreateUnplannedVisitPage from './pages/CreateUnplannedVisitPage'
 import AttendancePage from './pages/AttendancePage'
 import AttendanceMonitorPage from './pages/AttendanceMonitorPage'
 import AdminAttendanceMonitorPage from './pages/AdminAttendanceMonitorPage'
@@ -198,6 +199,8 @@ export default function App() {
           <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
           <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
           <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
+          <Route path="create-visit-record" element={<VisitManagementOnly><CreateVisitRecordPage /></VisitManagementOnly>} />
+          <Route path="create-unplanned-visit" element={<VisitManagementOnly><CreateUnplannedVisitPage /></VisitManagementOnly>} />
           <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
           <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
           <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
@@ -210,9 +213,6 @@ export default function App() {
         onClose={handleWelcomeClose}
         user={user}
       />
-
-      {/* Server Status Indicator */}
-      <ServerStatus />
     </>
   )
 }

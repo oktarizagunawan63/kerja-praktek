@@ -87,6 +87,8 @@ export const api = {
     const queryString = new URLSearchParams(params).toString()
     return request(`/users${queryString ? '?' + queryString : ''}`)
   },
+  getSalesUsers: () => request('/users/sales'),
+  getEngineers: () => request('/users/engineers'),
   getUser: (id) => request(`/users/${id}`),
   createUser: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -96,19 +98,30 @@ export const api = {
   
   // Customers
   getCustomers: () => request('/customers'),
+  getPendingCustomers: () => request('/customers/pending'),
   createCustomer: (data) => request('/customers', { method: 'POST', body: JSON.stringify(data) }),
+  getCustomer: (id) => request(`/customers/${id}`),
   updateCustomer: (id, data) => request(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCustomer: (id) => request(`/customers/${id}`, { method: 'DELETE' }),
+  approveCustomer: (id) => request(`/customers/${id}/approve`, { method: 'POST' }),
+  rejectCustomer: (id, reason) => request(`/customers/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
+
   
   // Plan Visits
   getPlanVisits: (params = {}) => {
     const queryString = new URLSearchParams(params).toString()
     return request(`/plan-visits${queryString ? '?' + queryString : ''}`)
   },
+  getApprovedPlanVisits: () => request('/plan-visits/approved'),
+  getPendingPlanVisits: () => request('/plan-visits/pending'),
+  getPendingVisits: () => request('/plan-visits/pending'),
   createPlanVisit: (data) => request('/plan-visits', { method: 'POST', body: JSON.stringify(data) }),
   updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePlanVisit: (id) => request(`/plan-visits/${id}`, { method: 'DELETE' }),
+  approvePlanVisit: (id) => request(`/plan-visits/${id}/approve`, { method: 'POST' }),
+  rejectPlanVisit: (id, reason) => request(`/plan-visits/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
   completePlanVisit: (id, data) => request(`/plan-visits/${id}/complete`, { method: 'POST', body: JSON.stringify(data) }),
+
   
   // Realisasi Visits
   getRealisasiVisits: (params = {}) => {
@@ -116,8 +129,13 @@ export const api = {
     return request(`/realisasi-visits${queryString ? '?' + queryString : ''}`)
   },
   createRealisasiVisit: (data) => request('/realisasi-visits', { method: 'POST', body: JSON.stringify(data) }),
+  createUnplannedVisit: (data) => request('/realisasi-visits/unplanned', { method: 'POST', body: JSON.stringify(data) }),
   updateRealisasiVisit: (id, data) => request(`/realisasi-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteRealisasiVisit: (id) => request(`/realisasi-visits/${id}`, { method: 'DELETE' }),
+  getPendingUnplannedVisits: () => request('/realisasi-visits/pending-unplanned'),
+  approveUnplannedVisit: (id) => request(`/realisasi-visits/${id}/approve-unplanned`, { method: 'POST' }),
+  rejectUnplannedVisit: (id, data) => request(`/realisasi-visits/${id}/reject-unplanned`, { method: 'POST', body: JSON.stringify(data) }),
+  markVisitAsMissed: (planVisitId) => request(`/realisasi-visits/${planVisitId}/mark-missed`, { method: 'POST' }),
   
   // Attendance
   getAttendance: (params = {}) => {
@@ -139,10 +157,16 @@ export const api = {
   deleteWarning: (id) => request(`/warnings/${id}`, { method: 'DELETE' }),
   
   // Visit Reports
-  getVisitReports: (params = {}) => {
+  getVisitReport: (params = {}) => {
     const queryString = new URLSearchParams(params).toString()
     return request(`/visit-reports${queryString ? '?' + queryString : ''}`)
   },
+  getSalesPerformance: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/visit-reports/sales-performance${queryString ? '?' + queryString : ''}`)
+  },
+  getDashboardStats: () => request('/visit-reports/dashboard-stats'),
+  getCustomerVisitHistory: (customerId) => request(`/visit-reports/customer/${customerId}/history`),
   
   // Locations
   getLocations: () => request('/locations'),

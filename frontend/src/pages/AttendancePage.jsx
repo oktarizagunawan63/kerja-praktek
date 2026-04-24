@@ -77,10 +77,10 @@ function AttendancePage() {
     fetchTodayAttendance()
     fetchWorkLocations()
     
-    // Get current location
+    // Get current location - silent error handling
     getCurrentLocation()
       .then(setCurrentLocation)
-      .catch(console.error)
+      .catch(() => {}) // Silent catch - user will be prompted when needed
   }, [])
 
   const fetchData = async () => {
