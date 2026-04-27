@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, LogOut, Users,
-  MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings
+  MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
@@ -28,6 +28,23 @@ const NAV_SECTIONS = {
         { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
         { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
+      ]
+    },
+    { 
+      title: 'Visit Management', 
+      items: [
+        { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
+        { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
+        { to: '/create-visit-record', icon: FileText, label: 'Create Visit Record', tourId: 'create-visit-record' },
+        { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
+        { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
+        { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
+      ]
+    },
+    { 
+      title: 'Sales Funnel', 
+      items: [
+        { to: '/funnels', icon: TrendingUp, label: 'Sales Funnel', tourId: 'funnels' }
       ]
     },
     { 
@@ -75,6 +92,12 @@ const NAV_SECTIONS = {
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
         { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
       ]
+    },
+    { 
+      title: 'Sales Funnel', 
+      items: [
+        { to: '/funnels', icon: TrendingUp, label: 'Sales Funnel', tourId: 'funnels' }
+      ]
     }
   ],
   sales: [
@@ -94,6 +117,12 @@ const NAV_SECTIONS = {
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' }
+      ]
+    },
+    { 
+      title: 'Sales Funnel', 
+      items: [
+        { to: '/funnels', icon: TrendingUp, label: 'Sales Funnel', tourId: 'funnels' }
       ]
     }
   ],

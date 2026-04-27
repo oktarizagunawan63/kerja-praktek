@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import './styles/modern-professional.css'
 import './styles/professional.css'
 import './styles/animations.css'
@@ -9,37 +9,50 @@ import useAuthStore from './store/authStore'
 import { isAdministrator, isSiteManager, isSalesManager, isSales } from './utils/roleUtils'
 import { canAccessVisitManagement, canManageProjects } from './lib/permissions'
 import { clearErrorNotifications } from './utils/clearErrorNotifications'
+
+// Eager load critical components
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
-import SalesManagerDashboard from './pages/SalesManagerDashboard'
-import SalesDashboard from './pages/SalesDashboard'
-import ProjectsPage from './pages/ProjectsPage'
-import ProjectDetailPage from './pages/ProjectDetailPage'
-import DocumentsPage from './pages/DocumentsPage'
-import ReportsPage from './pages/ReportsPage'
-import ActivityLogPage from './pages/ActivityLogPage'
-import NotificationsPage from './pages/NotificationsPage'
-import UsersPage from './pages/UsersPage'
-// Visit Management Pages
-import CustomersPage from './pages/CustomersPage'
-import PlanVisitsPage from './pages/PlanVisitsPage'
-import RealisasiVisitsPage from './pages/RealisasiVisitsPage'
-import CreateVisitRecordPage from './pages/CreateVisitRecordPage'
-import CreateUnplannedVisitPage from './pages/CreateUnplannedVisitPage'
-import AttendancePage from './pages/AttendancePage'
-import AttendanceMonitorPage from './pages/AttendanceMonitorPage'
-import AdminAttendanceMonitorPage from './pages/AdminAttendanceMonitorPage'
-import EngineerDashboard from './pages/EngineerDashboard'
-import EngineerProjectsPage from './pages/EngineerProjectsPage'
-import EngineerProgressReportsPage from './pages/EngineerProgressReportsPage'
-import VisitReportsPage from './pages/VisitReportsPage'
-import WarningsPage from './pages/WarningsPage'
-import WelcomeModal from './components/ui/WelcomeModal'
-import './styles/animations.css'
-import './styles/professional.css'
+
+// Lazy load all other pages
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const SalesManagerDashboard = lazy(() => import('./pages/SalesManagerDashboard'))
+const SalesDashboard = lazy(() => import('./pages/SalesDashboard'))
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'))
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'))
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+const ActivityLogPage = lazy(() => import('./pages/ActivityLogPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const UsersPage = lazy(() => import('./pages/UsersPage'))
+const CustomersPage = lazy(() => import('./pages/CustomersPage'))
+const PlanVisitsPage = lazy(() => import('./pages/PlanVisitsPage'))
+const RealisasiVisitsPage = lazy(() => import('./pages/RealisasiVisitsPage'))
+const CreateVisitRecordPage = lazy(() => import('./pages/CreateVisitRecordPage'))
+const CreateUnplannedVisitPage = lazy(() => import('./pages/CreateUnplannedVisitPage'))
+const AttendancePage = lazy(() => import('./pages/AttendancePage'))
+const AttendanceMonitorPage = lazy(() => import('./pages/AttendanceMonitorPage'))
+const AdminAttendanceMonitorPage = lazy(() => import('./pages/AdminAttendanceMonitorPage'))
+const EngineerDashboard = lazy(() => import('./pages/EngineerDashboard'))
+const EngineerProjectsPage = lazy(() => import('./pages/EngineerProjectsPage'))
+const EngineerProgressReportsPage = lazy(() => import('./pages/EngineerProgressReportsPage'))
+const VisitReportsPage = lazy(() => import('./pages/VisitReportsPage'))
+const WarningsPage = lazy(() => import('./pages/WarningsPage'))
+const WelcomeModal = lazy(() => import('./components/ui/WelcomeModal'))
+const FunnelsPage = lazy(() => import('./pages/FunnelsPage'))
+const FunnelFormPage = lazy(() => import('./pages/FunnelFormPage'))
+const FunnelDetailPage = lazy(() => import('./pages/FunnelDetailPage'))
+
+// Loading component
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+    </div>
+  )
+}
 
 function PrivateRoute({ children }) {
   const { token } = useAuthStore()
@@ -162,57 +175,69 @@ export default function App() {
           duration: 3000,
         }}
       />
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard"        element={<RoleBasedDashboardRedirect />} />
-          
-          {/* Role-based Dashboards */}
-          <Route path="site/dashboard"    element={<ProjectManagementOnly><SiteManagerDashboard /></ProjectManagementOnly>} />
-          <Route path="manager/dashboard" element={<VisitManagementOnly><SalesManagerDashboard /></VisitManagementOnly>} />
-          <Route path="sales/dashboard"   element={<VisitManagementOnly><SalesDashboard /></VisitManagementOnly>} />
-          <Route path="engineer/dashboard" element={<EngineerOnly><EngineerDashboardComponent /></EngineerOnly>} />
-          
-          {/* Engineer Routes */}
-          <Route path="engineer/projects" element={<EngineerOnly><EngineerProjectsPage /></EngineerOnly>} />
-          <Route path="engineer/progress-reports" element={<EngineerOnly><EngineerProgressReportsPage /></EngineerOnly>} />
-          
-          {/* Project Management Routes - Site Manager + Administrator */}
-          <Route path="projects"         element={<ProjectManagementOnly><ProjectsPage /></ProjectManagementOnly>} />
-          <Route path="projects/:id"     element={<ProjectManagementOnly><ProjectDetailPage /></ProjectManagementOnly>} />
-          <Route path="documents"        element={<ProjectManagementOnly><DocumentsPage /></ProjectManagementOnly>} />
-          <Route path="reports"          element={<ProjectManagementOnly><ReportsPage /></ProjectManagementOnly>} />
-          
-          {/* General Routes */}
-          <Route path="notifications"    element={<NotificationsPage />} />
-          
-          {/* Administrator-only Routes */}
-          <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
-          <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
-          <Route path="attendance-monitor" element={<AdministratorOnly><AttendanceMonitorPage /></AdministratorOnly>} />
-          <Route path="admin/attendance-monitor" element={<AdministratorOnly><AdminAttendanceMonitorPage /></AdministratorOnly>} />
-          
-          {/* Visit Management Routes - Sales Manager + Sales + Administrator */}
-          <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
-          <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
-          <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
-          <Route path="create-visit-record" element={<VisitManagementOnly><CreateVisitRecordPage /></VisitManagementOnly>} />
-          <Route path="create-unplanned-visit" element={<VisitManagementOnly><CreateUnplannedVisitPage /></VisitManagementOnly>} />
-          <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
-          <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
-          <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard"        element={<RoleBasedDashboardRedirect />} />
+            
+            {/* Role-based Dashboards */}
+            <Route path="site/dashboard"    element={<ProjectManagementOnly><SiteManagerDashboard /></ProjectManagementOnly>} />
+            <Route path="manager/dashboard" element={<VisitManagementOnly><SalesManagerDashboard /></VisitManagementOnly>} />
+            <Route path="sales/dashboard"   element={<VisitManagementOnly><SalesDashboard /></VisitManagementOnly>} />
+            <Route path="engineer/dashboard" element={<EngineerOnly><EngineerDashboardComponent /></EngineerOnly>} />
+            
+            {/* Engineer Routes */}
+            <Route path="engineer/projects" element={<EngineerOnly><EngineerProjectsPage /></EngineerOnly>} />
+            <Route path="engineer/progress-reports" element={<EngineerOnly><EngineerProgressReportsPage /></EngineerOnly>} />
+            
+            {/* Project Management Routes - Site Manager + Administrator */}
+            <Route path="projects"         element={<ProjectManagementOnly><ProjectsPage /></ProjectManagementOnly>} />
+            <Route path="projects/:id"     element={<ProjectManagementOnly><ProjectDetailPage /></ProjectManagementOnly>} />
+            <Route path="documents"        element={<ProjectManagementOnly><DocumentsPage /></ProjectManagementOnly>} />
+            <Route path="reports"          element={<ProjectManagementOnly><ReportsPage /></ProjectManagementOnly>} />
+            
+            {/* General Routes */}
+            <Route path="notifications"    element={<NotificationsPage />} />
+            
+            {/* Administrator-only Routes */}
+            <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
+            <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
+            <Route path="attendance-monitor" element={<AdministratorOnly><AttendanceMonitorPage /></AdministratorOnly>} />
+            <Route path="admin/attendance-monitor" element={<AdministratorOnly><AdminAttendanceMonitorPage /></AdministratorOnly>} />
+            
+            {/* Visit Management Routes - Sales Manager + Sales + Administrator */}
+            <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
+            <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
+            <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
+            <Route path="create-visit-record" element={<VisitManagementOnly><CreateVisitRecordPage /></VisitManagementOnly>} />
+            <Route path="create-unplanned-visit" element={<VisitManagementOnly><CreateUnplannedVisitPage /></VisitManagementOnly>} />
+            <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
+            <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />
+            <Route path="warnings"         element={<VisitManagementOnly><WarningsPage /></VisitManagementOnly>} />
+            
+            {/* Sales Funnel Routes - Sales Manager + Sales + Administrator */}
+            <Route path="funnels"          element={<VisitManagementOnly><FunnelsPage /></VisitManagementOnly>} />
+            <Route path="funnels/create"   element={<VisitManagementOnly><FunnelFormPage /></VisitManagementOnly>} />
+            <Route path="funnels/:id"      element={<VisitManagementOnly><FunnelDetailPage /></VisitManagementOnly>} />
+            <Route path="funnels/:id/edit" element={<VisitManagementOnly><FunnelFormPage /></VisitManagementOnly>} />
+          </Route>
+        </Routes>
+      </Suspense>
 
       {/* Welcome Modal for New Users */}
-      <WelcomeModal
-        open={showWelcomeModal}
-        onClose={handleWelcomeClose}
-        user={user}
-      />
+      {showWelcomeModal && (
+        <Suspense fallback={null}>
+          <WelcomeModal
+            open={showWelcomeModal}
+            onClose={handleWelcomeClose}
+            user={user}
+          />
+        </Suspense>
+      )}
     </>
   )
 }

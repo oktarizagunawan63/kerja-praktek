@@ -133,6 +133,7 @@ export const api = {
   updateRealisasiVisit: (id, data) => request(`/realisasi-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteRealisasiVisit: (id) => request(`/realisasi-visits/${id}`, { method: 'DELETE' }),
   getPendingUnplannedVisits: () => request('/realisasi-visits/pending-unplanned'),
+  getMyUnplannedVisits: () => request('/sales/my-unplanned-visits'),
   approveUnplannedVisit: (id) => request(`/realisasi-visits/${id}/approve-unplanned`, { method: 'POST' }),
   rejectUnplannedVisit: (id, data) => request(`/realisasi-visits/${id}/reject-unplanned`, { method: 'POST', body: JSON.stringify(data) }),
   markVisitAsMissed: (planVisitId) => request(`/realisasi-visits/${planVisitId}/mark-missed`, { method: 'POST' }),
@@ -144,6 +145,10 @@ export const api = {
   },
   getTodayAttendance: () => request('/attendance/today'),
   getAttendanceSummary: () => request('/attendance/summary'),
+  getAdminAttendanceMonitor: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return request(`/attendance${queryString ? '?' + queryString : ''}`)
+  },
   checkIn: (data) => request('/attendance/check-in', { method: 'POST', body: JSON.stringify(data) }),
   checkOut: (data) => request('/attendance/check-out', { method: 'POST', body: JSON.stringify(data) }),
   
@@ -152,6 +157,7 @@ export const api = {
     const queryString = new URLSearchParams(params).toString()
     return request(`/warnings${queryString ? '?' + queryString : ''}`)
   },
+  getWarningStats: () => request('/warnings/stats'),
   createWarning: (data) => request('/warnings', { method: 'POST', body: JSON.stringify(data) }),
   updateWarning: (id, data) => request(`/warnings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteWarning: (id) => request(`/warnings/${id}`, { method: 'DELETE' }),
@@ -229,6 +235,28 @@ export const api = {
   getSalesManagerDashboard: () => request('/dashboard/sales-manager'),
   getSiteManagerDashboard: () => request('/dashboard/site-manager'),
   getEngineerDashboard: () => request('/dashboard/engineer'),
+  getSalesDashboard: () => request('/dashboard/sales'),
+  
+  // Sales Funnel Management
+  getFunnels: (params = {}) => {
+    const cleanParams = {}
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        cleanParams[key] = params[key]
+      }
+    })
+    const queryString = new URLSearchParams(cleanParams).toString()
+    return request(`/funnels${queryString ? '?' + queryString : ''}`)
+  },
+  getFunnelStats: () => request('/funnels/stats/summary'),
+  getFunnel: (id) => request(`/funnels/${id}`),
+  createFunnel: (data) => request('/funnels', { method: 'POST', body: JSON.stringify(data) }),
+  updateFunnel: (id, data) => request(`/funnels/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteFunnel: (id) => request(`/funnels/${id}`, { method: 'DELETE' }),
+  markFunnelAsWon: (id, data) => request(`/funnels/${id}/mark-won`, { method: 'POST', body: JSON.stringify(data) }),
+  markFunnelAsLost: (id, data) => request(`/funnels/${id}/mark-lost`, { method: 'POST', body: JSON.stringify(data) }),
+  getFunnelActivities: (id) => request(`/funnels/${id}/activities`),
+  createFunnelActivity: (id, data) => request(`/funnels/${id}/activities`, { method: 'POST', body: JSON.stringify(data) }),
   
   // Search
   search: (query) => {

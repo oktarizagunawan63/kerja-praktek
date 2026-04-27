@@ -65,8 +65,10 @@ const getCurrentLocation = () => {
 export default function RealisasiVisitsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('pending') // pending, unplanned-approval, my-unplanned, history
   const [pendingVisits, setPendingVisits] = useState([])
   const [pendingUnplannedVisits, setPendingUnplannedVisits] = useState([])
+  const [myUnplannedVisits, setMyUnplannedVisits] = useState([])
   const [realisasiVisits, setRealisasiVisits] = useState([])
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -136,6 +138,18 @@ export default function RealisasiVisitsPage() {
         } catch (error) {
           console.warn('Pending unplanned visits API failed:', error.message)
           setPendingUnplannedVisits([])
+        }
+      }
+      
+      // Fetch my unplanned visits for Sales
+      if (user?.role === 'sales') {
+        try {
+          const myUnplannedResponse = await api.getMyUnplannedVisits()
+          const myUnplannedData = myUnplannedResponse.data?.data || myUnplannedResponse.data || []
+          setMyUnplannedVisits(Array.isArray(myUnplannedData) ? myUnplannedData : [])
+        } catch (error) {
+          console.warn('My unplanned visits API failed:', error.message)
+          setMyUnplannedVisits([])
         }
       }
       
@@ -575,7 +589,76 @@ export default function RealisasiVisitsPage() {
         </div>
       </div>
 
-      {/* Pending Visits */}
+      {/* Tabs */}
+      <div className="mb-6 border-b border-gray-200">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === 'pending'
+                ? 'border-red-600 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Pending Visits
+            {pendingVisits.length > 0 && (
+              <span className="ml-2 bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full">
+                {pendingVisits.length}
+              </span>
+            )}
+          </button>
+          
+          {user?.role === 'sales_manager' && (
+            <button
+              onClick={() => setActiveTab('unplanned-approval')}
+              className={`pb-3 px-2 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'unplanned-approval'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Unplanned Approval
+              {pendingUnplannedVisits.length > 0 && (
+                <span className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                  {pendingUnplannedVisits.length}
+                </span>
+              )}
+            </button>
+          )}
+          
+          {user?.role === 'sales' && (
+            <button
+              onClick={() => setActiveTab('my-unplanned')}
+              className={`pb-3 px-2 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'my-unplanned'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              My Unplanned Visits
+              {myUnplannedVisits.length > 0 && (
+                <span className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                  {myUnplannedVisits.length}
+                </span>
+              )}
+            </button>
+          )}
+          
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === 'history'
+                ? 'border-red-600 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Riwayat Visit
+          </button>
+        </div>
+      </div>
+
+      {/* Pending Visits Tab */}
+      {activeTab === 'pending' && (
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="text-orange-500" size={20} />
@@ -592,9 +675,10 @@ export default function RealisasiVisitsPage() {
           emptyMessage="Tidak ada visit yang pending"
         />
       </div>
+      )}
 
       {/* Pending Unplanned Visits - Sales Manager Only */}
-      {user?.role === 'sales_manager' && (
+      {activeTab === 'unplanned-approval' && user?.role === 'sales_manager' && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="text-blue-500" size={20} />
@@ -684,7 +768,75 @@ export default function RealisasiVisitsPage() {
         </div>
       )}
 
+      {/* My Unplanned Visits - Sales Only */}
+      {activeTab === 'my-unplanned' && user?.role === 'sales' && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin className="text-blue-500" size={20} />
+            <h2 className="text-lg font-semibold text-gray-900">My Unplanned Visits</h2>
+            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
+              {myUnplannedVisits.length}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <div className="col-span-full text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            ) : myUnplannedVisits.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <MapPin className="text-gray-300 mx-auto mb-3" size={48} />
+                <p className="text-gray-500">Belum ada unplanned visit</p>
+              </div>
+            ) : (
+              myUnplannedVisits.map((visit) => (
+                <div key={visit.id} className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{visit.customer_name}</p>
+                      <p className="text-sm text-gray-600">{visit.customer_company}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                      visit.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      visit.approval_status === 'approved' ? 'bg-green-100 text-green-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {visit.approval_status === 'pending' ? 'Pending' :
+                       visit.approval_status === 'approved' ? 'Approved' :
+                       'Rejected'}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-600 mb-3">
+                    <p><span className="font-medium">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}</p>
+                    <p><span className="font-medium">Purpose:</span> {visit.visit_purpose}</p>
+                    {visit.visit_outcome && (
+                      <p><span className="font-medium">Outcome:</span> {visit.visit_outcome}</p>
+                    )}
+                    {visit.deal_amount && (
+                      <p><span className="font-medium">Deal:</span> Rp {Number(visit.deal_amount).toLocaleString('id-ID')}</p>
+                    )}
+                  </div>
+                  {visit.approval_status === 'rejected' && visit.rejection_reason && (
+                    <div className="mt-2 p-2 bg-red-50 rounded border border-red-200">
+                      <p className="text-xs font-medium text-red-700">Rejection Reason:</p>
+                      <p className="text-xs text-red-600">{visit.rejection_reason}</p>
+                    </div>
+                  )}
+                  {visit.approval_status === 'approved' && visit.approved_by && (
+                    <div className="mt-2 text-xs text-green-600">
+                      Approved by {visit.approved_by} on {new Date(visit.approved_at).toLocaleDateString('id-ID')}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Completed Visits */}
+      {activeTab === 'history' && (
       <div>
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle className="text-green-500" size={20} />
@@ -698,6 +850,7 @@ export default function RealisasiVisitsPage() {
           emptyMessage="Belum ada realisasi visit"
         />
       </div>
+      )}
 
       {/* Visit Form Modal */}
       {showVisitForm && selectedVisit && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Calendar, CheckSquare, TrendingUp, AlertTriangle, MapPin } from 'lucide-react'
+import { Users, Calendar, CheckSquare, TrendingUp, AlertTriangle, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import { api } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -15,6 +15,7 @@ export default function SalesManagerDashboard() {
   const [recentCustomers, setRecentCustomers] = useState([])
   const [recentVisits, setRecentVisits] = useState([])
   const [warnings, setWarnings] = useState([])
+  const [pendingUnplannedVisits, setPendingUnplannedVisits] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,7 +39,6 @@ export default function SalesManagerDashboard() {
         setStats(statsResponse.data || stats)
       } catch (error) {
         console.warn('Dashboard stats failed, using defaults:', error.message)
-        // Keep default stats if API fails
       }
       
       // Load recent customers with fallback
@@ -70,12 +70,45 @@ export default function SalesManagerDashboard() {
         console.warn('Warnings API failed:', error.message)
         setWarnings([])
       }
+
+      // Load pending unplanned visits
+      try {
+        const response = await api.get('/sales-manager/pending-unplanned-visits')
+        setPendingUnplannedVisits(response.data || [])
+      } catch (error) {
+        console.warn('Pending unplanned visits failed:', error.message)
+        setPendingUnplannedVisits([])
+      }
       
     } catch (error) {
       console.error('Error loading dashboard data:', error)
-      // Don't show toast error for dashboard loading issues
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApproveUnplanned = async (visitId) => {
+    try {
+      await api.post(`/sales-manager/unplanned-visits/${visitId}/approve`)
+      toast.success('Unplanned visit approved')
+      loadDashboardData()
+    } catch (error) {
+      toast.error('Failed to approve: ' + error.message)
+    }
+  }
+
+  const handleRejectUnplanned = async (visitId) => {
+    const reason = prompt('Enter rejection reason:')
+    if (!reason) return
+
+    try {
+      await api.post(`/sales-manager/unplanned-visits/${visitId}/reject`, {
+        rejection_reason: reason
+      })
+      toast.success('Unplanned visit rejected')
+      loadDashboardData()
+    } catch (error) {
+      toast.error('Failed to reject: ' + error.message)
     }
   }
 
@@ -240,6 +273,75 @@ export default function SalesManagerDashboard() {
 
           {/* Additional Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            {/* Pending Unplanned Visits - NEW */}
+            {pendingUnplannedVisits.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="text-orange-500" size={20} />
+                    <h2 className="text-lg font-semibold text-gray-900">Pending Unplanned Visits Approval</h2>
+                    <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {pendingUnplannedVisits.length} pending
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {pendingUnplannedVisits.map((visit) => (
+                    <div key={visit.id} className="flex items-start justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center shrink-0">
+                          <MapPin className="text-white" size={18} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-gray-900">{visit.customer_name}</p>
+                            <span className="bg-orange-200 text-orange-800 px-2 py-0.5 rounded text-xs font-medium">
+                              Unplanned
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-1">{visit.customer_company}</p>
+                          <p className="text-sm text-gray-600 mb-2">{visit.visit_purpose}</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            <div>
+                              <span className="font-medium">Sales:</span> {visit.visited_by}
+                            </div>
+                            <div>
+                              <span className="font-medium">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}
+                            </div>
+                            <div>
+                              <span className="font-medium">Outcome:</span> {visit.visit_outcome}
+                            </div>
+                            {visit.deal_amount && (
+                              <div>
+                                <span className="font-medium">Deal:</span> Rp {Number(visit.deal_amount).toLocaleString('id-ID')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleApproveUnplanned(visit.id)}
+                          className="flex items-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <CheckCircle size={16} />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleRejectUnplanned(visit.id)}
+                          className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <XCircle size={16} />
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Warnings */}
             <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
               <div className="flex items-center justify-between mb-4">
