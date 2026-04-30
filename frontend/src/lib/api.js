@@ -46,6 +46,7 @@ const request = async (endpoint, options = {}) => {
     
     if (response.status === 422) {
       const data = await response.json()
+      console.error('Validation errors:', data.errors)
       throw { message: data.message || 'Validation error', errors: data.errors || {}, status: 422 }
     }
     

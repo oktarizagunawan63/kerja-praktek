@@ -250,8 +250,8 @@ export default function CustomersPage() {
       label: 'Aksi',
       render: (customer) => (
         <div className="flex items-center gap-2">
-          {/* Sales Manager approval buttons for pending customers */}
-          {user?.role === 'sales_manager' && customer.approval_status === 'pending' && (
+          {/* Sales Manager and Administrator approval buttons for pending customers */}
+          {['sales_manager', 'administrator'].includes(user?.role) && customer.approval_status === 'pending' && (
             <>
               <button
                 onClick={() => handleApprove(customer)}

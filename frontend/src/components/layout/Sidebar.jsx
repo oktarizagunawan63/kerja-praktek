@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, LogOut, Users,
-  MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp
+  MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp, ClipboardCheck
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
