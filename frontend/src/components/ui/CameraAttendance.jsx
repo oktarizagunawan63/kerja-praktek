@@ -7,30 +7,50 @@ import toast from 'react-hot-toast'
 const MIN_GPS_ACCURACY = 50 // meters
 const MAX_GPS_AGE = 30000 // 30 seconds
 
-// Anti-fake GPS detection - FIXED LOGIC
+// Anti-fake GPS detection - ENHANCED
 const detectFakeGPS = (position) => {
   const warnings = []
   
-  // CORRECTED: Check accuracy - fake GPS often has TOO PERFECT accuracy
-  // Normal GPS: 10-200m accuracy is normal for WiFi/cell triangulation
-  // Suspicious: < 5m accuracy AND speed === 0 (too perfect = likely spoofed)
-  if (position.coords.accuracy < 5 && (position.coords.speed === 0 || position.coords.speed === null)) {
-    warnings.push('GPS accuracy suspiciously perfect (possible spoofing)')
+  // 1. Check for mock location (CRITICAL - immediate red flag)
+  if (position.mocked === true) {
+    warnings.push('Mock location detected - Fake GPS app terdeteksi')
   }
   
-  // Check for common fake GPS coordinates (0,0 or other obvious fakes)
+  // 2. Check for suspiciously perfect accuracy (< 3m is unusual for mobile GPS)
+  // Real GPS: 10-50m is normal, < 5m is suspicious, < 3m is very suspicious
+  if (position.coords.accuracy < 3) {
+    warnings.push('GPS accuracy terlalu sempurna (kemungkinan fake GPS)')
+  }
+  
+  // 3. Check for perfect accuracy with no movement (very suspicious)
+  if (position.coords.accuracy < 5 && 
+      (position.coords.speed === 0 || position.coords.speed === null)) {
+    warnings.push('GPS statis dengan akurasi sempurna (kemungkinan spoofing)')
+  }
+  
+  // 4. Check for invalid coordinates (0,0 or near 0,0)
   const lat = position.coords.latitude
   const lng = position.coords.longitude
   if ((lat === 0 && lng === 0) || 
       (Math.abs(lat) < 0.001 && Math.abs(lng) < 0.001)) {
-    warnings.push('Invalid GPS coordinates detected')
+    warnings.push('Koordinat GPS tidak valid')
   }
   
-  // Check timestamp - fake GPS might have old timestamps
+  // 5. Check for missing altitude (real GPS usually provides altitude)
+  if (position.coords.altitude === null || position.coords.altitude === undefined) {
+    warnings.push('Data altitude tidak tersedia (kemungkinan GPS palsu)')
+  }
+  
+  // 6. Check for old GPS timestamp
   const now = Date.now()
   const gpsTime = position.timestamp
   if (now - gpsTime > MAX_GPS_AGE) {
-    warnings.push('GPS data is too old')
+    warnings.push('Data GPS terlalu lama')
+  }
+  
+  // 7. Check for missing speed when moving (real GPS provides speed)
+  if (position.coords.speed === null && position.coords.heading !== null) {
+    warnings.push('Data kecepatan tidak konsisten')
   }
   
   return warnings
@@ -148,7 +168,9 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
             altitude: position.coords.altitude,
             altitudeAccuracy: position.coords.altitudeAccuracy,
             heading: position.coords.heading,
-            speed: position.coords.speed
+            speed: position.coords.speed,
+            is_mock: position.mocked || false, // Detect mock location
+            provider: 'browser_geolocation'
           }
           
           // Validate work location
@@ -443,11 +465,6 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
                       ? 'bg-green-50 border-green-200' 
                       : 'bg-red-50 border-red-200'
                   }`}>
-                    <p className={`text-xs font-medium ${
-                      validWorkLocation.isValid ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                      {validWorkLocation.isValid ? '✅ Lokasi Kerja Valid' : '❌ Tidak di Lokasi Kerja'}
-                    </p>
                     {validWorkLocation.location && (
                       <p className={`text-xs ${
                         validWorkLocation.isValid ? 'text-green-600' : 'text-red-600'

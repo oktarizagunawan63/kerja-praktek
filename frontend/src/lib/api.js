@@ -115,7 +115,6 @@ export const api = {
   },
   getApprovedPlanVisits: () => request('/plan-visits/approved'),
   getPendingPlanVisits: () => request('/plan-visits/pending'),
-  getPendingVisits: () => request('/plan-visits/pending'),
   createPlanVisit: (data) => request('/plan-visits', { method: 'POST', body: JSON.stringify(data) }),
   updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePlanVisit: (id) => request(`/plan-visits/${id}`, { method: 'DELETE' }),
@@ -129,6 +128,7 @@ export const api = {
     const queryString = new URLSearchParams(params).toString()
     return request(`/realisasi-visits${queryString ? '?' + queryString : ''}`)
   },
+  getPendingVisits: () => request('/realisasi-visits/pending'),
   createRealisasiVisit: (data) => request('/realisasi-visits', { method: 'POST', body: JSON.stringify(data) }),
   createUnplannedVisit: (data) => request('/realisasi-visits/unplanned', { method: 'POST', body: JSON.stringify(data) }),
   updateRealisasiVisit: (id, data) => request(`/realisasi-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -258,6 +258,7 @@ export const api = {
   markFunnelAsLost: (id, data) => request(`/funnels/${id}/mark-lost`, { method: 'POST', body: JSON.stringify(data) }),
   getFunnelActivities: (id) => request(`/funnels/${id}/activities`),
   createFunnelActivity: (id, data) => request(`/funnels/${id}/activities`, { method: 'POST', body: JSON.stringify(data) }),
+  getVisitedCustomers: () => request('/funnels/visited-customers'),
   
   // Search
   search: (query) => {

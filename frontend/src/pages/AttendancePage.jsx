@@ -161,31 +161,7 @@ function AttendancePage() {
     }
   }
 
-  const handleResetAttendance = async () => {
-    if (!window.confirm('Reset attendance hari ini? Tindakan ini tidak dapat dibatalkan.')) return
-    
-    try {
-      setActionLoading(true)
-      const today = new Date().toISOString().split('T')[0]
-      
-      const response = await api.resetAttendance({
-        user_id: user.id,
-        date: today
-      })
-      
-      if (response.success) {
-        toast.success('Attendance berhasil direset')
-        setTodayAttendance(null)
-        fetchData()
-      } else {
-        toast.error(response.message || 'Gagal reset attendance')
-      }
-    } catch (error) {
-      toast.error(error.message || 'Gagal reset attendance')
-    } finally {
-      setActionLoading(false)
-    }
-  }
+
 
   const handleDeleteAttendance = async (attendance) => {
     const confirmMessage = `Hapus attendance ${attendance.user?.name || 'user'} pada ${new Date(attendance.date).toLocaleDateString('id-ID')}?`
@@ -438,18 +414,6 @@ function AttendancePage() {
             >
               <XCircle size={16} />
               Check Out
-            </button>
-          )}
-          
-          {(user?.role === 'administrator' || user?.role === 'sales_manager') && todayAttendance && (
-            <button
-              onClick={handleResetAttendance}
-              disabled={actionLoading}
-              className="btn-responsive danger"
-            >
-              <Clock size={16} />
-              <span className="mobile-hidden">Reset Attendance</span>
-              <span className="desktop-hidden tablet-hidden">Reset</span>
             </button>
           )}
         </div>

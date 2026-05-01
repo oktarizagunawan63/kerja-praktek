@@ -79,7 +79,6 @@ export default function RealisasiVisitsPage() {
   const [locationLoading, setLocationLoading] = useState(false)
   const [formData, setFormData] = useState({
     visit_date: new Date().toISOString().split('T')[0],
-    actual_duration: '',
     meeting_notes: '',
     visit_outcome: '',
     deal_amount: '',
@@ -119,9 +118,9 @@ export default function RealisasiVisitsPage() {
     try {
       setLoading(true)
       
-      // Fetch pending visits with fallback
+      // Fetch pending visits (plan visits belum dikunjungi)
       try {
-        const pendingResponse = await api.getPendingVisits()
+        const pendingResponse = await api.getRealisasiVisits({ type: 'pending' })
         const pendingData = pendingResponse.data?.data || pendingResponse.data || []
         setPendingVisits(Array.isArray(pendingData) ? pendingData : [])
       } catch (error) {
@@ -130,7 +129,7 @@ export default function RealisasiVisitsPage() {
       }
       
       // Fetch pending unplanned visits for Sales Manager
-      if (user?.role === 'sales_manager') {
+      if (user?.role === 'sales_manager' || user?.role === 'administrator') {
         try {
           const pendingUnplannedResponse = await api.getPendingUnplannedVisits()
           const pendingUnplannedData = pendingUnplannedResponse.data?.data || pendingUnplannedResponse.data || []
@@ -153,7 +152,7 @@ export default function RealisasiVisitsPage() {
         }
       }
       
-      // Fetch realisasi visits with fallback
+      // Fetch realisasi visits (completed visits - riwayat)
       try {
         const realisasiResponse = await api.getRealisasiVisits()
         const realisasiData = realisasiResponse.data?.data || realisasiResponse.data || []
@@ -237,11 +236,6 @@ export default function RealisasiVisitsPage() {
       return
     }
     
-    if (!formData.actual_duration || formData.actual_duration <= 0) {
-      toast.error('Durasi actual harus lebih dari 0 menit')
-      return
-    }
-    
     if (!formData.meeting_notes || formData.meeting_notes.length < 10) {
       toast.error('Meeting notes minimal 10 karakter')
       return
@@ -272,7 +266,6 @@ export default function RealisasiVisitsPage() {
       const submitData = {
         plan_visit_id: selectedVisit.id,
         visit_date: formData.visit_date,
-        actual_duration: parseInt(formData.actual_duration),
         meeting_notes: formData.meeting_notes,
         visit_outcome: formData.visit_outcome,
         deal_amount: formData.visit_outcome === 'closed' ? parseFloat(formData.deal_amount) : null,
@@ -896,33 +889,6 @@ export default function RealisasiVisitsPage() {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">Tanggal actual visit dilakukan</p>
-              </div>
-
-              {/* Actual Duration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Durasi Actual (menit) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.actual_duration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, actual_duration: e.target.value }))}
-                  min="0"
-                  step="5"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: 65"
-                  required
-                />
-                {selectedVisit.durasi && formData.actual_duration && (
-                  <p className="text-xs mt-1">
-                    <span className="text-gray-500">Planned: {selectedVisit.durasi} min</span>
-                    {' '}
-                    <span className={parseInt(formData.actual_duration) > parseInt(selectedVisit.durasi) ? 'text-blue-600' : 'text-yellow-600'}>
-                      {parseInt(formData.actual_duration) - parseInt(selectedVisit.durasi) > 0 ? '+' : ''}
-                      {parseInt(formData.actual_duration) - parseInt(selectedVisit.durasi)} min
-                    </span>
-                  </p>
-                )}
               </div>
 
               {/* Meeting Notes */}
