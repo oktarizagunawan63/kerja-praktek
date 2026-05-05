@@ -1,35 +1,69 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
-import useAuthStore from '../store/authStore'
+import { ArrowLeft, Save } from 'lucide-react'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
+import toast from 'react-hot-toast'
 
 export default function FunnelFormPage() {
-  const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuthStore()
-  const isEdit = Boolean(id)
+  const { id } = useParams()
+  const isEdit = !!id
+
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    customer_name: '', customer_company: '', customer_phone: '', customer_email: '',
-    channel: 'kontraktor', channel_other: '', city: '', province: '',
-    segment: 'sot', segment_custom: '', qty: '', unit: 'unit',
-    estimated_value: '', deal_stage: 'prospek', deadline_date: '', target_close_date: '',
-    win_probability: 'middle', competitor_name: '', competitor_notes: '', initial_notes: '',
-    assigned_to: user?.id || ''
+    customer_name: '',
+    customer_company: '',
+    customer_phone: '',
+    customer_email: '',
+    channel: '',
+    channel_other: '',
+    city: '',
+    segment: '',
+    segment_custom: '',
+    qty: '',
+    unit: '',
+    deal_stage: 'prospek',
+    target_close_date: '',
+    win_probability: 'middle',
+    notes: ''
   })
 
-  useEffect(() => { if (isEdit) loadFunnel() }, [id])
+  useEffect(() => {
+    if (isEdit) {
+      fetchFunnel()
+    }
+  }, [id])
 
-  const loadFunnel = async () => {
+  const fetchFunnel = async () => {
     try {
+      setLoading(true)
       const response = await api.getFunnel(id)
-      setFormData(response.data)
+      const funnel = response.data
+      
+      setFormData({
+        customer_name: funnel.customer_name || '',
+        customer_company: funnel.customer_company || '',
+        customer_phone: funnel.customer_phone || '',
+        customer_email: funnel.customer_email || '',
+        channel: funnel.channel || '',
+        channel_other: funnel.channel_other || '',
+        city: funnel.city || '',
+        segment: funnel.segment || '',
+        segment_custom: funnel.segment_custom || '',
+        qty: funnel.qty || '',
+        unit: funnel.unit || '',
+        deal_stage: funnel.deal_stage || 'prospek',
+        target_close_date: funnel.target_close_date || '',
+        win_probability: funnel.win_probability || 'middle',
+        notes: funnel.notes || ''
+      })
     } catch (error) {
+      console.error('Error fetching funnel:', error)
       toast.error('Gagal memuat data funnel')
       navigate('/funnels')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -40,85 +74,222 @@ export default function FunnelFormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
+    
+    if (!formData.customer_name.trim()) {
+      toast.error('Nama customer harus diisi')
+      return
+    }
+    
+    if (!formData.customer_company.trim()) {
+      toast.error('Nama perusahaan harus diisi')
+      return
+    }
+    
+    if (!formData.channel) {
+      toast.error('Channel harus dipilih')
+      return
+    }
+    
+    if (formData.channel === 'lainnya' && !formData.channel_other.trim()) {
+      toast.error('Channel lainnya harus diisi')
+      return
+    }
+    
+    if (!formData.city.trim()) {
+      toast.error('Daerah harus diisi')
+      return
+    }
+    
+    if (!formData.segment) {
+      toast.error('Segment harus dipilih')
+      return
+    }
+    
+    if (formData.segment === 'umum' && !formData.segment_custom.trim()) {
+      toast.error('Segment custom harus diisi')
+      return
+    }
+    
+    if (!formData.qty || formData.qty <= 0) {
+      toast.error('QTY harus diisi dengan angka positif')
+      return
+    }
+    
+    if (!formData.unit.trim()) {
+      toast.error('Unit harus diisi')
+      return
+    }
+    
+    if (!formData.target_close_date) {
+      toast.error('Target close date harus diisi')
+      return
+    }
+
     try {
+      setLoading(true)
+      
       if (isEdit) {
         await api.updateFunnel(id, formData)
         toast.success('Funnel berhasil diupdate')
       } else {
         await api.createFunnel(formData)
-        toast.success('Funnel berhasil dibuat')
+        toast.success('Funnel berhasil ditambahkan')
       }
+      
       navigate('/funnels')
     } catch (error) {
+      console.error('Error saving funnel:', error)
       toast.error(error.response?.data?.message || 'Gagal menyimpan funnel')
     } finally {
       setLoading(false)
     }
   }
 
+  if (loading && isEdit) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">{isEdit ? 'Edit' : 'Tambah'} Sales Funnel</h1>
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-        <div><h2 className="text-lg font-semibold mb-4">Informasi Customer</h2>
+    <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 min-h-screen">
+      <div className="mb-6">
+        <Button variant="outline" onClick={() => navigate('/funnels')} className="mb-4">
+          <ArrowLeft size={16} />
+          Kembali
+        </Button>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isEdit ? 'Edit Funnel' : 'Tambah Funnel Baru'}
+        </h1>
+        <p className="text-gray-600 mt-1">
+          {isEdit ? 'Update informasi funnel' : 'Masukkan informasi funnel baru'}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Customer</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Nama Customer" name="customer_name" value={formData.customer_name} onChange={handleChange} required />
-            <Input label="Nama Perusahaan" name="customer_company" value={formData.customer_company} onChange={handleChange} required />
-            <Input label="No. Telepon" name="customer_phone" value={formData.customer_phone} onChange={handleChange} />
-            <Input label="Email" type="email" name="customer_email" value={formData.customer_email} onChange={handleChange} />
-          </div></div>
-        <div><h2 className="text-lg font-semibold mb-4">Lokasi</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nama Customer <span className="text-red-500">*</span>
+              </label>
+              <input type="text" name="customer_name" value={formData.customer_name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Nama lengkap customer" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nama Perusahaan <span className="text-red-500">*</span>
+              </label>
+              <input type="text" name="customer_company" value={formData.customer_company} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Nama perusahaan" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">No. Telepon</label>
+              <input type="tel" name="customer_phone" value={formData.customer_phone} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="08xxxxxxxxxx" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input type="email" name="customer_email" value={formData.customer_email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="email@example.com" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Deal</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Channel *</label>
-              <select name="channel" value={formData.channel} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required>
-                <option value="kontraktor">Kontraktor</option><option value="subdist">Subdist</option><option value="rsud">RSUD</option>
-                <option value="rs_swasta">RS Swasta</option><option value="klinik">Klinik</option><option value="puskesmas">Puskesmas</option>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Channel <span className="text-red-500">*</span></label>
+              <select name="channel" value={formData.channel} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                <option value="">Pilih Channel</option>
+                <option value="kontraktor">Kontraktor</option>
+                <option value="subdist">Subdist</option>
+                <option value="rsud">RSUD</option>
+                <option value="rs_swasta">RS Swasta</option>
+                <option value="klinik">Klinik</option>
+                <option value="puskesmas">Puskesmas</option>
                 <option value="lainnya">Lainnya</option>
-              </select></div>
-            {formData.channel === 'lainnya' && <Input label="Channel Lainnya" name="channel_other" value={formData.channel_other} onChange={handleChange} required />}
-            <Input label="Kota" name="city" value={formData.city} onChange={handleChange} required />
-            <Input label="Provinsi" name="province" value={formData.province} onChange={handleChange} />
-          </div></div>
-        <div><h2 className="text-lg font-semibold mb-4">Informasi Produk</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Segment *</label>
-              <select name="segment" value={formData.segment} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required>
-                <option value="sot">SOT</option><option value="igvm">IGVM</option><option value="nursecall">Nursecall</option><option value="umum">Umum</option>
-              </select></div>
-            {formData.segment === 'umum' && <Input label="Segment Custom" name="segment_custom" value={formData.segment_custom} onChange={handleChange} required />}
-            <Input label="Quantity" type="number" name="qty" value={formData.qty} onChange={handleChange} required />
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-              <select name="unit" value={formData.unit} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required>
-                <option value="unit">Unit</option><option value="set">Set</option><option value="pcs">Pcs</option>
-              </select></div>
-            <Input label="Estimasi Nilai (Rp)" type="number" name="estimated_value" value={formData.estimated_value} onChange={handleChange} required />
-          </div></div>
-        <div><h2 className="text-lg font-semibold mb-4">Pipeline</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Deal Stage *</label>
-              <select name="deal_stage" value={formData.deal_stage} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required>
-                <option value="prospek">Prospek</option><option value="qualified">Qualified</option><option value="proposal">Proposal</option>
-                <option value="negosiasi">Negosiasi</option><option value="closing">Closing</option>
-              </select></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Win Probability *</label>
-              <select name="win_probability" value={formData.win_probability} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required>
-                <option value="low">Low (25%)</option><option value="middle">Middle (50%)</option><option value="high">High (75%)</option><option value="very_high">Very High (90%)</option>
-              </select></div>
-            <Input label="Deadline Customer" type="date" name="deadline_date" value={formData.deadline_date} onChange={handleChange} required />
-            <Input label="Target Close Date" type="date" name="target_close_date" value={formData.target_close_date} onChange={handleChange} required />
-          </div></div>
-        <div><h2 className="text-lg font-semibold mb-4">Kompetitor</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Nama Kompetitor" name="competitor_name" value={formData.competitor_name} onChange={handleChange} />
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Catatan Kompetitor</label>
-              <textarea name="competitor_notes" value={formData.competitor_notes} onChange={handleChange} rows="3" className="w-full px-3 py-2 border rounded-md" />
-            </div></div></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">Catatan Awal Kebutuhan *</label>
-          <textarea name="initial_notes" value={formData.initial_notes} onChange={handleChange} rows="4" className="w-full px-3 py-2 border rounded-md" required /></div>
-        <div className="flex gap-3 justify-end">
-          <Button type="button" variant="secondary" onClick={() => navigate('/funnels')}>Batal</Button>
-          <Button type="submit" disabled={loading}>{loading ? 'Menyimpan...' : isEdit ? 'Update' : 'Simpan'}</Button>
+              </select>
+            </div>
+            {formData.channel === 'lainnya' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Channel Lainnya <span className="text-red-500">*</span></label>
+                <input type="text" name="channel_other" value={formData.channel_other} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Sebutkan channel" required />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Daerah <span className="text-red-500">*</span></label>
+              <input type="text" name="city" value={formData.city} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Kota/Kabupaten" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Segment <span className="text-red-500">*</span></label>
+              <select name="segment" value={formData.segment} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                <option value="">Pilih Segment</option>
+                <option value="sot">SOT</option>
+                <option value="igvm">IGVM</option>
+                <option value="nursecall">NurseCall</option>
+                <option value="umum">Umum</option>
+              </select>
+            </div>
+            {formData.segment === 'umum' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Segment Custom <span className="text-red-500">*</span></label>
+                <input type="text" name="segment_custom" value={formData.segment_custom} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Sebutkan segment" required />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">QTY <span className="text-red-500">*</span></label>
+              <input type="number" name="qty" value={formData.qty} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Jumlah" min="1" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Unit <span className="text-red-500">*</span></label>
+              <input type="text" name="unit" value={formData.unit} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="pcs, set, unit, dll" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Deal Stage <span className="text-red-500">*</span></label>
+              <select name="deal_stage" value={formData.deal_stage} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                <option value="prospek">Prospek</option>
+                <option value="qualified">Qualified</option>
+                <option value="proposal">Proposal</option>
+                <option value="negosiasi">Negosiasi</option>
+                <option value="closing">Closing</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Target Close Date <span className="text-red-500">*</span></label>
+              <input type="date" name="target_close_date" value={formData.target_close_date} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Win Probability <span className="text-red-500">*</span></label>
+              <select name="win_probability" value={formData.win_probability} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                <option value="low">Low</option>
+                <option value="middle">Middle</option>
+                <option value="high">High</option>
+                <option value="very_high">Very High</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Catatan</label>
+          <textarea name="notes" value={formData.notes} onChange={handleChange} rows={4} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Catatan tambahan..." />
+        </div>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700">
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Menyimpan...
+              </>
+            ) : (
+              <>
+                <Save size={16} />
+                {isEdit ? 'Update Funnel' : 'Tambah Funnel'}
+              </>
+            )}
+          </Button>
         </div>
       </form>
     </div>

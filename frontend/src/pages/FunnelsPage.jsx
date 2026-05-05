@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
-import { TrendingUp, Plus, Filter, Search, DollarSign, Target, TrendingDown, Award } from 'lucide-react'
+import { TrendingUp, Plus, Filter, Search, Target, TrendingDown, Award } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
-import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import toast from 'react-hot-toast'
 
 export default function FunnelsPage() {
-  const { user } = useAuthStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [funnels, setFunnels] = useState([])
@@ -169,21 +167,7 @@ export default function FunnelsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Pipeline</p>
-                <p className="text-2xl font-bold text-red-700">
-                  Rp {Number(stats.total_pipeline || 0).toLocaleString('id-ID')}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="text-white" size={24} />
-              </div>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 border border-blue-100 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -251,7 +235,6 @@ export default function FunnelsPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             <option value="created_at">Terbaru</option>
-            <option value="nilai_terbesar">Nilai Terbesar</option>
             <option value="deadline_terdekat">Deadline Terdekat</option>
             <option value="last_update">Last Update</option>
           </select>
@@ -364,7 +347,6 @@ export default function FunnelsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Daerah</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Segment</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">QTY</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estimasi Nilai</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deal Stage</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deadline</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peluang</th>
@@ -397,11 +379,6 @@ export default function FunnelsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-gray-700">{funnel.qty} {funnel.unit}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-medium text-gray-900">
-                        Rp {Number(funnel.estimated_value).toLocaleString('id-ID')}
-                      </span>
                     </td>
                     <td className="px-4 py-3">
                       {getDealStageBadge(funnel.deal_stage)}

@@ -24,7 +24,9 @@ export function normalizeRole(role) {
     'Sales': 'sales'
   }
   
-  return roleMap[role] || role.toLowerCase()
+  // Convert to string if not already
+  const roleStr = typeof role === 'string' ? role : String(role)
+  return roleMap[roleStr] || roleStr.toLowerCase()
 }
 
 // Check if user is administrator (any variant) - SIMPLE VERSION
@@ -66,6 +68,8 @@ export function isSales(user) {
 
 // Get role display name
 export function getRoleDisplayName(role) {
+  if (!role) return 'Unknown'
+  
   const displayNames = {
     'administrator': 'Administrator',
     'direktur': 'Administrator',
@@ -77,5 +81,6 @@ export function getRoleDisplayName(role) {
     'sales': 'Sales'
   }
   
-  return displayNames[role] || role || 'Unknown'
+  const roleStr = typeof role === 'string' ? role : String(role)
+  return displayNames[roleStr] || roleStr || 'Unknown'
 }

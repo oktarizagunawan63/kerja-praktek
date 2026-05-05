@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera } from 'lucide-react'
+import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
@@ -75,6 +75,8 @@ export default function RealisasiVisitsPage() {
   const [showVisitForm, setShowVisitForm] = useState(false)
   const [showUnplannedForm, setShowUnplannedForm] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState(null)
+  const [showPhotoModal, setShowPhotoModal] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [currentLocation, setCurrentLocation] = useState(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -89,10 +91,7 @@ export default function RealisasiVisitsPage() {
     status: 'done'
   })
   const [unplannedFormData, setUnplannedFormData] = useState({
-    customer_name: '',
-    customer_company: '',
-    customer_phone: '',
-    customer_address: '',
+    customer_id: '',
     visit_date: new Date().toISOString().split('T')[0],
     visit_time: new Date().toTimeString().slice(0, 5),
     visit_purpose: '',
@@ -120,7 +119,7 @@ export default function RealisasiVisitsPage() {
       
       // Fetch pending visits (plan visits belum dikunjungi)
       try {
-        const pendingResponse = await api.getRealisasiVisits({ type: 'pending' })
+        const pendingResponse = await api.getPendingVisits()
         const pendingData = pendingResponse.data?.data || pendingResponse.data || []
         setPendingVisits(Array.isArray(pendingData) ? pendingData : [])
       } catch (error) {
@@ -279,6 +278,8 @@ export default function RealisasiVisitsPage() {
         visited_at: new Date().toISOString()
       }
       
+      console.log('Submitting visit data:', submitData)
+      
       await api.createRealisasiVisit(submitData)
       toast.success('Realisasi visit berhasil disimpan')
       
@@ -287,7 +288,6 @@ export default function RealisasiVisitsPage() {
       setCurrentLocation(null)
       setFormData({
         visit_date: new Date().toISOString().split('T')[0],
-        actual_duration: '',
         meeting_notes: '',
         visit_outcome: '',
         deal_amount: '',
@@ -301,6 +301,7 @@ export default function RealisasiVisitsPage() {
       fetchData()
       
     } catch (error) {
+      console.error('Submit visit error:', error)
       toast.error(error.message || 'Gagal menyimpan realisasi visit')
     }
   }
@@ -309,10 +310,12 @@ export default function RealisasiVisitsPage() {
     if (!window.confirm(`Tandai visit ke ${visit.customer?.name} sebagai terlewat?`)) return
     
     try {
+      // visit.id is the plan_visit_id from pending visits
       await api.markVisitAsMissed(visit.id)
       toast.success('Visit ditandai sebagai terlewat')
       fetchData()
     } catch (error) {
+      console.error('Mark as missed error:', error)
       toast.error(error.message || 'Gagal menandai visit sebagai terlewat')
     }
   }
@@ -494,35 +497,59 @@ export default function RealisasiVisitsPage() {
     {
       key: 'visited_at',
       label: 'Waktu Visit',
-      render: (realisasi) => (
-        <div>
-          <p className="text-sm font-medium">
-            {realisasi.type === 'unplanned' && realisasi.visit_date
-              ? new Date(realisasi.visit_date).toLocaleDateString('id-ID')
-              : realisasi.visited_at 
-                ? new Date(realisasi.visited_at).toLocaleDateString('id-ID')
-                : '-'}
-          </p>
-          <p className="text-xs text-gray-500">
-            {realisasi.type === 'unplanned' && realisasi.visit_time
-              ? realisasi.visit_time
-              : realisasi.visited_at
-                ? new Date(realisasi.visited_at).toLocaleTimeString('id-ID')
-                : '-'}
-          </p>
-        </div>
-      )
+      render: (realisasi) => {
+        // Try multiple date fields
+        const dateValue = realisasi.visit_date || realisasi.visited_at || realisasi.created_at
+        const timeValue = realisasi.visit_time || (realisasi.visited_at ? new Date(realisasi.visited_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null)
+        
+        return (
+          <div>
+            <p className="text-sm font-medium">
+              {dateValue ? new Date(dateValue).toLocaleDateString('id-ID') : '-'}
+            </p>
+            <p className="text-xs text-gray-500">
+              {timeValue || '-'}
+            </p>
+          </div>
+        )
+      }
     },
     {
       key: 'hasil_visit',
       label: 'Hasil Visit',
       render: (realisasi) => (
-        <span className="text-sm text-gray-600">
-          {realisasi.type === 'unplanned' 
-            ? realisasi.meeting_notes || realisasi.visit_purpose
-            : realisasi.hasil_visit || realisasi.meeting_notes}
-        </span>
+        <div className="max-w-xs">
+          <p className="text-sm text-gray-900 line-clamp-2">
+            {realisasi.type === 'unplanned' 
+              ? realisasi.meeting_notes || realisasi.visit_purpose || '-'
+              : realisasi.hasil_visit || realisasi.meeting_notes || '-'}
+          </p>
+        </div>
       )
+    },
+    {
+      key: 'photo',
+      label: 'Foto',
+      render: (realisasi) => {
+        // Check multiple photo field possibilities
+        const hasPhoto = realisasi.photos || realisasi.photo || realisasi.foto_bukti
+        
+        return hasPhoto ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedPhoto(realisasi)
+              setShowPhotoModal(true)
+            }}
+          >
+            <Camera size={14} />
+            Lihat Foto
+          </Button>
+        ) : (
+          <span className="text-xs text-gray-400">Tidak ada foto</span>
+        )
+      }
     },
     {
       key: 'status',
@@ -594,7 +621,7 @@ export default function RealisasiVisitsPage() {
             }`}
           >
             Pending Visits
-            {pendingVisits.length > 0 && (
+            {Array.isArray(pendingVisits) && pendingVisits.length > 0 && (
               <span className="ml-2 bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full">
                 {pendingVisits.length}
               </span>
@@ -657,13 +684,13 @@ export default function RealisasiVisitsPage() {
           <Clock className="text-orange-500" size={20} />
           <h2 className="text-lg font-semibold text-gray-900">Pending Visits</h2>
           <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
-            {pendingVisits.length}
+            {Array.isArray(pendingVisits) ? pendingVisits.length : 0}
           </span>
         </div>
         
         <DataTable
           columns={pendingColumns}
-          data={pendingVisits}
+          data={Array.isArray(pendingVisits) ? pendingVisits : []}
           loading={loading}
           emptyMessage="Tidak ada visit yang pending"
         />
@@ -754,7 +781,7 @@ export default function RealisasiVisitsPage() {
                 )
               }
             ]}
-            data={pendingUnplannedVisits}
+            data={Array.isArray(pendingUnplannedVisits) ? pendingUnplannedVisits : []}
             loading={loading}
             emptyMessage="Tidak ada unplanned visit yang pending approval"
           />
@@ -777,7 +804,7 @@ export default function RealisasiVisitsPage() {
               <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               </div>
-            ) : myUnplannedVisits.length === 0 ? (
+            ) : !Array.isArray(myUnplannedVisits) || myUnplannedVisits.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <MapPin className="text-gray-300 mx-auto mb-3" size={48} />
                 <p className="text-gray-500">Belum ada unplanned visit</p>
@@ -1083,15 +1110,15 @@ export default function RealisasiVisitsPage() {
               <h2 className="text-lg font-semibold">Tambah Unplanned Visit</h2>
             </div>
 
-            {/* Location Status */}
+            {/* Location Status - Show GPS Coordinates Only */}
             {currentLocation && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
                   <Navigation className="text-blue-600" size={16} />
-                  <span className="text-sm font-medium text-blue-800">Lokasi Terverifikasi</span>
+                  <span className="text-sm font-medium text-blue-800">GPS Coordinates</span>
                 </div>
-                <p className="text-xs text-blue-700 mt-1">
-                  GPS: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+                <p className="text-xs text-blue-700 mt-1 font-mono">
+                  {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
                 </p>
               </div>
             )}
@@ -1105,18 +1132,8 @@ export default function RealisasiVisitsPage() {
               }
               
               // Validations
-              if (!unplannedFormData.customer_name || unplannedFormData.customer_name.trim().length < 3) {
-                toast.error('Nama customer minimal 3 karakter')
-                return
-              }
-              
-              if (!unplannedFormData.customer_company || unplannedFormData.customer_company.trim().length < 3) {
-                toast.error('Nama perusahaan minimal 3 karakter')
-                return
-              }
-              
-              if (!unplannedFormData.customer_phone || unplannedFormData.customer_phone.trim().length < 10) {
-                toast.error('Nomor telepon minimal 10 digit')
+              if (!unplannedFormData.customer_id) {
+                toast.error('Pilih customer terlebih dahulu')
                 return
               }
               
@@ -1163,10 +1180,7 @@ export default function RealisasiVisitsPage() {
               
               try {
                 const submitData = {
-                  customer_name: unplannedFormData.customer_name.trim(),
-                  customer_company: unplannedFormData.customer_company.trim(),
-                  customer_phone: unplannedFormData.customer_phone.trim(),
-                  customer_address: unplannedFormData.customer_address.trim(),
+                  customer_id: parseInt(unplannedFormData.customer_id),
                   visit_date: unplannedFormData.visit_date,
                   visit_time: unplannedFormData.visit_time,
                   visit_purpose: unplannedFormData.visit_purpose,
@@ -1207,67 +1221,51 @@ export default function RealisasiVisitsPage() {
                 toast.error(error.message || 'Gagal menyimpan unplanned visit')
               }
             }} className="space-y-4">
-              {/* Customer Info - Manual Input */}
+              {/* Customer Selection */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <h3 className="font-medium text-gray-900 mb-2">Data Customer Baru</h3>
+                <h3 className="font-medium text-gray-900 mb-2">Pilih Customer</h3>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Customer <span className="text-red-500">*</span>
+                    Customer <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={unplannedFormData.customer_name}
-                    onChange={(e) => setUnplannedFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                  <select
+                    value={unplannedFormData.customer_id}
+                    onChange={(e) => setUnplannedFormData(prev => ({ ...prev, customer_id: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: Budi Santoso"
                     required
-                    minLength={3}
-                  />
+                  >
+                    <option value="">-- Pilih Customer --</option>
+                    {customers.filter(c => c.approval_status === 'approved').map(customer => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name} - {customer.company || 'N/A'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Perusahaan <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={unplannedFormData.customer_company}
-                    onChange={(e) => setUnplannedFormData(prev => ({ ...prev, customer_company: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: PT Maju Jaya"
-                    required
-                    minLength={3}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nomor Telepon <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={unplannedFormData.customer_phone}
-                    onChange={(e) => setUnplannedFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: 081234567890"
-                    required
-                    minLength={10}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alamat (Opsional)
-                  </label>
-                  <textarea
-                    value={unplannedFormData.customer_address}
-                    onChange={(e) => setUnplannedFormData(prev => ({ ...prev, customer_address: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={2}
-                    placeholder="Alamat lengkap customer..."
-                  />
-                </div>
+                
+                {/* Display Selected Customer Info */}
+                {unplannedFormData.customer_id && (() => {
+                  const selectedCustomer = customers.find(c => c.id === parseInt(unplannedFormData.customer_id))
+                  return selectedCustomer ? (
+                    <div className="mt-3 p-3 bg-white rounded border border-gray-200">
+                      <div className="space-y-1 text-xs">
+                        <div className="flex">
+                          <span className="w-20 text-gray-600">Nama:</span>
+                          <span className="font-medium text-gray-900">{selectedCustomer.name}</span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-20 text-gray-600">Perusahaan:</span>
+                          <span className="font-medium text-gray-900">{selectedCustomer.company || '-'}</span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-20 text-gray-600">Telepon:</span>
+                          <span className="font-medium text-gray-900">{selectedCustomer.phone || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                })()}
               </div>
 
               {/* Visit Date & Time */}
@@ -1514,6 +1512,105 @@ export default function RealisasiVisitsPage() {
           onCancel={() => setShowCamera(false)}
           type="unplanned-visit"
         />
+      )}
+
+      {/* Photo Modal */}
+      {showPhotoModal && selectedPhoto && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Foto Bukti Visit</h3>
+                <button
+                  onClick={() => {
+                    setShowPhotoModal(false)
+                    setSelectedPhoto(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-2"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Visit Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Customer</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPhoto.type === 'unplanned' 
+                        ? selectedPhoto.directCustomer?.name || selectedPhoto.customer_name
+                        : selectedPhoto.plan_visit?.customer?.name || selectedPhoto.customer_name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Waktu Visit</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPhoto.visit_date 
+                        ? new Date(selectedPhoto.visit_date).toLocaleDateString('id-ID')
+                        : selectedPhoto.visited_at
+                          ? new Date(selectedPhoto.visited_at).toLocaleString('id-ID')
+                          : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Hasil Visit</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPhoto.type === 'unplanned' 
+                        ? selectedPhoto.meeting_notes || selectedPhoto.visit_purpose || '-'
+                        : selectedPhoto.hasil_visit || selectedPhoto.meeting_notes || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">GPS Coordinates</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPhoto.latitude && selectedPhoto.longitude
+                        ? `${parseFloat(selectedPhoto.latitude).toFixed(6)}, ${parseFloat(selectedPhoto.longitude).toFixed(6)}`
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Photos */}
+              <div className="space-y-4">
+                {Array.isArray(selectedPhoto.photos) ? (
+                  selectedPhoto.photos.map((photo, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <img 
+                        src={photo} 
+                        alt={`Foto visit ${index + 1}`}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  ))
+                ) : selectedPhoto.photos ? (
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <img 
+                      src={selectedPhoto.photos} 
+                      alt="Foto visit"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">Tidak ada foto</p>
+                )}
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  onClick={() => {
+                    setShowPhotoModal(false)
+                    setSelectedPhoto(null)
+                  }}
+                  className="w-full"
+                >
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

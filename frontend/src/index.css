@@ -31,3 +31,8 @@
 ::-webkit-scrollbar-track { @apply bg-gray-100; }
 ::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
 ::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+
+/* Data attribute selectors for dynamic styling */
+[data-selected="true"] {
+  /* Applied via data-[selected=true] in Tailwind */
+}

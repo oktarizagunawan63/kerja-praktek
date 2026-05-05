@@ -14,6 +14,9 @@ import { clearErrorNotifications } from './utils/clearErrorNotifications'
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import FunnelsPage from './pages/FunnelsPage'
+import FunnelFormPage from './pages/FunnelFormPage'
+import FunnelDetailPage from './pages/FunnelDetailPage'
 
 // Lazy load all other pages
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
@@ -41,9 +44,6 @@ const EngineerProgressReportsPage = lazy(() => import('./pages/EngineerProgressR
 const VisitReportsPage = lazy(() => import('./pages/VisitReportsPage'))
 const WarningsPage = lazy(() => import('./pages/WarningsPage'))
 const WelcomeModal = lazy(() => import('./components/ui/WelcomeModal'))
-const FunnelsPage = lazy(() => import('./pages/FunnelsPage'))
-const FunnelFormPage = lazy(() => import('./pages/FunnelFormPage'))
-const FunnelDetailPage = lazy(() => import('./pages/FunnelDetailPage'))
 
 // Loading component
 function PageLoader() {

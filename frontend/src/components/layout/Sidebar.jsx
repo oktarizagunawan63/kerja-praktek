@@ -35,7 +35,6 @@ const NAV_SECTIONS = {
       items: [
         { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
         { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
-        { to: '/create-visit-record', icon: FileText, label: 'Create Visit Record', tourId: 'create-visit-record' },
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
         { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
@@ -86,7 +85,6 @@ const NAV_SECTIONS = {
       items: [
         { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
         { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
-        { to: '/create-visit-record', icon: FileText, label: 'Create Visit Record', tourId: 'create-visit-record' },
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
@@ -113,7 +111,6 @@ const NAV_SECTIONS = {
       items: [
         { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
         { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
-        { to: '/create-visit-record', icon: FileText, label: 'Create Visit Record', tourId: 'create-visit-record' },
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/attendance', icon: Clock, label: 'Attendance', tourId: 'attendance' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' }

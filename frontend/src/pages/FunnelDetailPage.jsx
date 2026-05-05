@@ -286,12 +286,6 @@ export default function FunnelDetailPage() {
                 <span className="ml-2 text-sm text-gray-700">({funnel.win_percentage}%)</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Estimasi Nilai</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  Rp {Number(funnel.estimated_value).toLocaleString('id-ID')}
-                </p>
-              </div>
-              <div>
                 <p className="text-sm text-gray-600 mb-1">QTY</p>
                 <p className="text-lg font-semibold text-gray-900">{funnel.qty} {funnel.unit}</p>
               </div>

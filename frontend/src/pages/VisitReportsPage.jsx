@@ -6,12 +6,14 @@ import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
+import { exportVisitReportsPDF } from '../lib/exportPdf'
 import toast from 'react-hot-toast'
 
 export default function VisitReportsPage() {
   const { user } = useAuthStore()
   const [reportData, setReportData] = useState(null)
   const [salesPerformance, setSalesPerformance] = useState([])
+  const [detailedVisits, setDetailedVisits] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     period: 'monthly',
@@ -51,6 +53,23 @@ export default function VisitReportsPage() {
       const reportResponse = await api.getVisitReport(filters)
       setReportData(reportResponse.data)
       
+      // Fetch detailed visits for PDF export
+      const visitsResponse = await api.getRealisasiVisits()
+      const allVisits = visitsResponse.data || []
+      
+      // Filter visits by date range
+      const filteredVisits = allVisits.filter(visit => {
+        const visitDate = visit.plan_visit?.tanggal_visit || visit.created_at?.split('T')[0]
+        return visitDate >= filters.start_date && visitDate <= filters.end_date
+      })
+      
+      // Filter by sales if specified
+      const finalVisits = filters.sales_id 
+        ? filteredVisits.filter(visit => visit.visited_by == filters.sales_id)
+        : filteredVisits
+      
+      setDetailedVisits(finalVisits)
+      
       // Fetch sales performance (Sales Manager only)
       if (can(user, 'view_sales_performance')) {
         const performanceResponse = await api.getSalesPerformance({
@@ -71,6 +90,37 @@ export default function VisitReportsPage() {
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleExportPDF = () => {
+    if (!detailedVisits || detailedVisits.length === 0) {
+      toast.error('Tidak ada data untuk di-export')
+      return
+    }
+
+    try {
+      const statistics = {
+        totalVisits: reportData.summary?.total_visits || 0,
+        completed: reportData.summary?.completed_visits || 0,
+        missed: reportData.summary?.missed_visits || 0,
+        performanceRate: reportData.summary?.performance_rate || 0
+      }
+
+      // Add sales name to filters if sales_id is selected
+      const exportFilters = { ...filters }
+      if (filters.sales_id && salesUsers.length > 0) {
+        const selectedSales = salesUsers.find(s => s.id == filters.sales_id)
+        if (selectedSales) {
+          exportFilters.sales_name = selectedSales.name
+        }
+      }
+
+      exportVisitReportsPDF(detailedVisits, exportFilters, statistics)
+      toast.success('PDF berhasil di-export')
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      toast.error('Gagal export PDF')
+    }
   }
 
   const getPerformanceColor = (rate) => {
@@ -182,7 +232,6 @@ export default function VisitReportsPage() {
   ]
 
   const isSiteManager = can(user, 'view_sales_performance')
-  const themeColor = isSiteManager ? 'green' : 'red'
 
   return (
     <div className="p-6">
@@ -192,16 +241,16 @@ export default function VisitReportsPage() {
           <p className="text-gray-600">Laporan dan analisis kunjungan sales</p>
         </div>
         
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExportPDF}>
           <Download size={16} />
           Export PDF
         </Button>
       </div>
 
       {/* Filters */}
-      <div className={`bg-${themeColor}-50 rounded-xl p-6 mb-8 border border-${themeColor}-100`}>
+      <div className="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className={`text-${themeColor}-600`} size={20} />
+          <Filter className="text-blue-600" size={20} />
           <h2 className="text-lg font-semibold text-gray-900">Filter Laporan</h2>
         </div>
         
@@ -260,13 +309,13 @@ export default function VisitReportsPage() {
       {/* Summary Cards */}
       {reportData?.summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className={`bg-${themeColor}-50 rounded-xl p-6 border border-${themeColor}-100`}>
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Total Visits</p>
-                <p className={`text-2xl font-bold text-${themeColor}-700`}>{reportData.summary.total_visits}</p>
+                <p className="text-2xl font-bold text-blue-700">{reportData.summary.total_visits}</p>
               </div>
-              <div className={`w-12 h-12 bg-${themeColor}-600 rounded-lg flex items-center justify-center`}>
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Calendar className="text-white" size={24} />
               </div>
             </div>
@@ -314,7 +363,7 @@ export default function VisitReportsPage() {
       {reportData?.period_data && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className={`text-${themeColor}-600`} size={20} />
+            <BarChart3 className="text-blue-600" size={20} />
             <h2 className="text-lg font-semibold text-gray-900">Data Per Periode</h2>
           </div>
           

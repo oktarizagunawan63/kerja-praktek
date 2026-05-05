@@ -430,14 +430,9 @@ function AttendancePage() {
           </div>
           
           {currentLocation && (
-            <>
-              <p className="text-responsive-xs text-blue-700 font-mono">
-                GPS: {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
-              </p>
-              <p className="text-responsive-xs text-blue-600">
-                Akurasi: ±{Math.round(currentLocation.accuracy)}m
-              </p>
-            </>
+            <p className="text-responsive-xs text-blue-700 font-mono">
+              GPS: {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
+            </p>
           )}
           
           {todayAttendance?.check_in_latitude && !currentLocation && (

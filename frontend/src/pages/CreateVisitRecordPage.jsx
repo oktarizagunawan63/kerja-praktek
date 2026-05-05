@@ -20,7 +20,6 @@ export default function CreateVisitRecordPage() {
   const [formData, setFormData] = useState({
     plan_visit_id: '',
     visit_date: new Date().toISOString().split('T')[0],
-    actual_duration: '',
     meeting_notes: '',
     visit_outcome: '',
     deal_amount: '',
@@ -77,11 +76,6 @@ export default function CreateVisitRecordPage() {
       return
     }
     
-    if (!formData.actual_duration || parseInt(formData.actual_duration) <= 0) {
-      toast.error('Duration must be greater than 0 minutes')
-      return
-    }
-    
     if (!formData.meeting_notes || formData.meeting_notes.trim().length < 10) {
       toast.error('Meeting notes required (min 10 characters)')
       return
@@ -105,7 +99,6 @@ export default function CreateVisitRecordPage() {
       const submitData = {
         plan_visit_id: parseInt(formData.plan_visit_id),
         visit_date: formData.visit_date,
-        actual_duration: parseInt(formData.actual_duration),
         meeting_notes: formData.meeting_notes.trim(),
         visit_outcome: formData.visit_outcome,
         deal_amount: formData.visit_outcome === 'closed' ? parseFloat(formData.deal_amount) : null,
@@ -123,19 +116,7 @@ export default function CreateVisitRecordPage() {
     }
   }
 
-  const getDurationVariance = () => {
-    if (!selectedPlan?.durasi || !formData.actual_duration) return null
-    
-    const planned = parseInt(selectedPlan.durasi)
-    const actual = parseInt(formData.actual_duration)
-    const diff = actual - planned
-    
-    if (diff === 0) return { text: 'On schedule', color: 'text-green-600' }
-    if (diff > 0) return { text: `+${diff} min (Longer than planned)`, color: 'text-blue-600' }
-    return { text: `${diff} min (Shorter than planned)`, color: 'text-yellow-600' }
-  }
 
-  const variance = getDurationVariance()
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -241,28 +222,6 @@ export default function CreateVisitRecordPage() {
             helperText="Kapan visit actual dilakukan (tidak boleh masa depan)"
           />
 
-          {/* Actual Duration */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Actual Duration (menit) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={formData.actual_duration}
-              onChange={(e) => setFormData(prev => ({ ...prev, actual_duration: e.target.value }))}
-              min="0"
-              step="5"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Contoh: 65"
-              required
-            />
-            {variance && (
-              <p className={`text-sm mt-1 ${variance.color} font-medium`}>
-                Planned: {selectedPlan.durasi} min | {variance.text}
-              </p>
-            )}
-          </div>
-
           {/* Meeting Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -288,35 +247,53 @@ export default function CreateVisitRecordPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">3. Hasil Visit</h2>
           
           <div className="space-y-3">
-            {[
-              { value: 'closed', label: 'Closed (Deal)', desc: 'Customer setuju & deal ditutup', color: 'green' },
-              { value: 'follow_up', label: 'Follow-up', desc: 'Masih ada pembahasan lanjut', color: 'blue' },
-              { value: 'not_interested', label: 'Not Interested', desc: 'Customer tidak tertarik', color: 'red' },
-              { value: 'rescheduled', label: 'Rescheduled', desc: 'Pertemuan dijadwalkan ulang', color: 'yellow' }
-            ].map(outcome => (
-              <label
-                key={outcome.value}
-                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  formData.visit_outcome === outcome.value
-                    ? `border-${outcome.color}-500 bg-${outcome.color}-50`
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="visit_outcome"
-                  value={outcome.value}
-                  checked={formData.visit_outcome === outcome.value}
-                  onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
-                  className={`mt-1 text-${outcome.color}-600`}
-                  required
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{outcome.label}</p>
-                  <p className="text-sm text-gray-600">{outcome.desc}</p>
-                </div>
-              </label>
-            ))}
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-green-500 data-[selected=true]:bg-green-50"
+              data-selected={formData.visit_outcome === 'closed'}>
+              <input type="radio" name="visit_outcome" value="closed"
+                checked={formData.visit_outcome === 'closed'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1 text-green-600" required />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Closed (Deal)</p>
+                <p className="text-sm text-gray-600">Customer setuju & deal ditutup</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-blue-500 data-[selected=true]:bg-blue-50"
+              data-selected={formData.visit_outcome === 'follow_up'}>
+              <input type="radio" name="visit_outcome" value="follow_up"
+                checked={formData.visit_outcome === 'follow_up'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1 text-blue-600" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Follow-up</p>
+                <p className="text-sm text-gray-600">Masih ada pembahasan lanjut</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-red-500 data-[selected=true]:bg-red-50"
+              data-selected={formData.visit_outcome === 'not_interested'}>
+              <input type="radio" name="visit_outcome" value="not_interested"
+                checked={formData.visit_outcome === 'not_interested'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1 text-red-600" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Not Interested</p>
+                <p className="text-sm text-gray-600">Customer tidak tertarik</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-yellow-500 data-[selected=true]:bg-yellow-50"
+              data-selected={formData.visit_outcome === 'rescheduled'}>
+              <input type="radio" name="visit_outcome" value="rescheduled"
+                checked={formData.visit_outcome === 'rescheduled'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1 text-yellow-600" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Rescheduled</p>
+                <p className="text-sm text-gray-600">Pertemuan dijadwalkan ulang</p>
+              </div>
+            </label>
           </div>
 
           {/* Deal Amount & Notes - Conditional */}

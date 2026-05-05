@@ -29,6 +29,8 @@ export default function CreateUnplannedVisitPage() {
     latitude: null,
     longitude: null
   })
+  
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
 
   useEffect(() => {
     fetchCustomers()
@@ -191,24 +193,58 @@ export default function CreateUnplannedVisitPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">1. Informasi Customer</h2>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Customer <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.customer_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, customer_id: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={loading}
-            >
-              <option value="">-- Pilih Customer --</option>
-              {customers.map(customer => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.company || 'N/A'}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Pilih Customer <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.customer_id}
+                onChange={(e) => {
+                  const customerId = e.target.value
+                  const customer = customers.find(c => c.id === parseInt(customerId))
+                  setFormData(prev => ({ ...prev, customer_id: customerId }))
+                  setSelectedCustomer(customer || null)
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                disabled={loading}
+              >
+                <option value="">-- Pilih Customer --</option>
+                {customers.map(customer => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name} - {customer.company || 'N/A'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Display Selected Customer Info */}
+            {selectedCustomer && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="text-sm font-semibold text-blue-900 mb-3">Detail Customer</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex">
+                    <span className="w-32 text-gray-600">Nama:</span>
+                    <span className="font-medium text-gray-900">{selectedCustomer.name}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="w-32 text-gray-600">Perusahaan:</span>
+                    <span className="font-medium text-gray-900">{selectedCustomer.company || '-'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="w-32 text-gray-600">Telepon:</span>
+                    <span className="font-medium text-gray-900">{selectedCustomer.phone || '-'}</span>
+                  </div>
+                  {selectedCustomer.address && (
+                    <div className="flex">
+                      <span className="w-32 text-gray-600">Alamat:</span>
+                      <span className="font-medium text-gray-900">{selectedCustomer.address}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -303,35 +339,53 @@ export default function CreateUnplannedVisitPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">3. Hasil Kunjungan</h2>
           
           <div className="space-y-3">
-            {[
-              { value: 'closed', label: 'Closed (Deal)', desc: 'Customer setuju & deal ditutup', color: 'green' },
-              { value: 'follow_up', label: 'Follow-up', desc: 'Masih ada pembahasan lanjut', color: 'blue' },
-              { value: 'not_interested', label: 'Not Interested', desc: 'Customer tidak tertarik', color: 'red' },
-              { value: 'rescheduled', label: 'Rescheduled', desc: 'Pertemuan dijadwalkan ulang', color: 'yellow' }
-            ].map(outcome => (
-              <label
-                key={outcome.value}
-                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  formData.visit_outcome === outcome.value
-                    ? `border-${outcome.color}-500 bg-${outcome.color}-50`
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="visit_outcome"
-                  value={outcome.value}
-                  checked={formData.visit_outcome === outcome.value}
-                  onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
-                  className="mt-1"
-                  required
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{outcome.label}</p>
-                  <p className="text-sm text-gray-600">{outcome.desc}</p>
-                </div>
-              </label>
-            ))}
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-green-500 data-[selected=true]:bg-green-50"
+              data-selected={formData.visit_outcome === 'closed'}>
+              <input type="radio" name="visit_outcome" value="closed"
+                checked={formData.visit_outcome === 'closed'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1" required />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Closed (Deal)</p>
+                <p className="text-sm text-gray-600">Customer setuju & deal ditutup</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-blue-500 data-[selected=true]:bg-blue-50"
+              data-selected={formData.visit_outcome === 'follow_up'}>
+              <input type="radio" name="visit_outcome" value="follow_up"
+                checked={formData.visit_outcome === 'follow_up'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Follow-up</p>
+                <p className="text-sm text-gray-600">Masih ada pembahasan lanjut</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-red-500 data-[selected=true]:bg-red-50"
+              data-selected={formData.visit_outcome === 'not_interested'}>
+              <input type="radio" name="visit_outcome" value="not_interested"
+                checked={formData.visit_outcome === 'not_interested'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Not Interested</p>
+                <p className="text-sm text-gray-600">Customer tidak tertarik</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all border-gray-200 hover:border-gray-300 data-[selected=true]:border-yellow-500 data-[selected=true]:bg-yellow-50"
+              data-selected={formData.visit_outcome === 'rescheduled'}>
+              <input type="radio" name="visit_outcome" value="rescheduled"
+                checked={formData.visit_outcome === 'rescheduled'}
+                onChange={(e) => setFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
+                className="mt-1" />
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Rescheduled</p>
+                <p className="text-sm text-gray-600">Pertemuan dijadwalkan ulang</p>
+              </div>
+            </label>
           </div>
 
           {/* Deal Amount - Conditional */}

@@ -155,6 +155,11 @@ export default function PlanVisitsPage() {
       return
     }
     
+    if (!completeFormData.completion_photo) {
+      toast.error('Foto bukti visit wajib diupload')
+      return
+    }
+    
     try {
       await api.completePlanVisit(completingVisit.id, completeFormData)
       toast.success('Visit berhasil diselesaikan! Mengarahkan ke halaman realisasi visit...', {
@@ -595,7 +600,9 @@ export default function PlanVisitsPage() {
               </div>
 
               <div className="form-group-responsive">
-                <label className="text-responsive-sm font-medium text-gray-700">Upload Foto Bukti (Opsional)</label>
+                <label className="text-responsive-sm font-medium text-gray-700">
+                  Upload Foto Bukti <span className="text-red-500">*</span>
+                </label>
                 <div className="mt-2">
                   {completeFormData.completion_photo ? (
                     <div className="space-y-3">
