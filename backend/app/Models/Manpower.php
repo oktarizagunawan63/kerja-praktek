@@ -9,7 +9,7 @@ class Manpower extends Model
 {
     use HasFactory;
 
-    protected $table = 'manpower';
+    protected $table = 'manpowers';
 
     protected $fillable = [
         'project_id', 'name', 'role', 'status', 'joined_date',

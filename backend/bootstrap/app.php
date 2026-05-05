@@ -12,12 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Use only Laravel's built-in CORS handling
         $middleware->api(prepend: [
-            // Removed EnsureFrontendRequestsAreStateful - using token auth only
+            \Illuminate\Http\Middleware\HandleCors::class,
         ]);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

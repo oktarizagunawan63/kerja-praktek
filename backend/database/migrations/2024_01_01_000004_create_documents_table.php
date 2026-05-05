@@ -12,9 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
-            $table->enum('type', ['daily_report', 'weekly_report', 'photo', 'technical_doc']);
+            $table->string('type', 100); // custom type string
             $table->string('name');
             $table->string('file_path');
+            $table->string('file_url')->nullable();
             $table->unsignedBigInteger('file_size')->nullable();
             $table->string('mime_type')->nullable();
             $table->timestamps();

@@ -14,8 +14,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['project_manager', 'engineer', 'director'])->default('engineer');
+            $table->enum('role', ['direktur', 'site_manager', 'engineer'])->default('engineer');
+            $table->string('phone')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->json('assigned_projects')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

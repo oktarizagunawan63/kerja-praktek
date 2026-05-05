@@ -2,55 +2,71 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
-    use HasFactory;
+    use SoftDeletes;
 
-    // status: on_track | at_risk | delayed | completed
     protected $fillable = [
         'name', 'description', 'location', 'status',
         'start_date', 'end_date', 'budget', 'budget_realisasi',
-        'progress', 'project_manager_id',
+        'progress', 'project_manager_id', 'pm_name', 'pm_email',
+        'completed_at', 'assigned_engineers',
     ];
 
     protected $casts = [
-        'start_date'       => 'date',
-        'end_date'         => 'date',
-        'budget'           => 'decimal:2',
-        'budget_realisasi' => 'decimal:2',
-        'progress'         => 'integer',
+        'start_date'         => 'date:Y-m-d',
+        'end_date'           => 'date:Y-m-d',
+        'completed_at'       => 'datetime',
+        'budget'             => 'decimal:2',
+        'budget_realisasi'   => 'decimal:2',
+        'progress'           => 'integer',
+        'assigned_engineers' => 'array',
     ];
 
-    public function projectManager()
+    public function projectManager()  { return $this->belongsTo(User::class, 'project_manager_id'); }
+    public function materials()       { return $this->hasMany(Material::class); }
+    public function documents()       { return $this->hasMany(Document::class); }
+    public function notifications()   { return $this->hasMany(ProjectNotification::class); }
+    
+    public function assignments()
     {
-        return $this->belongsTo(User::class, 'project_manager_id');
+        return $this->hasMany(ProjectAssignment::class);
     }
 
-    public function manpowers()
+    public function assignedEngineers()
     {
-        return $this->hasMany(Manpower::class);
+        return $this->belongsToMany(User::class, 'project_assignments', 'project_id', 'user_id')
+                    ->withPivot('assigned_by', 'assigned_at')
+                    ->withTimestamps();
     }
 
-    public function materials()
+    public function engineers()
     {
-        return $this->hasMany(Material::class);
+        return $this->hasManyThrough(
+            User::class,
+            ProjectAssignment::class,
+            'project_id', // Foreign key on project_assignments table
+            'id',         // Foreign key on users table
+            'id',         // Local key on projects table
+            'user_id'     // Local key on project_assignments table
+        );
+    }
+
+    public function engineerProgressReports()
+    {
+        return $this->hasMany(EngineerProgressReport::class);
     }
 
     public function progressReports()
     {
-        return $this->hasMany(ProgressReport::class);
+        return $this->hasMany(\App\Models\EngineerProgressReport::class);
     }
 
-    public function documents()
+    public function siteManager()
     {
-        return $this->hasMany(Document::class);
-    }
-
-    public function notifications()
-    {
-        return $this->hasMany(ProjectNotification::class);
+        return $this->belongsTo(\App\Models\User::class, 'site_manager_id');
     }
 }

@@ -8,16 +8,10 @@ class ActivityLog extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = [
-        'user_id', 'action', 'description', 'ip_address', 'created_at',
-    ];
+    protected $fillable = ['user_id', 'action', 'description', 'project_id', 'ip_address', 'created_at'];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-    ];
+    protected $casts = ['created_at' => 'datetime'];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    public function user()    { return $this->belongsTo(User::class); }
+    public function project() { return $this->belongsTo(Project::class); }
 }

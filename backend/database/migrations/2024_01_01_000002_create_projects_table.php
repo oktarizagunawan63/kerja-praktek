@@ -19,7 +19,12 @@ return new class extends Migration
             $table->decimal('budget', 15, 2)->default(0);
             $table->decimal('budget_realisasi', 15, 2)->default(0);
             $table->unsignedTinyInteger('progress')->default(0);
+            $table->string('pm_name')->nullable();
+            $table->string('pm_email')->nullable();
+            $table->json('assigned_engineers')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->foreignId('project_manager_id')->constrained('users')->cascadeOnDelete();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

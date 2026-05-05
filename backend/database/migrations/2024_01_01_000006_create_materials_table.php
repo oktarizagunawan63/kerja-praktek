@@ -14,8 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('unit', 50);
             $table->decimal('qty_plan', 12, 2)->default(0);
-            $table->decimal('qty_used', 12, 2)->default(0);
-            $table->decimal('qty_stock', 12, 2)->default(0);
+            $table->decimal('qty_terpasang', 12, 2)->default(0);
             $table->timestamps();
         });
     }

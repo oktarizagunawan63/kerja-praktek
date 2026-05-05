@@ -15,6 +15,7 @@ class AuthController extends Controller
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
+            'role'     => 'nullable|string', // Optional role selection
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -26,7 +27,25 @@ class AuthController extends Controller
         }
 
         if (! $user->is_active) {
-            return response()->json(['message' => 'Akun tidak aktif.'], 403);
+            if ($user->status === 'pending') {
+                return response()->json(['message' => 'Akun Anda masih menunggu persetujuan.'], 403);
+            } elseif ($user->status === 'rejected') {
+                return response()->json(['message' => 'Akun Anda ditolak. Hubungi administrator.'], 403);
+            } else {
+                return response()->json(['message' => 'Akun tidak aktif.'], 403);
+            }
+        }
+
+        // Role validation if role is specified in request
+        if ($request->role) {
+            $normalizedUserRole = strtolower($user->role);
+            $normalizedRequestRole = strtolower($request->role);
+            
+            if ($normalizedUserRole !== $normalizedRequestRole) {
+                return response()->json([
+                    'message' => 'Akun Anda tidak memiliki akses sebagai ' . ucfirst($request->role)
+                ], 403);
+            }
         }
 
         // Revoke old tokens
@@ -43,6 +62,7 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
+            'success' => true,
             'token' => $token,
             'user'  => [
                 'id'    => $user->id,

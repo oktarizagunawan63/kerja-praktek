@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('project_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['over_budget', 'deadline_warning', 'milestone', 'info']);
+            $table->enum('type', ['over_budget', 'deadline_warning', 'success', 'info']);
             $table->string('title');
             $table->text('message');
             $table->boolean('is_read')->default(false);
