@@ -33,7 +33,6 @@ const UsersPage = lazy(() => import('./pages/UsersPage'))
 const CustomersPage = lazy(() => import('./pages/CustomersPage'))
 const PlanVisitsPage = lazy(() => import('./pages/PlanVisitsPage'))
 const RealisasiVisitsPage = lazy(() => import('./pages/RealisasiVisitsPage'))
-const CreateVisitRecordPage = lazy(() => import('./pages/CreateVisitRecordPage'))
 const CreateUnplannedVisitPage = lazy(() => import('./pages/CreateUnplannedVisitPage'))
 const AttendancePage = lazy(() => import('./pages/AttendancePage'))
 const AttendanceMonitorPage = lazy(() => import('./pages/AttendanceMonitorPage'))
@@ -213,7 +212,6 @@ export default function App() {
             <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
             <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
             <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
-            <Route path="create-visit-record" element={<VisitManagementOnly><CreateVisitRecordPage /></VisitManagementOnly>} />
             <Route path="create-unplanned-visit" element={<VisitManagementOnly><CreateUnplannedVisitPage /></VisitManagementOnly>} />
             <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
             <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />

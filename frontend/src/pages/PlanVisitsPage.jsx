@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock, Camera } from 'lucide-react'
+import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
-import CameraAttendance from '../components/ui/CameraAttendance'
 import '../styles/responsive-global.css'
 
 export default function PlanVisitsPage() {
@@ -19,13 +18,8 @@ export default function PlanVisitsPage() {
   const [activeFilter, setActiveFilter] = useState('semua')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingVisit, setEditingVisit] = useState(null)
-  const [showCompleteModal, setShowCompleteModal] = useState(false)
-  const [completingVisit, setCompletingVisit] = useState(null)
-  const [showCamera, setShowCamera] = useState(false)
-  const [completeFormData, setCompleteFormData] = useState({
-    hasil_visit: '',
-    completion_photo: null
-  })
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailVisit, setDetailVisit] = useState(null)
   const [formData, setFormData] = useState({
     customer_id: '',
     assigned_to: '',
@@ -121,61 +115,6 @@ export default function PlanVisitsPage() {
       fetchData()
     } catch (error) {
       toast.error(error.message || 'Gagal menghapus plan visit')
-    }
-  }
-
-  const handleCompleteVisit = async (visit) => {
-    setCompletingVisit(visit)
-    setCompleteFormData({
-      hasil_visit: '',
-      completion_photo: null
-    })
-    setShowCompleteModal(true)
-  }
-
-  const handleCameraCapture = (photoData) => {
-    // Convert base64 to file-like object for upload
-    setCompleteFormData(prev => ({
-      ...prev,
-      completion_photo: photoData.photo
-    }))
-    setShowCamera(false)
-    toast.success('Foto berhasil diambil!')
-  }
-
-  const handleCameraCancel = () => {
-    setShowCamera(false)
-  }
-
-  const handleCompleteSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!completeFormData.hasil_visit.trim()) {
-      toast.error('Hasil kunjungan harus diisi')
-      return
-    }
-    
-    if (!completeFormData.completion_photo) {
-      toast.error('Foto bukti visit wajib diupload')
-      return
-    }
-    
-    try {
-      await api.completePlanVisit(completingVisit.id, completeFormData)
-      toast.success('Visit berhasil diselesaikan! Mengarahkan ke halaman realisasi visit...', {
-        duration: 2000
-      })
-      setShowCompleteModal(false)
-      setCompletingVisit(null)
-      fetchData()
-      
-      // Redirect ke halaman Realisasi Visit setelah berhasil
-      setTimeout(() => {
-        navigate('/realisasi-visits')
-      }, 1500) // Delay 1.5 detik untuk memberi waktu toast muncul
-      
-    } catch (error) {
-      toast.error(error.message || 'Gagal menyelesaikan visit')
     }
   }
 
@@ -377,15 +316,20 @@ export default function PlanVisitsPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => handleCompleteVisit(visit)}
+                        onClick={() => navigate('/realisasi-visits')}
                         className="btn-responsive primary"
                         style={{ fontSize: '12px', padding: '6px 12px' }}
                       >
-                        ✓ <span className="mobile-hidden">Selesai</span>
+                        → <span className="mobile-hidden">Ke Realisasi</span>
                       </button>
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 p-3 bg-blue-100 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 Untuk menyelesaikan visit, buka halaman <strong>Realisasi Visit</strong> → Tab <strong>Pending Visits</strong> → Klik <strong>Mulai Visit</strong>
+                </p>
               </div>
             </div>
           )
@@ -535,17 +479,6 @@ export default function PlanVisitsPage() {
                   <span className="mobile-hidden">Detail</span>
                 </button>
                 
-                {/* Button Selesaikan - hanya muncul untuk visit yang belum selesai */}
-                {!isVisitCompleted(visit) && (
-                  <button
-                    onClick={() => handleCompleteVisit(visit)}
-                    className="btn-responsive primary flex-1 min-w-0"
-                    title="Selesaikan visit ini dan buat realisasi visit"
-                  >
-                    ✓ <span className="mobile-hidden">Selesai</span>
-                  </button>
-                )}
-                
                 {can(user, 'edit_plan_visit') && (
                   <button
                     onClick={() => handleEdit(visit)}
@@ -566,99 +499,6 @@ export default function PlanVisitsPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Complete Visit Modal */}
-      {showCompleteModal && completingVisit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg w-full max-w-md">
-            <div className="spacing-lg border-b border-gray-200">
-              <h2 className="text-responsive-xl font-semibold text-gray-900">Selesaikan Kunjungan</h2>
-              <div className="mt-2">
-                <h4 className="text-responsive-base font-medium text-gray-800">{completingVisit.customer?.name}</h4>
-                <p className="text-responsive-sm text-gray-600">{completingVisit.customer?.company}</p>
-              </div>
-              <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                <p className="text-responsive-sm text-blue-800">
-                  Setelah menyelesaikan visit, Anda akan diarahkan ke halaman Realisasi Visit untuk melihat hasil kunjungan.
-                </p>
-              </div>
-            </div>
-            
-            <form onSubmit={handleCompleteSubmit} className="spacing-lg">
-              <div className="form-group-responsive">
-                <label className="text-responsive-sm font-medium text-gray-700">Hasil Kunjungan *</label>
-                <textarea
-                  value={completeFormData.hasil_visit}
-                  onChange={(e) => setCompleteFormData(prev => ({ ...prev, hasil_visit: e.target.value }))}
-                  className="input-responsive"
-                  style={{ minHeight: '80px' }}
-                  placeholder="Jelaskan hasil kunjungan, kesepakatan, atau hal penting lainnya..."
-                  required
-                />
-              </div>
-
-              <div className="form-group-responsive">
-                <label className="text-responsive-sm font-medium text-gray-700">
-                  Upload Foto Bukti <span className="text-red-500">*</span>
-                </label>
-                <div className="mt-2">
-                  {completeFormData.completion_photo ? (
-                    <div className="space-y-3">
-                      <img 
-                        src={completeFormData.completion_photo} 
-                        alt="Foto bukti visit" 
-                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowCamera(true)}
-                          className="btn-responsive secondary flex-1"
-                        >
-                          <Camera size={16} />
-                          Ambil Ulang
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCompleteFormData(prev => ({ ...prev, completion_photo: null }))}
-                          className="btn-responsive danger flex-1"
-                        >
-                          Hapus Foto
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowCamera(true)}
-                      className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
-                    >
-                      <Camera size={24} className="mx-auto text-gray-400 mb-2" />
-                      <p className="text-responsive-sm text-gray-600">Ambil Foto dengan Kamera</p>
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="submit" className="btn-responsive primary flex-1">
-                  ✓ Selesai & Lihat Realisasi
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCompleteModal(false)
-                    setCompletingVisit(null)
-                  }}
-                  className="btn-responsive secondary flex-1"
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 
@@ -797,13 +637,168 @@ export default function PlanVisitsPage() {
         </div>
       )}
 
-      {/* Camera Component */}
-      {showCamera && (
-        <CameraAttendance
-          onCapture={handleCameraCapture}
-          onCancel={handleCameraCancel}
-          type="visit-photo"
-        />
+      {/* Detail Modal */}
+      {showDetailModal && detailVisit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="spacing-lg border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-responsive-xl font-semibold text-gray-900">Detail Plan Visit</h2>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false)
+                  setDetailVisit(null)
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="spacing-lg">
+              {/* Status Badge */}
+              <div className="flex items-center justify-between mb-4">
+                <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${
+                  getStatusClass(detailVisit) === 'status-selesai' ? 'bg-green-100 text-green-700' :
+                  getStatusClass(detailVisit) === 'status-berjalan' ? 'bg-yellow-100 text-yellow-700' :
+                  getStatusClass(detailVisit) === 'status-dibatalkan' ? 'bg-red-100 text-red-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {getStatusText(detailVisit)}
+                </span>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Informasi Customer</h3>
+                <div className="space-y-2">
+                  <div className="flex">
+                    <span className="text-sm text-gray-600 w-32">Nama:</span>
+                    <span className="text-sm font-medium text-gray-900">{detailVisit.customer?.name}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="text-sm text-gray-600 w-32">Perusahaan:</span>
+                    <span className="text-sm font-medium text-gray-900">{detailVisit.customer?.company || '-'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="text-sm text-gray-600 w-32">Telepon:</span>
+                    <span className="text-sm font-medium text-gray-900">{detailVisit.customer?.phone || '-'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="text-sm text-gray-600 w-32">Email:</span>
+                    <span className="text-sm font-medium text-gray-900">{detailVisit.customer?.email || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visit Info */}
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Informasi Kunjungan</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-blue-600" />
+                    <span className="text-sm text-gray-600 w-28">Tanggal:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {new Date(detailVisit.tanggal_visit).toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  {detailVisit.waktu_visit && (
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="text-blue-600" />
+                      <span className="text-sm text-gray-600 w-28">Waktu:</span>
+                      <span className="text-sm font-medium text-gray-900">{detailVisit.waktu_visit}</span>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <MapPin size={16} className="text-blue-600 mt-0.5" />
+                    <span className="text-sm text-gray-600 w-28">Lokasi:</span>
+                    <span className="text-sm font-medium text-gray-900 flex-1">{detailVisit.lokasi}</span>
+                  </div>
+                  {(detailVisit.customer?.latitude && detailVisit.customer?.longitude) && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 font-mono ml-6">
+                        📍 GPS: {detailVisit.customer.latitude}, {detailVisit.customer.longitude}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <User size={16} className="text-blue-600" />
+                    <span className="text-sm text-gray-600 w-28">Assigned To:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {detailVisit.assigned_to_user?.name || detailVisit.assignedUser?.name || 'Unassigned'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purpose & Notes */}
+              {detailVisit.tujuan && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Tujuan Kunjungan</h3>
+                  <p className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3">{detailVisit.tujuan}</p>
+                </div>
+              )}
+
+              {detailVisit.catatan && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Catatan</h3>
+                  <p className="text-sm text-gray-900 bg-gray-50 rounded-lg p-3">{detailVisit.catatan}</p>
+                </div>
+              )}
+
+              {/* Realisasi Info (if completed) */}
+              {isVisitCompleted(detailVisit) && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="text-sm font-medium text-green-800 mb-3">Hasil Realisasi</h3>
+                  <div className="space-y-2">
+                    <div className="flex">
+                      <span className="text-sm text-green-700 w-32">Status:</span>
+                      <span className="text-sm font-medium text-green-900">
+                        {(detailVisit.realisasi?.status || detailVisit.realisasiVisit?.status) === 'done' ? 'Selesai' : 'Dibatalkan'}
+                      </span>
+                    </div>
+                    {(detailVisit.realisasi?.meeting_notes || detailVisit.realisasiVisit?.meeting_notes) && (
+                      <div>
+                        <span className="text-sm text-green-700">Hasil Kunjungan:</span>
+                        <p className="text-sm text-green-900 mt-1">
+                          {detailVisit.realisasi?.meeting_notes || detailVisit.realisasiVisit?.meeting_notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                {!isVisitCompleted(detailVisit) && (
+                  <button
+                    onClick={() => {
+                      setShowDetailModal(false)
+                      navigate('/realisasi-visits')
+                    }}
+                    className="btn-responsive primary flex-1"
+                  >
+                    → Ke Realisasi Visit
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false)
+                    setDetailVisit(null)
+                  }}
+                  className="btn-responsive secondary flex-1"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
