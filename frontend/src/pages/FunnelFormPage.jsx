@@ -19,6 +19,7 @@ export default function FunnelFormPage() {
   const dropdownRef = useRef(null)
 
   const [formData, setFormData] = useState({
+    customer_id: '',
     customer_name: '',
     customer_company: '',
     customer_phone: '',
@@ -76,6 +77,7 @@ export default function FunnelFormPage() {
       const response = await api.getFunnel(id)
       const f = response.data
       setFormData({
+        customer_id: f.customer_id || '',
         customer_name: f.customer_name || '',
         customer_company: f.customer_company || '',
         customer_phone: f.customer_phone || '',
@@ -114,6 +116,7 @@ export default function FunnelFormPage() {
     setShowDropdown(false)
     setFormData(prev => ({
       ...prev,
+      customer_id: customer.id || '',
       customer_name: customer.name || '',
       customer_company: customer.company || '',
       customer_phone: customer.phone || '',
@@ -128,6 +131,7 @@ export default function FunnelFormPage() {
     setCustomerSearch('')
     setFormData(prev => ({
       ...prev,
+      customer_id: '',
       customer_name: '',
       customer_company: '',
       customer_phone: '',

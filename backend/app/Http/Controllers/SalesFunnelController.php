@@ -209,6 +209,7 @@ class SalesFunnelController extends Controller
                 'segment_custom' => 'required_if:segment,umum|nullable|string',
                 'qty' => 'required|numeric|min:0',
                 'unit' => 'required|in:unit,set,pcs',
+                'estimated_value' => 'nullable|numeric|min:0',
                 'deal_stage' => 'required|in:prospek,qualified,proposal,negosiasi,closing',
                 'deadline_date' => 'required|date',
                 'target_close_date' => 'required|date',
@@ -230,6 +231,11 @@ class SalesFunnelController extends Controller
             
             $data = $validator->validated();
             
+            // Default estimated_value if not provided
+            if (!isset($data['estimated_value'])) {
+                $data['estimated_value'] = 0;
+            }
+
             // Auto-assign
             if (!isset($data['assigned_to'])) {
                 $data['assigned_to'] = $user->id;
@@ -370,6 +376,7 @@ class SalesFunnelController extends Controller
                 'segment_custom' => 'required_if:segment,umum|nullable|string',
                 'qty' => 'sometimes|required|numeric|min:0',
                 'unit' => 'sometimes|required|in:unit,set,pcs',
+                'estimated_value' => 'nullable|numeric|min:0',
                 'deal_stage' => 'sometimes|required|in:prospek,qualified,proposal,negosiasi,closing',
                 'deadline_date' => 'sometimes|required|date',
                 'target_close_date' => 'sometimes|required|date',
@@ -538,6 +545,7 @@ class SalesFunnelController extends Controller
                 'progress'    => 0,
                 'pm_name'     => null,
                 'pm_email'    => null,
+                'project_manager_id' => $user->id, // Required field
             ]);
 
             // Notify Sales Manager, Admin, Site Manager about WON + new project
