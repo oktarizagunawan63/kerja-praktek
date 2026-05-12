@@ -90,7 +90,7 @@ export const api = {
   },
   getSalesUsers: () => request('/users/sales'),
   getEngineers: () => request('/users/engineers'),
-  getUser: (id) => request(`/users/${id}`),
+  getUserById: (id) => request(`/users/${id}`),
   createUser: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
@@ -187,8 +187,7 @@ export const api = {
     return request(`/activity-logs${queryString ? '?' + queryString : ''}`)
   },
   
-  // Notifications
-  getNotifications: () => request('/notifications'),
+  // Notifications (legacy aliases — kept for backward compat)
   getUnreadNotificationCount: () => request('/notifications/unread-count'),
   markNotificationAsRead: (id) => request(`/notifications/${id}/mark-read`, { method: 'POST' }),
   markAllNotificationsAsRead: () => request('/notifications/mark-all-read', { method: 'POST' }),
@@ -273,6 +272,14 @@ export const api = {
   getEngineers: () => request('/projects/engineers/list'),
   completeProject: (id, note) => request(`/projects/${id}/complete`, { method: 'POST', body: JSON.stringify({ note }) }),
   restoreProject: (id) => request(`/projects/${id}/restore`, { method: 'POST' }),
+
+  // Notifications (backend-driven)
+  getNotifications: () => request('/notifications'),
+  getNotificationsUnreadCount: () => request('/notifications/unread-count'),
+  markNotificationRead: (id) => request(`/notifications/${id}/mark-read`, { method: 'POST' }),
+  markAllNotificationsRead: () => request('/notifications/mark-all-read', { method: 'POST' }),
+  deleteNotification: (id) => request(`/notifications/${id}`, { method: 'DELETE' }),
+  clearAllNotifications: () => request('/notifications', { method: 'DELETE' }),
 
   // Check server status (for ServerStatus component)
   checkServerStatus: async () => {

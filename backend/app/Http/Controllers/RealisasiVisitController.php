@@ -4,27 +4,49 @@ namespace App\Http\Controllers;
 
 use App\Models\RealisasiVisit;
 use App\Models\PlanVisit;
+use App\Models\ProjectNotification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+// Helper: kirim notifikasi visit
+function sendVisitNotif($userId, $type, $title, $message) {
+    try {
+        ProjectNotification::create([
+            'user_id'    => $userId,
+            'project_id' => null,
+            'type'       => $type,
+            'title'      => $title,
+            'message'    => $message,
+            'is_read'    => false,
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Visit notif error: ' . $e->getMessage());
+    }
+}
+
 class RealisasiVisitController extends Controller
 {
+    /**
+     * Get all completed visits for Riwayat Visit tab
+     * Returns ALL realisasi visits with status = done (both planned and unplanned)
+     */
     public function index(Request $request)
     {
         try {
             $user = Auth::user();
             
-            // Build query for completed visits (realisasi)
+            // Get ALL completed visits (planned + unplanned) for Riwayat Visit
             $query = RealisasiVisit::with(['planVisit.customer', 'directCustomer', 'visitor'])
-                ->whereIn('status', ['done', 'missed']);
+                ->where('status', 'done');
             
             // Role-based filtering
             if ($user->role === 'sales') {
-                // Sales only sees their own visits
+                // Sales only sees their own completed visits
                 $query->where('visited_by', $user->id);
             } elseif ($user->role === 'sales_manager') {
-                // Sales Manager sees all visits from their team
+                // Sales Manager sees all completed visits from their team
                 $salesTeam = \App\Models\User::where('role', 'sales')
                     ->where('is_active', true)
                     ->pluck('id');
@@ -32,7 +54,7 @@ class RealisasiVisitController extends Controller
             }
             // Administrator sees all
             
-            $realisasiVisits = $query->orderBy('created_at', 'desc')->get();
+            $realisasiVisits = $query->orderBy('visit_date', 'desc')->get();
             
             return response()->json([
                 'success' => true,
@@ -49,6 +71,47 @@ class RealisasiVisitController extends Controller
         }
     }
 
+    /**
+     * Get only unplanned visits that are approved for My Unplanned Visits tab
+     */
+    public function getMyUnplannedVisits(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            // Get ONLY unplanned visits that are approved and done
+            $query = RealisasiVisit::with(['directCustomer', 'visitor'])
+                ->where('type', 'unplanned')
+                ->where('approval_status', 'approved')
+                ->where('status', 'done');
+            
+            // Role-based filtering
+            if ($user->role === 'sales') {
+                $query->where('visited_by', $user->id);
+            } elseif ($user->role === 'sales_manager') {
+                $salesTeam = \App\Models\User::where('role', 'sales')
+                    ->where('is_active', true)
+                    ->pluck('id');
+                $query->whereIn('visited_by', $salesTeam->push($user->id));
+            }
+            
+            $unplannedVisits = $query->orderBy('visit_date', 'desc')->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $unplannedVisits
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('My unplanned visits error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch unplanned visits: ' . $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -58,8 +121,6 @@ class RealisasiVisitController extends Controller
                 'visit_date' => 'nullable|date',
                 'meeting_notes' => 'nullable|string',
                 'visit_outcome' => 'nullable|in:closed,follow_up,not_interested,rescheduled',
-                'deal_amount' => 'nullable|numeric|min:0',
-                'deal_notes' => 'nullable|string',
                 'hasil_visit' => 'nullable|string',
                 'catatan' => 'nullable|string',
                 'visited_at' => 'nullable|date',
@@ -100,21 +161,29 @@ class RealisasiVisitController extends Controller
             
             $realisasiVisit = RealisasiVisit::create([
                 'plan_visit_id' => $request->plan_visit_id,
+                'type' => 'planned',
                 'status' => $request->status,
                 'visit_date' => $request->visit_date ?: now()->toDateString(),
-                'visited_at' => $request->visited_at ?: now(),
-                'meeting_notes' => $request->meeting_notes,
+                'visit_time' => $request->visited_at ?: now(),
+                'meeting_notes' => $request->meeting_notes ?: $request->hasil_visit,
                 'visit_outcome' => $request->visit_outcome,
-                'deal_amount' => $request->deal_amount,
-                'deal_notes' => $request->deal_notes,
-                'hasil_visit' => $request->hasil_visit,
-                'catatan' => $request->catatan,
+                'notes' => $request->catatan,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'photos' => $request->photos,
                 'visited_by' => $request->visited_by ?: Auth::id(),
             ]);
             
+            // NOTIFIKASI: beri tahu Sales Manager bahwa visit selesai
+            $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
+            $customerName = $planVisit->customer->name ?? 'Customer';
+            $visitorName  = $user->name;
+            foreach ($managers as $mgr) {
+                sendVisitNotif($mgr->id, 'success',
+                    '✅ Visit Selesai',
+                    "{$visitorName} telah menyelesaikan kunjungan ke {$customerName} pada " . now()->format('d M Y H:i') . '.');
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Visit realisasi berhasil ditambahkan',
@@ -236,11 +305,29 @@ class RealisasiVisitController extends Controller
             
             $realisasiVisit = RealisasiVisit::create([
                 'plan_visit_id' => $planVisitId,
-                'status' => 'missed',
-                'visit_time' => null,
-                'notes' => 'Visit marked as missed',
-                'visited_by' => Auth::id(),
+                'status'        => 'missed',
+                'visit_time'    => null,
+                'notes'         => 'Visit marked as missed',
+                'visited_by'    => Auth::id(),
             ]);
+
+            // NOTIFIKASI: beri tahu Sales dan Sales Manager
+            $customerName = $planVisit->customer->name ?? 'Customer';
+            $visitDate    = $planVisit->tanggal_visit;
+
+            // Notif ke sales yang ditugaskan
+            if ($planVisit->assigned_to) {
+                sendVisitNotif($planVisit->assigned_to, 'deadline_warning',
+                    '⚠️ Kunjungan Terlewat',
+                    "Kunjungan ke {$customerName} pada {$visitDate} telah ditandai sebagai TERLEWAT.");
+            }
+            // Notif ke Sales Manager / Admin
+            $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
+            foreach ($managers as $mgr) {
+                sendVisitNotif($mgr->id, 'deadline_warning',
+                    '⚠️ Kunjungan Terlewat',
+                    "Kunjungan ke {$customerName} ({$visitDate}) oleh " . (User::find($planVisit->assigned_to)?->name ?? '-') . " telah ditandai TERLEWAT.");
+            }
             
             return response()->json([
                 'success' => true,
@@ -263,8 +350,8 @@ class RealisasiVisitController extends Controller
             
             // Get plan visits that don't have realisasi yet (pending to be visited)
             $query = PlanVisit::with(['customer', 'assignedUser'])
-                ->whereDoesntHave('realisasiVisit') // No realisasi = belum dikunjungi
-                ->where('status', 'approved'); // Only approved plans
+                ->whereDoesntHave('realisasiVisit')
+                ->whereIn('status', ['pending', 'approved']);
             
             // Role-based filtering
             if ($user && $user->role === 'sales') {
@@ -294,10 +381,11 @@ class RealisasiVisitController extends Controller
             $validator = Validator::make($request->all(), [
                 // Explicitly nullable for unplanned visits
                 'plan_visit_id' => 'nullable|exists:plan_visits,id',
-                // New customer data (manual input)
-                'customer_name' => 'required|string|min:3',
-                'customer_company' => 'required|string|min:3',
-                'customer_phone' => 'required|string|min:10',
+                // Customer can be either existing (customer_id) or new (customer_name, etc)
+                'customer_id' => 'nullable|exists:customers,id',
+                'customer_name' => 'required_without:customer_id|string|min:3',
+                'customer_company' => 'required_without:customer_id|string|min:3',
+                'customer_phone' => 'required_without:customer_id|string|min:10',
                 'customer_address' => 'nullable|string',
                 // Visit data
                 'visit_date' => 'required|date|before_or_equal:today',
@@ -305,8 +393,6 @@ class RealisasiVisitController extends Controller
                 'visit_purpose' => 'required|string|min:10',
                 'meeting_notes' => 'required|string|min:10',
                 'visit_outcome' => 'required|in:closed,follow_up,not_interested,rescheduled',
-                'deal_amount' => 'required_if:visit_outcome,closed|nullable|numeric|min:0',
-                'deal_notes' => 'nullable|string',
                 'latitude' => 'required|numeric|between:-90,90',
                 'longitude' => 'required|numeric|between:-180,180',
                 'photos' => 'required|array|min:1',
@@ -323,6 +409,24 @@ class RealisasiVisitController extends Controller
             
             $user = Auth::user();
             
+            // Get customer data
+            $customerId = $request->customer_id;
+            $customerName = $request->customer_name;
+            $customerCompany = $request->customer_company;
+            $customerPhone = $request->customer_phone;
+            $customerAddress = $request->customer_address;
+            
+            // If customer_id is provided, get customer data from database
+            if ($customerId) {
+                $customer = \App\Models\Customer::find($customerId);
+                if ($customer) {
+                    $customerName = $customer->name;
+                    $customerCompany = $customer->company;
+                    $customerPhone = $customer->phone;
+                    $customerAddress = $customer->address;
+                }
+            }
+            
             // Determine approval status based on role
             // Sales creates pending unplanned visits that need approval
             // Sales Manager creates approved unplanned visits directly
@@ -330,23 +434,21 @@ class RealisasiVisitController extends Controller
             $approvedBy = ($user->role === 'sales') ? null : $user->id;
             $approvedAt = ($user->role === 'sales') ? null : now();
             
-            // Create unplanned visit with new customer data
+            // Create unplanned visit
             $realisasiVisit = RealisasiVisit::create([
                 'type' => 'unplanned',
                 'plan_visit_id' => null, // Explicitly null for unplanned visits
-                'customer_id' => null, // No existing customer
-                'customer_name' => $request->customer_name,
-                'customer_company' => $request->customer_company,
-                'customer_phone' => $request->customer_phone,
-                'customer_address' => $request->customer_address,
+                'customer_id' => $customerId, // Can be null for new customers
+                'customer_name' => $customerName,
+                'customer_company' => $customerCompany,
+                'customer_phone' => $customerPhone,
+                'customer_address' => $customerAddress,
                 'visit_date' => $request->visit_date,
                 'visit_time' => $request->visit_time,
                 'visit_purpose' => $request->visit_purpose,
                 'meeting_notes' => $request->meeting_notes,
                 'visit_outcome' => $request->visit_outcome,
-                'deal_amount' => $request->visit_outcome === 'closed' ? $request->deal_amount : null,
-                'deal_notes' => $request->visit_outcome === 'closed' ? $request->deal_notes : null,
-                'status' => $request->visit_outcome === 'closed' ? 'done' : 'done',
+                'status' => 'done',
                 'approval_status' => $approvalStatus,
                 'approved_by' => $approvedBy,
                 'approved_at' => $approvedAt,
@@ -359,11 +461,29 @@ class RealisasiVisitController extends Controller
             $message = ($user->role === 'sales') 
                 ? 'Unplanned visit berhasil ditambahkan dan menunggu approval' 
                 : 'Unplanned visit berhasil ditambahkan';
+
+            // NOTIFIKASI: jika Sales, beri tahu Sales Manager untuk approval
+            if ($user->role === 'sales') {
+                $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
+                foreach ($managers as $mgr) {
+                    sendVisitNotif($mgr->id, 'info',
+                        '🔔 Unplanned Visit Menunggu Approval',
+                        "{$user->name} melakukan kunjungan tidak terencana ke " . ($customerName ?? 'customer') . " ({$customerCompany}). Mohon ditinjau dan disetujui.");
+                }
+            } else {
+                // Sales Manager langsung approved — notifikasi ke admin
+                $admins = User::where('role', 'administrator')->get();
+                foreach ($admins as $admin) {
+                    sendVisitNotif($admin->id, 'success',
+                        '✅ Unplanned Visit Baru',
+                        "{$user->name} menambahkan kunjungan tidak terencana ke " . ($customerName ?? 'customer') . " dan langsung disetujui.");
+                }
+            }
             
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'data' => $realisasiVisit->load(['visitor'])
+                'data' => $realisasiVisit->load(['visitor', 'directCustomer'])
             ], 201);
             
         } catch (\Exception $e) {
@@ -412,6 +532,11 @@ class RealisasiVisitController extends Controller
             ]);
             
             $realisasiVisit->load(['directCustomer', 'visitor', 'approver']);
+
+            // NOTIFIKASI: beri tahu sales bahwa unplanned visit disetujui
+            sendVisitNotif($realisasiVisit->visited_by, 'success',
+                '✅ Unplanned Visit Disetujui',
+                "Kunjungan tidak terencana Anda ke " . ($realisasiVisit->customer_name ?? 'customer') . " telah disetujui oleh {$user->name}.");
             
             return response()->json([
                 'success' => true,
@@ -476,6 +601,11 @@ class RealisasiVisitController extends Controller
             ]);
             
             $realisasiVisit->load(['directCustomer', 'visitor', 'approver']);
+
+            // NOTIFIKASI: beri tahu sales bahwa unplanned visit ditolak
+            sendVisitNotif($realisasiVisit->visited_by, 'over_budget',
+                '❌ Unplanned Visit Ditolak',
+                "Kunjungan tidak terencana Anda ke " . ($realisasiVisit->customer_name ?? 'customer') . " ditolak oleh {$user->name}. Alasan: {$request->rejection_reason}");
             
             return response()->json([
                 'success' => true,

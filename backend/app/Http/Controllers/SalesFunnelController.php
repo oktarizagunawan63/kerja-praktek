@@ -4,10 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Models\SalesFunnel;
 use App\Models\FunnelActivity;
+use App\Models\ProjectNotification;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+
+// Helper to send notification
+function sendNotif($userId, $type, $title, $message, $metadata = null) {
+    try {
+        ProjectNotification::create([
+            'user_id' => $userId,
+            'project_id' => null,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'is_read' => false,
+            'metadata' => $metadata ? json_encode($metadata) : null,
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Notification error: ' . $e->getMessage());
+    }
+}
 
 class SalesFunnelController extends Controller
 {
@@ -18,7 +38,7 @@ class SalesFunnelController extends Controller
     {
         try {
             $user = Auth::user();
-            $query = SalesFunnel::with(['assignedUser', 'creator', 'activities']);
+            $query = SalesFunnel::with(['customer', 'assignedUser', 'creator', 'activities']);
             
             // Access control
             if ($user->role === 'sales') {
@@ -176,6 +196,7 @@ class SalesFunnelController extends Controller
             $user = Auth::user();
             
             $validator = Validator::make($request->all(), [
+                'customer_id' => 'nullable|exists:customers,id',
                 'customer_name' => 'required|string|max:255',
                 'customer_company' => 'required|string|max:255',
                 'customer_phone' => 'nullable|string|max:50',
@@ -237,6 +258,17 @@ class SalesFunnelController extends Controller
                 'notes' => 'Funnel created: ' . $data['initial_notes'],
                 'created_by' => $user->id
             ]);
+
+            // Notify Sales Managers & Admins about new funnel
+            $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
+            foreach ($managers as $mgr) {
+                if ($mgr->id !== $user->id) {
+                    sendNotif($mgr->id, 'info',
+                        '📋 Funnel Baru Ditambahkan',
+                        "{$user->name} menambahkan funnel baru: {$funnel->customer_name} ({$funnel->customer_company}) — {$funnel->segment}"
+                    );
+                }
+            }
             
             return response()->json([
                 'success' => true,
@@ -260,7 +292,7 @@ class SalesFunnelController extends Controller
     {
         try {
             $user = Auth::user();
-            $funnel = SalesFunnel::with(['assignedUser', 'creator', 'activities.creator'])
+            $funnel = SalesFunnel::with(['customer', 'assignedUser', 'creator', 'activities.creator'])
                 ->findOrFail($id);
             
             // Access control
@@ -309,8 +341,8 @@ class SalesFunnelController extends Controller
             $user = Auth::user();
             $funnel = SalesFunnel::findOrFail($id);
             
-            // Access control
-            if (!in_array($user->role, ['admin', 'administrator']) && $funnel->status !== 'open') {
+            // Access control — administrator can edit all including won/lost
+            if (!in_array($user->role, ['administrator']) && $funnel->status !== 'open') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot edit won/lost funnel'
@@ -325,6 +357,7 @@ class SalesFunnelController extends Controller
             }
             
             $validator = Validator::make($request->all(), [
+                'customer_id' => 'nullable|exists:customers,id',
                 'customer_name' => 'sometimes|required|string|max:255',
                 'customer_company' => 'sometimes|required|string|max:255',
                 'customer_phone' => 'nullable|string|max:50',
@@ -412,10 +445,10 @@ class SalesFunnelController extends Controller
         try {
             $user = Auth::user();
             
-            if (!in_array($user->role, ['admin', 'administrator'])) {
+            if (!in_array($user->role, ['administrator', 'sales_manager'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only admin can delete funnels'
+                    'message' => 'Only administrator or sales manager can delete funnels'
                 ], 403);
             }
             
@@ -445,7 +478,7 @@ class SalesFunnelController extends Controller
             $user = Auth::user();
             $funnel = SalesFunnel::findOrFail($id);
             
-            // Access control
+            // Access control — administrator bypass
             if ($user->role === 'sales' && $funnel->assigned_to != $user->id) {
                 return response()->json([
                     'success' => false,
@@ -489,11 +522,46 @@ class SalesFunnelController extends Controller
                 'notes' => "Deal WON! Value: Rp " . number_format($data['won_value'], 0, ',', '.') . ". Reason: {$data['won_reason_category']}. Notes: {$data['won_notes']}",
                 'created_by' => $user->id
             ]);
+
+            // Auto-create project for Site Manager dashboard
+            $segmentLabel = strtoupper($funnel->segment ?? 'Umum');
+            $projectName = "[FUNNEL] {$funnel->customer_company} - {$segmentLabel}";
+            $project = Project::create([
+                'name'        => $projectName,
+                'description' => "Proyek dari Sales Funnel (WON).\nCustomer: {$funnel->customer_name}\nSegment: {$segmentLabel}\nNilai: Rp " . number_format($data['won_value'], 0, ',', '.') . "\nCatatan: {$data['won_notes']}",
+                'location'    => $funnel->city ?? '-',
+                'status'      => 'on_track',
+                'start_date'  => now()->toDateString(),
+                'end_date'    => $funnel->target_close_date ?? now()->addMonths(3)->toDateString(),
+                'budget'      => $data['won_value'],
+                'budget_realisasi' => 0,
+                'progress'    => 0,
+                'pm_name'     => null,
+                'pm_email'    => null,
+            ]);
+
+            // Notify Sales Manager, Admin, Site Manager about WON + new project
+            $notifyRoles = User::whereIn('role', ['sales_manager', 'administrator', 'site_manager'])->get();
+            foreach ($notifyRoles as $recipient) {
+                sendNotif($recipient->id, 'success',
+                    '🏆 Deal WON! Proyek Baru Dibuat',
+                    "Funnel {$funnel->customer_name} ({$funnel->customer_company}) berhasil WON senilai Rp " . number_format($data['won_value'], 0, ',', '.') . ". Proyek '{$projectName}' telah dibuat dan menunggu assignment Site Manager.",
+                    ['funnel_id' => $funnel->id, 'project_id' => $project->id]
+                );
+            }
+            // Also notify the sales person
+            if ($user->role !== 'sales') {
+                sendNotif($funnel->assigned_to, 'success',
+                    '🏆 Selamat! Deal Anda WON',
+                    "Funnel {$funnel->customer_name} telah ditandai sebagai WON. Proyek baru telah dibuat untuk ditindaklanjuti."
+                );
+            }
             
             return response()->json([
                 'success' => true,
-                'message' => 'Funnel berhasil ditandai sebagai menang!',
-                'data' => $funnel->load(['assignedUser', 'creator'])
+                'message' => 'Funnel berhasil ditandai sebagai menang! Proyek baru telah dibuat.',
+                'data' => $funnel->load(['assignedUser', 'creator']),
+                'project' => $project
             ]);
             
         } catch (\Exception $e) {
@@ -557,6 +625,16 @@ class SalesFunnelController extends Controller
                 'notes' => "Deal LOST. Reason: {$data['lost_reason_category']}. Notes: {$data['lost_notes']}",
                 'created_by' => $user->id
             ]);
+
+            // Notify Sales Manager & Admin
+            $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
+            foreach ($managers as $mgr) {
+                sendNotif($mgr->id, 'over_budget',
+                    '❌ Deal Lost',
+                    "Funnel {$funnel->customer_name} ({$funnel->customer_company}) ditandai LOST. Alasan: {$data['lost_reason_category']}.",
+                    ['funnel_id' => $funnel->id]
+                );
+            }
             
             return response()->json([
                 'success' => true,

@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { TrendingUp, Plus, Filter, Search, Target, TrendingDown, Award } from 'lucide-react'
+import { TrendingUp, Plus, Filter, Search, Target, TrendingDown, Award, Trash2, Edit2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import toast from 'react-hot-toast'
 
 export default function FunnelsPage() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'administrator'
   const [loading, setLoading] = useState(true)
   const [funnels, setFunnels] = useState([])
   const [stats, setStats] = useState(null)
@@ -55,6 +58,17 @@ export default function FunnelsPage() {
       toast.error('Gagal memuat data funnel')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDelete = async (funnel) => {
+    if (!confirm(`Hapus funnel "${funnel.customer_name}"? Tindakan ini tidak dapat dibatalkan.`)) return
+    try {
+      await api.deleteFunnel(funnel.id)
+      toast.success('Funnel berhasil dihapus')
+      fetchData()
+    } catch (error) {
+      toast.error(error?.message || 'Gagal menghapus funnel')
     }
   }
 
@@ -406,16 +420,26 @@ export default function FunnelsPage() {
                         >
                           Detail
                         </Button>
-                        {funnel.status === 'open' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => navigate(`/funnels/${funnel.id}/edit`)}
-                            >
-                              Edit
-                            </Button>
-                          </>
+                        {/* Edit: open funnels OR admin can edit any */}
+                        {(funnel.status === 'open' || isAdmin) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/funnels/${funnel.id}/edit`)}
+                          >
+                            <Edit2 size={13} />
+                            Edit
+                          </Button>
+                        )}
+                        {/* Delete: only admin */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(funnel)}
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Hapus funnel"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         )}
                       </div>
                     </td>

@@ -10,13 +10,10 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
-        // Get notifications for current user (either project-based or user-specific welcome notifications)
-        $notifs = ProjectNotification::with('project:id,name,pm_name,pm_email,end_date,progress', 'user:id,name')
-            ->where(function($query) use ($user) {
-                // User-specific notifications (like welcome)
+
+        $notifs = ProjectNotification::with('project:id,name,pm_name,pm_email,end_date,progress')
+            ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
-                      // OR project notifications (existing logic)
                       ->orWhereNull('user_id');
             })
             ->orderByDesc('created_at')
@@ -31,6 +28,7 @@ class NotificationController extends Controller
             'createdAt' => $n->created_at,
             'projectId' => $n->project_id,
             'userId'    => $n->user_id,
+            'metadata'  => $n->metadata ? json_decode($n->metadata, true) : null,
             'project'   => $n->project ? [
                 'id'       => $n->project->id,
                 'name'     => $n->project->name,
@@ -39,24 +37,20 @@ class NotificationController extends Controller
                 'deadline' => $n->project->end_date,
                 'progress' => $n->project->progress,
             ] : null,
-            'user'      => $n->user ? [
-                'id'   => $n->user->id,
-                'name' => $n->user->name,
-            ] : null,
         ]));
     }
 
     public function unreadCount(Request $request)
     {
         $user = $request->user();
-        
+
         $count = ProjectNotification::where('is_read', false)
-            ->where(function($query) use ($user) {
+            ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
                       ->orWhereNull('user_id');
             })
             ->count();
-            
+
         return response()->json(['count' => $count]);
     }
 
@@ -69,14 +63,14 @@ class NotificationController extends Controller
     public function markAllRead(Request $request)
     {
         $user = $request->user();
-        
+
         ProjectNotification::where('is_read', false)
-            ->where(function($query) use ($user) {
+            ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
                       ->orWhereNull('user_id');
             })
             ->update(['is_read' => true]);
-            
+
         return response()->json(['message' => 'OK']);
     }
 
@@ -86,9 +80,36 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Dihapus']);
     }
 
-    public function clearAll()
+    public function clearAll(Request $request)
     {
-        ProjectNotification::truncate();
+        $user = $request->user();
+
+        ProjectNotification::where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+        })->delete();
+
         return response()->json(['message' => 'Semua notifikasi dihapus']);
+    }
+
+    /**
+     * Create a visit-related notification
+     * Called internally from other controllers
+     */
+    public static function createVisitNotification(array $data)
+    {
+        try {
+            ProjectNotification::create([
+                'user_id'    => $data['user_id'] ?? null,
+                'project_id' => $data['project_id'] ?? null,
+                'type'       => $data['type'],
+                'title'      => $data['title'],
+                'message'    => $data['message'],
+                'is_read'    => false,
+                'metadata'   => isset($data['metadata']) ? json_encode($data['metadata']) : null,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create visit notification: ' . $e->getMessage());
+        }
     }
 }

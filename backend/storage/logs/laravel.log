@@ -38685,3 +38685,153 @@
 [2026-05-05 13:52:45] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 12 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
 [2026-05-05 13:52:49] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 12 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
 [2026-05-05 13:52:53] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 12 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
+[2026-05-11 20:46:46] local.INFO: PlanVisit store request data: {"customer_id":"22","assigned_to":"13","tanggal_visit":"2026-05-11","waktu_visit":"20:55","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Minat NursCall","catatan":"bapak suhan tertarik NursCall"} 
+[2026-05-11 20:46:47] local.INFO: PlanVisit created successfully: {"id":24} 
+[2026-05-11 21:42:47] local.INFO: PlanVisit store request data: {"customer_id":"23","assigned_to":13,"tanggal_visit":"2026-05-11","waktu_visit":"21:45","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Follow Up NursCall","catatan":"pak agus tertarik dengan NursCall"} 
+[2026-05-11 21:42:47] local.INFO: PlanVisit created successfully: {"id":25} 
+[2026-05-11 22:38:04] local.INFO: PlanVisit store request data: {"customer_id":"24","assigned_to":13,"tanggal_visit":"2026-05-11","waktu_visit":"22:40","lokasi":"jalan cendana 1","tujuan":"Minat NursCall","catatan":null} 
+[2026-05-11 22:38:04] local.INFO: PlanVisit created successfully: {"id":26} 
+[2026-05-11 22:50:12] local.INFO: PlanVisit store request data: {"customer_id":"25","assigned_to":13,"tanggal_visit":"2026-05-11","waktu_visit":"22:55","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Minat NursCall","catatan":null} 
+[2026-05-11 22:50:12] local.INFO: PlanVisit created successfully: {"id":27} 
+[2026-05-11 23:25:38] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:25:39] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:26:22] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:26:22] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:26:49] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:26:49] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:28:48] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:28:49] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:29:55] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:29:55] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:31:43] local.INFO: PlanVisit store request data: {"customer_id":"27","assigned_to":13,"tanggal_visit":"2026-05-11","waktu_visit":"23:35","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Minta NursCall ni pak bokir","catatan":null} 
+[2026-05-11 23:31:43] local.INFO: PlanVisit created successfully: {"id":28} 
+[2026-05-11 23:31:52] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":1,"visits":{"Illuminate\\Support\\Collection":[{"id":28,"customer":"Pak Bokir","status":"approved","assigned_to":13,"has_realisasi":"no"}]}} 
+[2026-05-11 23:31:53] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":1,"visits":{"Illuminate\\Support\\Collection":[{"id":28,"customer":"Pak Bokir","status":"approved","assigned_to":13,"has_realisasi":"no"}]}} 
+[2026-05-11 23:32:25] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":1,"visits":{"Illuminate\\Support\\Collection":[{"id":28,"customer":"Pak Bokir","status":"approved","assigned_to":13,"has_realisasi":"no"}]}} 
+[2026-05-11 23:32:26] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":1,"visits":{"Illuminate\\Support\\Collection":[{"id":28,"customer":"Pak Bokir","status":"approved","assigned_to":13,"has_realisasi":"no"}]}} 
+[2026-05-11 23:33:40] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:33:54] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:33:54] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:34:13] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:34:13] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:37:36] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:37:37] local.INFO: getPendingVisits called {"user_id":13,"user_role":"sales","total_pending":0,"visits":{"Illuminate\\Database\\Eloquent\\Collection":[]}} 
+[2026-05-11 23:51:38] local.INFO: PlanVisit store request data: {"customer_id":"29","assigned_to":13,"tanggal_visit":"2026-05-11","waktu_visit":"23:55","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"jshfgjdbjdnjd","catatan":null} 
+[2026-05-11 23:51:38] local.INFO: PlanVisit created successfully: {"id":29} 
+[2026-05-12 10:39:38] local.INFO: PlanVisit store request data: {"customer_id":"31","assigned_to":13,"tanggal_visit":"2026-05-12","waktu_visit":"10:45","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Follow Up NursCall","catatan":null} 
+[2026-05-12 10:39:38] local.INFO: PlanVisit created successfully: {"id":30} 
+[2026-05-12 10:50:35] local.INFO: PlanVisit store request data: {"customer_id":"32","assigned_to":13,"tanggal_visit":"2026-05-12","waktu_visit":"11:11","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Pembahasan NursCall","catatan":null} 
+[2026-05-12 10:50:35] local.INFO: PlanVisit created successfully: {"id":31} 
+[2026-05-12 10:50:36] local.INFO: PlanVisit store request data: {"customer_id":"32","assigned_to":13,"tanggal_visit":"2026-05-12","waktu_visit":"11:11","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Pembahasan NursCall","catatan":null} 
+[2026-05-12 10:50:36] local.INFO: PlanVisit created successfully: {"id":32} 
+[2026-05-12 10:52:09] local.INFO: PlanVisit store request data: {"customer_id":"33","assigned_to":13,"tanggal_visit":"2026-05-12","waktu_visit":"11:11","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Pembahasan NursCall","catatan":null} 
+[2026-05-12 10:52:09] local.INFO: PlanVisit created successfully: {"id":33} 
+[2026-05-12 11:26:27] local.INFO: PlanVisit store request data: {"customer_id":"34","assigned_to":13,"tanggal_visit":"2026-05-12","waktu_visit":"12:12","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Pemasangan NursCall","catatan":null} 
+[2026-05-12 11:26:27] local.INFO: PlanVisit created successfully: {"id":34} 
+[2026-05-12 11:35:22] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 11:35:23] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 14:37:50] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 14:37:50] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 14:38:53] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 14:38:54] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:16:14] local.ERROR: SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 4 (Connection: mysql, SQL: ALTER TABLE project_notifications MODIFY COLUMN type ENUM(
+            'over_budget', 'deadline_warning', 'success', 'info',
+            'visit', 'funnel', 'warning', 'milestone'
+        ) NOT NULL DEFAULT 'info') {"exception":"[object] (Illuminate\\Database\\QueryException(code: 01000): SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 4 (Connection: mysql, SQL: ALTER TABLE project_notifications MODIFY COLUMN type ENUM(
+            'over_budget', 'deadline_warning', 'success', 'info',
+            'visit', 'funnel', 'warning', 'milestone'
+        ) NOT NULL DEFAULT 'info') at C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php:825)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate/Database/Connection->runQueryCallback('ALTER TABLE pro...', Array, Object(Closure))
+#1 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(560): Illuminate/Database/Connection->run('ALTER TABLE pro...', Array, Object(Closure))
+#2 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate/Database/Connection->statement('ALTER TABLE pro...')
+#3 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate/Database/DatabaseManager->__call('statement', Array)
+#4 C:/laragon/www/kerjapraktek/backend/database/migrations/2026_05_12_200000_fix_project_notifications_for_visit_funnel.php(30): Illuminate/Support/Facades/Facade::__callStatic('statement', Array)
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(507): Illuminate/Database/Migrations/Migration@anonymous->up()
+#6 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(432): Illuminate/Database/Migrations/Migrator->runMethod(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#7 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(441): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#8 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->runMigration(Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/View/Components/Task.php(40): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(798): Illuminate/Console/View/Components/Task->render('2026_05_12_2000...', Object(Closure))
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->write('Illuminate//Cons...', '2026_05_12_2000...', Object(Closure))
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(211): Illuminate/Database/Migrations/Migrator->runUp('C://laragon//www//...', 18, false)
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(138): Illuminate/Database/Migrations/Migrator->runPending(Array, Array)
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(117): Illuminate/Database/Migrations/Migrator->run(Array, Array)
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(658): Illuminate/Database/Console/Migrations/MigrateCommand->Illuminate/Database/Console/Migrations/{closure}()
+#16 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(110): Illuminate/Database/Migrations/Migrator->usingConnection(NULL, Object(Closure))
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(89): Illuminate/Database/Console/Migrations/MigrateCommand->runMigrations()
+#18 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate/Database/Console/Migrations/MigrateCommand->handle()
+#19 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#20 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#21 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#22 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#23 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#24 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#25 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#26 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#27 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Database/Console/Migrations/MigrateCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#28 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#29 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#30 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#31 {main}
+
+[previous exception] [object] (PDOException(code: 01000): SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 4 at C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php:571)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(571): PDOStatement->execute()
+#1 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(812): Illuminate/Database/Connection->Illuminate/Database/{closure}('ALTER TABLE pro...', Array)
+#2 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate/Database/Connection->runQueryCallback('ALTER TABLE pro...', Array, Object(Closure))
+#3 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(560): Illuminate/Database/Connection->run('ALTER TABLE pro...', Array, Object(Closure))
+#4 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate/Database/Connection->statement('ALTER TABLE pro...')
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate/Database/DatabaseManager->__call('statement', Array)
+#6 C:/laragon/www/kerjapraktek/backend/database/migrations/2026_05_12_200000_fix_project_notifications_for_visit_funnel.php(30): Illuminate/Support/Facades/Facade::__callStatic('statement', Array)
+#7 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(507): Illuminate/Database/Migrations/Migration@anonymous->up()
+#8 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(432): Illuminate/Database/Migrations/Migrator->runMethod(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(441): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->runMigration(Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/View/Components/Task.php(40): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(798): Illuminate/Console/View/Components/Task->render('2026_05_12_2000...', Object(Closure))
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->write('Illuminate//Cons...', '2026_05_12_2000...', Object(Closure))
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(211): Illuminate/Database/Migrations/Migrator->runUp('C://laragon//www//...', 18, false)
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(138): Illuminate/Database/Migrations/Migrator->runPending(Array, Array)
+#16 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(117): Illuminate/Database/Migrations/Migrator->run(Array, Array)
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(658): Illuminate/Database/Console/Migrations/MigrateCommand->Illuminate/Database/Console/Migrations/{closure}()
+#18 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(110): Illuminate/Database/Migrations/Migrator->usingConnection(NULL, Object(Closure))
+#19 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(89): Illuminate/Database/Console/Migrations/MigrateCommand->runMigrations()
+#20 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate/Database/Console/Migrations/MigrateCommand->handle()
+#21 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#22 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#23 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#24 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#25 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#26 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#27 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#28 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#29 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Database/Console/Migrations/MigrateCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#30 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#31 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#32 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#33 {main}
+"} 
+[2026-05-12 15:17:28] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:17:29] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:26:03] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:27:55] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:27:55] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:28:01] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:28:02] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (33, 34) and `approval_status` = approved order by `name` asc)  
+[2026-05-12 15:29:08] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-12 15:29:09] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-12 15:30:25] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-12 15:30:25] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 

@@ -18,6 +18,10 @@ class PlanVisitController extends Controller
             $user = Auth::user();
             
             $query = PlanVisit::with(['customer', 'assignedUser', 'creator', 'realisasiVisit'])
+                // EXCLUDE plan visits that already have completed realisasi (status = done)
+                ->whereDoesntHave('realisasiVisit', function($q) {
+                    $q->where('status', 'done');
+                })
                 ->orderBy('tanggal_visit', 'desc');
             
             // Role-based filtering
@@ -611,6 +615,63 @@ class PlanVisitController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch pending plan visits: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get completed plan visits (riwayat)
+     * Returns plan visits that have realisasi with status = done
+     */
+    public function completedVisits(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            $query = PlanVisit::with(['customer', 'assignedUser', 'creator', 'realisasiVisit'])
+                ->whereHas('realisasiVisit', function($q) {
+                    $q->where('status', 'done')
+                      ->where('type', 'planned'); // Only planned visits, not unplanned
+                })
+                ->orderBy('updated_at', 'desc');
+            
+            // Role-based filtering
+            switch ($user->role) {
+                case 'administrator':
+                case 'admin':
+                    // Admin sees ALL completed visits
+                    break;
+                    
+                case 'sales_manager':
+                    // Sales manager sees completed visits they created
+                    $query->where('created_by', $user->id);
+                    break;
+                    
+                case 'sales':
+                    // Sales sees only their own completed visits
+                    $query->where('assigned_to', $user->id);
+                    break;
+                    
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tidak memiliki akses'
+                    ], 403);
+            }
+            
+            $completedVisits = $query->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $completedVisits,
+                'total' => $completedVisits->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Completed visits error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch completed visits: ' . $e->getMessage()
             ], 500);
         }
     }

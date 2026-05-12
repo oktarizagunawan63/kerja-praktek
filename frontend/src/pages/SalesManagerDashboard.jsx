@@ -73,7 +73,7 @@ export default function SalesManagerDashboard() {
 
       // Load pending unplanned visits
       try {
-        const response = await api.get('/sales-manager/pending-unplanned-visits')
+        const response = await api.getPendingUnplannedVisits()
         setPendingUnplannedVisits(response.data || [])
       } catch (error) {
         console.warn('Pending unplanned visits failed:', error.message)
@@ -89,7 +89,7 @@ export default function SalesManagerDashboard() {
 
   const handleApproveUnplanned = async (visitId) => {
     try {
-      await api.post(`/sales-manager/unplanned-visits/${visitId}/approve`)
+      await api.approveUnplannedVisit(visitId)
       toast.success('Unplanned visit approved')
       loadDashboardData()
     } catch (error) {
@@ -98,13 +98,14 @@ export default function SalesManagerDashboard() {
   }
 
   const handleRejectUnplanned = async (visitId) => {
-    const reason = prompt('Enter rejection reason:')
-    if (!reason) return
+    const reason = prompt('Enter rejection reason (min 10 characters):')
+    if (!reason || reason.length < 10) {
+      toast.error('Rejection reason minimal 10 karakter')
+      return
+    }
 
     try {
-      await api.post(`/sales-manager/unplanned-visits/${visitId}/reject`, {
-        rejection_reason: reason
-      })
+      await api.rejectUnplannedVisit(visitId, { rejection_reason: reason })
       toast.success('Unplanned visit rejected')
       loadDashboardData()
     } catch (error) {

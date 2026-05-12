@@ -186,6 +186,7 @@ class SalesController extends Controller
         try {
             $user = Auth::user();
             
+            // Show ALL unplanned visits (including completed ones)
             $unplannedVisits = RealisasiVisit::where('type', 'unplanned')
                 ->where('visited_by', $user->id)
                 ->with(['directCustomer', 'approver'])
@@ -200,12 +201,13 @@ class SalesController extends Controller
                         'customer_phone' => $visit->customer_phone ?? $visit->directCustomer->phone ?? '',
                         'customer_address' => $visit->customer_address ?? $visit->directCustomer->address ?? '',
                         'visit_date' => $visit->visit_date,
-                        'visit_time' => $visit->visit_time, // Already a string, no format() needed
+                        'visit_time' => $visit->visit_time,
                         'visit_purpose' => $visit->visit_purpose,
                         'meeting_notes' => $visit->meeting_notes,
                         'visit_outcome' => $visit->visit_outcome,
                         'deal_amount' => $visit->deal_amount,
                         'deal_notes' => $visit->deal_notes,
+                        'status' => $visit->status,
                         'approval_status' => $visit->approval_status,
                         'approved_by' => $visit->approver->name ?? null,
                         'approved_at' => $visit->approved_at ? \Carbon\Carbon::parse($visit->approved_at)->format('Y-m-d H:i') : null,

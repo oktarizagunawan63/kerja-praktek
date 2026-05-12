@@ -94,6 +94,7 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
         Route::get('/', [PlanVisitController::class, 'index']);
         Route::get('/approved', [PlanVisitController::class, 'approved']);
         Route::get('/pending', [PlanVisitController::class, 'pendingPlans']);
+        Route::get('/completed', [PlanVisitController::class, 'completedVisits']);
         Route::post('/', [PlanVisitController::class, 'store']);
         Route::get('/{id}', [PlanVisitController::class, 'show']);
         Route::put('/{id}', [PlanVisitController::class, 'update']);
@@ -104,7 +105,8 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     });
 
     Route::prefix('realisasi-visits')->group(function () {
-        Route::get('/', [RealisasiVisitController::class, 'index']);
+        Route::get('/', [RealisasiVisitController::class, 'index']); // Riwayat Visit - ALL completed
+        Route::get('/my-unplanned', [RealisasiVisitController::class, 'getMyUnplannedVisits']); // My Unplanned Visits
         Route::post('/', [RealisasiVisitController::class, 'store']);
         Route::post('/unplanned', [RealisasiVisitController::class, 'storeUnplanned']);
         Route::get('/pending', [RealisasiVisitController::class, 'getPendingVisits']);
@@ -158,9 +160,10 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index']);
         Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsRead']);
-        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markRead']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::delete('/', [NotificationController::class, 'clearAll']);
     });
 
     Route::prefix('documents')->group(function () {

@@ -11,6 +11,7 @@ class SalesFunnel extends Model
     use HasFactory;
 
     protected $fillable = [
+        'customer_id',
         'customer_name',
         'customer_company',
         'customer_phone',
@@ -59,6 +60,11 @@ class SalesFunnel extends Model
     ];
 
     // Relationships
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
     public function assignedUser()
     {
         return $this->belongsTo(User::class, 'assigned_to');

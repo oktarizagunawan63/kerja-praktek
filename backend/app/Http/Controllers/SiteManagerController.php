@@ -27,10 +27,8 @@ class SiteManagerController extends Controller
         try {
             $user = $request->user();
             
-            // Get projects managed by this site manager
-            $projects = Project::where('project_manager_id', $user->id)
-                ->orWhere('pm_name', $user->name)
-                ->get();
+            // Site Manager sees ALL projects (including auto-created from Funnel WON)
+            $projects = Project::all();
 
             // Project statistics
             $totalProjects = $projects->count();
@@ -40,44 +38,46 @@ class SiteManagerController extends Controller
             $atRiskProjects = $projects->where('status', 'at_risk')->count();
 
             // RAB statistics
-            $totalRab = $projects->sum('rab') ?? 0; // Use actual rab column
-            $totalRealisasi = $projects->sum('rab_realisasi') ?? 0; // Use actual rab_realisasi column
+            $totalRab = $projects->sum('budget') ?? 0;
+            $totalRealisasi = $projects->sum('budget_realisasi') ?? 0;
             $rabPercentage = $totalRab > 0 ? round(($totalRealisasi / $totalRab) * 100, 2) : 0;
 
             // Progress statistics
             $avgProgress = $projects->where('status', '!=', 'completed')->avg('progress') ?? 0;
             $avgProgress = round($avgProgress, 1);
 
-            // Engineers assigned to projects
-            $assignedEngineers = User::where('role', 'engineer')
-                ->where('is_active', true)
-                ->whereJsonContains('assigned_projects', $projects->pluck('id')->map(fn($id) => (string)$id)->toArray())
-                ->count();
+            // Count projects from Funnel WON (name starts with [FUNNEL])
+            $funnelProjects = $projects->filter(fn($p) => str_starts_with($p->name ?? '', '[FUNNEL]'));
+            $pendingFunnelProjects = $funnelProjects->whereIn('status', ['on_track'])->count();
 
-            // Recent projects
+            // Recent projects (latest 5, show funnel-originated first)
             $recentProjects = $projects->sortByDesc('created_at')
                 ->take(5)
                 ->map(function($project) {
+                    $isFunnel = str_starts_with($project->name ?? '', '[FUNNEL]');
                     return [
-                        'id' => $project->id,
-                        'name' => $project->name,
-                        'status' => $project->status,
-                        'progress' => $project->progress ?? 0,
-                        'rab' => $project->rab ?? 0, // Use actual rab column
-                        'rab_realisasi' => $project->rab_realisasi ?? 0, // Use actual rab_realisasi column
-                        'deadline' => $project->end_date,
+                        'id'            => $project->id,
+                        'name'          => $project->name,
+                        'status'        => $project->status,
+                        'progress'      => $project->progress ?? 0,
+                        'budget'        => $project->budget ?? 0,
+                        'budget_realisasi' => $project->budget_realisasi ?? 0,
+                        'deadline'      => $project->end_date,
+                        'location'      => $project->location,
+                        'pm_name'       => $project->pm_name,
+                        'from_funnel'   => $isFunnel,
                         'days_remaining' => now()->diffInDays($project->end_date, false),
-                        'created_at' => $project->created_at->format('Y-m-d')
+                        'created_at'    => $project->created_at?->format('Y-m-d'),
                     ];
                 })
                 ->values();
 
             // Project status breakdown
             $statusBreakdown = [
-                'on_track' => $projects->where('status', 'on_track')->count(),
-                'at_risk' => $projects->where('status', 'at_risk')->count(),
-                'delayed' => $projects->where('status', 'delayed')->count(),
-                'completed' => $projects->where('status', 'completed')->count()
+                'on_track'  => $projects->where('status', 'on_track')->count(),
+                'at_risk'   => $projects->where('status', 'at_risk')->count(),
+                'delayed'   => $projects->where('status', 'delayed')->count(),
+                'completed' => $projects->where('status', 'completed')->count(),
             ];
 
             // Engineers list - optimized
@@ -104,25 +104,27 @@ class SiteManagerController extends Controller
                 'success' => true,
                 'data' => [
                     'projects' => [
-                        'total' => $totalProjects,
-                        'active' => $activeProjects,
-                        'completed' => $completedProjects,
-                        'delayed' => $delayedProjects,
-                        'at_risk' => $atRiskProjects,
-                        'avg_progress' => $avgProgress
+                        'total'             => $totalProjects,
+                        'active'            => $activeProjects,
+                        'completed'         => $completedProjects,
+                        'delayed'           => $delayedProjects,
+                        'at_risk'           => $atRiskProjects,
+                        'avg_progress'      => $avgProgress,
+                        'from_funnel'       => $funnelProjects->count(),
+                        'pending_funnel'    => $pendingFunnelProjects,
                     ],
                     'rab' => [
-                        'total' => $totalRab,
-                        'realisasi' => $totalRealisasi,
+                        'total'      => $totalRab,
+                        'realisasi'  => $totalRealisasi,
                         'percentage' => $rabPercentage
                     ],
                     'engineers' => [
-                        'assigned_count' => $assignedEngineers,
+                        'assigned_count'  => User::where('role', 'engineer')->where('is_active', true)->count(),
                         'total_available' => User::where('role', 'engineer')->where('is_active', true)->count()
                     ],
-                    'status_breakdown' => $statusBreakdown,
-                    'recent_projects' => $recentProjects,
-                    'engineers_list' => $engineers
+                    'status_breakdown'  => $statusBreakdown,
+                    'recent_projects'   => $recentProjects,
+                    'engineers_list'    => $engineers
                 ]
             ]);
 

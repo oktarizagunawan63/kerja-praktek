@@ -28,11 +28,20 @@ class ProjectController extends Controller
                 ]);
             }
 
-            // Simple query without complex relationships
-            $projects = Project::select([
-                'id', 'name', 'location', 'status', 'budget', 
-                'start_date', 'end_date', 'created_at', 'updated_at'
-            ])->orderByDesc('created_at')->get();
+            $user = $request->user();
+
+            // Query all projects with all fields needed by frontend
+            $query = Project::with('assignments')
+                ->orderByDesc('created_at');
+
+            // Role-based filtering: site_manager & administrator see ALL projects
+            // Engineer sees only assigned projects
+            if ($user && $user->role === 'engineer') {
+                $query->whereHas('assignments', fn($q) => $q->where('user_id', $user->id));
+            }
+            // site_manager, administrator see all
+
+            $projects = $query->get()->map(fn($p) => $this->format($p));
 
             return response()->json([
                 'success' => true,
