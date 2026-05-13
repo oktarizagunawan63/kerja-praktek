@@ -27,6 +27,7 @@ export default function CustomersPage() {
     longitude: '' // Hidden field
   })
   const [lokasiAmbil, setLokasiAmbil] = useState(false) // FIX 5: Track location status
+  const [submitting, setSubmitting] = useState(false) // Prevent double submission
 
   useEffect(() => {
     // Check if user has permission to access customers
@@ -58,7 +59,13 @@ export default function CustomersPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Prevent double submission
+    if (submitting) return
+    
     try {
+      setSubmitting(true)
+      
       if (editingCustomer) {
         await api.updateCustomer(editingCustomer.id, formData)
         toast.success('Customer berhasil diperbarui')
@@ -81,6 +88,8 @@ export default function CustomersPage() {
       fetchCustomers()
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan customer')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -468,11 +477,16 @@ export default function CustomersPage() {
               <input type="hidden" value={formData.longitude} />
               
               <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="submit" className="btn-responsive primary flex-1">
-                  {editingCustomer ? 'Perbarui' : 'Simpan'}
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="btn-responsive primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Menyimpan...' : (editingCustomer ? 'Perbarui' : 'Simpan')}
                 </button>
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => {
                     setShowAddForm(false)
                     setEditingCustomer(null)
@@ -487,7 +501,7 @@ export default function CustomersPage() {
                     })
                     setLokasiAmbil(false)
                   }}
-                  className="btn-responsive secondary flex-1"
+                  className="btn-responsive secondary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Batal
                 </button>

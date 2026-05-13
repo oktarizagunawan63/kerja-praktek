@@ -148,11 +148,11 @@ class SalesFunnelController extends Controller
             // Total Deal Open (count of all open deals)
             $totalDealOpen = (clone $query)->where('status', 'open')->count();
             
-            // Total Menang Bulan Ini
+            // Total Menang Bulan Ini (sum of estimated_value for won deals)
             $totalMenangBulanIni = (clone $query)
                 ->where('status', 'won')
                 ->whereBetween('won_date', [$startOfMonth, $endOfMonth])
-                ->sum('won_value');
+                ->sum('estimated_value');
             
             // Win Rate Bulan Ini
             $totalClosedThisMonth = (clone $query)
@@ -215,9 +215,7 @@ class SalesFunnelController extends Controller
                 'target_close_date' => 'required|date',
                 'win_probability' => 'required|in:low,middle,high,very_high',
                 'win_percentage' => 'nullable|integer|min:0|max:100',
-                'competitor_name' => 'nullable|string|max:255',
-                'competitor_notes' => 'nullable|string',
-                'initial_notes' => 'required|string|min:10',
+                'initial_notes' => 'nullable|string',
                 'assigned_to' => 'nullable|exists:users,id'
             ]);
             
@@ -256,14 +254,16 @@ class SalesFunnelController extends Controller
             
             $funnel = SalesFunnel::create($data);
             
-            // Create initial activity
-            FunnelActivity::create([
-                'funnel_id' => $funnel->id,
-                'activity_type' => 'lainnya',
-                'activity_date' => now(),
-                'notes' => 'Funnel created: ' . $data['initial_notes'],
-                'created_by' => $user->id
-            ]);
+            // Create initial activity only if notes provided
+            if (!empty($data['initial_notes'])) {
+                FunnelActivity::create([
+                    'funnel_id' => $funnel->id,
+                    'activity_type' => 'lainnya',
+                    'activity_date' => now(),
+                    'notes' => 'Funnel created: ' . $data['initial_notes'],
+                    'created_by' => $user->id
+                ]);
+            }
 
             // Notify Sales Managers & Admins about new funnel
             $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
@@ -382,9 +382,7 @@ class SalesFunnelController extends Controller
                 'target_close_date' => 'sometimes|required|date',
                 'win_probability' => 'sometimes|required|in:low,middle,high,very_high',
                 'win_percentage' => 'nullable|integer|min:0|max:100',
-                'competitor_name' => 'nullable|string|max:255',
-                'competitor_notes' => 'nullable|string',
-                'initial_notes' => 'sometimes|required|string|min:10'
+                'initial_notes' => 'nullable|string'
             ]);
             
             if ($validator->fails()) {
@@ -501,9 +499,8 @@ class SalesFunnelController extends Controller
             }
             
             $validator = Validator::make($request->all(), [
-                'won_value' => 'required|numeric|min:0',
                 'won_reason_category' => 'required|in:harga_kompetitif,relasi,spesifikasi,after_sales,pengiriman,lainnya',
-                'won_notes' => 'required|string|min:20',
+                'won_notes' => 'nullable|string',
                 'won_date' => 'required|date'
             ]);
             
@@ -518,29 +515,32 @@ class SalesFunnelController extends Controller
             $data = $validator->validated();
             $data['status'] = 'won';
             $data['deal_stage'] = 'closing';
+            $data['won_value'] = $funnel->estimated_value; // Use estimated value as won value
             
             $funnel->update($data);
             
             // Log activity
+            $notesText = $data['won_notes'] ? ". Notes: {$data['won_notes']}" : "";
             FunnelActivity::create([
                 'funnel_id' => $funnel->id,
                 'activity_type' => 'lainnya',
                 'activity_date' => now(),
-                'notes' => "Deal WON! Value: Rp " . number_format($data['won_value'], 0, ',', '.') . ". Reason: {$data['won_reason_category']}. Notes: {$data['won_notes']}",
+                'notes' => "Deal WON! Reason: {$data['won_reason_category']}{$notesText}",
                 'created_by' => $user->id
             ]);
 
             // Auto-create project for Site Manager dashboard
             $segmentLabel = strtoupper($funnel->segment ?? 'Umum');
             $projectName = "[FUNNEL] {$funnel->customer_company} - {$segmentLabel}";
+            $descriptionNotes = $data['won_notes'] ? "\nCatatan: {$data['won_notes']}" : "";
             $project = Project::create([
                 'name'        => $projectName,
-                'description' => "Proyek dari Sales Funnel (WON).\nCustomer: {$funnel->customer_name}\nSegment: {$segmentLabel}\nNilai: Rp " . number_format($data['won_value'], 0, ',', '.') . "\nCatatan: {$data['won_notes']}",
+                'description' => "Proyek dari Sales Funnel (WON).\nCustomer: {$funnel->customer_name}\nSegment: {$segmentLabel}\nNilai Estimasi: Rp " . number_format($funnel->estimated_value, 0, ',', '.') . $descriptionNotes,
                 'location'    => $funnel->city ?? '-',
                 'status'      => 'on_track',
                 'start_date'  => now()->toDateString(),
                 'end_date'    => $funnel->target_close_date ?? now()->addMonths(3)->toDateString(),
-                'budget'      => $data['won_value'],
+                'budget'      => $funnel->estimated_value,
                 'budget_realisasi' => 0,
                 'progress'    => 0,
                 'pm_name'     => null,
@@ -553,7 +553,7 @@ class SalesFunnelController extends Controller
             foreach ($notifyRoles as $recipient) {
                 sendNotif($recipient->id, 'success',
                     '🏆 Deal WON! Proyek Baru Dibuat',
-                    "Funnel {$funnel->customer_name} ({$funnel->customer_company}) berhasil WON senilai Rp " . number_format($data['won_value'], 0, ',', '.') . ". Proyek '{$projectName}' telah dibuat dan menunggu assignment Site Manager.",
+                    "Funnel {$funnel->customer_name} ({$funnel->customer_company}) berhasil WON. Proyek '{$projectName}' telah dibuat dan menunggu assignment Site Manager.",
                     ['funnel_id' => $funnel->id, 'project_id' => $project->id]
                 );
             }
@@ -608,7 +608,7 @@ class SalesFunnelController extends Controller
             $validator = Validator::make($request->all(), [
                 'lost_reason_category' => 'required|in:kalah_harga,kalah_spesifikasi,kalah_kompetitor,budget_dipotong,proyek_ditunda,customer_batal,lainnya',
                 'lost_competitor' => 'required_if:lost_reason_category,kalah_kompetitor|nullable|string',
-                'lost_notes' => 'required|string|min:20',
+                'lost_notes' => 'nullable|string',
                 'lost_date' => 'required|date'
             ]);
             
@@ -626,11 +626,12 @@ class SalesFunnelController extends Controller
             $funnel->update($data);
             
             // Log activity
+            $notesText = $data['lost_notes'] ? ". Notes: {$data['lost_notes']}" : "";
             FunnelActivity::create([
                 'funnel_id' => $funnel->id,
                 'activity_type' => 'lainnya',
                 'activity_date' => now(),
-                'notes' => "Deal LOST. Reason: {$data['lost_reason_category']}. Notes: {$data['lost_notes']}",
+                'notes' => "Deal LOST. Reason: {$data['lost_reason_category']}{$notesText}",
                 'created_by' => $user->id
             ]);
 
@@ -690,7 +691,7 @@ class SalesFunnelController extends Controller
             // Get customer details
             $customers = \App\Models\Customer::whereIn('id', $allVisitedCustomerIds)
                 ->where('approval_status', 'approved')
-                ->select('id', 'name', 'company', 'phone', 'email', 'address', 'city')
+                ->select('id', 'name', 'company', 'phone', 'email', 'address')
                 ->orderBy('name')
                 ->get();
             

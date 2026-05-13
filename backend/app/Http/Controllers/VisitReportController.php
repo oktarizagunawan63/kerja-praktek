@@ -106,79 +106,88 @@ class VisitReportController extends Controller
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
             
-            // Base query for plan visits
-            $planVisitsQuery = DB::table('plan_visits')
-                ->whereBetween('tanggal_visit', [$startDate, $endDate]);
+            // Count ACTUAL visits from realisasi_visits (both planned and unplanned)
+            $totalVisitsQuery = DB::table('realisasi_visits')
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->where('status', '!=', 'pending');
             
             // Filter by user role
             if ($user->role === 'sales') {
-                $planVisitsQuery->where('assigned_to', $user->id);
+                $totalVisitsQuery->where('visited_by', $user->id);
             } elseif ($user->role === 'sales_manager') {
-                $planVisitsQuery->where('created_by', $user->id);
+                $salesTeam = DB::table('users')
+                    ->where('role', 'sales')
+                    ->where('is_active', true)
+                    ->pluck('id');
+                $totalVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
             }
             
-            $totalVisits = $planVisitsQuery->count();
+            $totalVisits = $totalVisitsQuery->count();
             
-            // Get completed visits
-            $completedVisits = DB::table('realisasi_visits')
-                ->join('plan_visits', 'realisasi_visits.plan_visit_id', '=', 'plan_visits.id')
-                ->whereBetween('plan_visits.tanggal_visit', [$startDate, $endDate])
-                ->where('realisasi_visits.status', 'done')
-                ->when($user->role === 'sales', function($q) use ($user) {
-                    return $q->where('plan_visits.assigned_to', $user->id);
-                })
-                ->when($user->role === 'sales_manager', function($q) use ($user) {
-                    return $q->where('plan_visits.created_by', $user->id);
-                })
-                ->count();
+            // Get completed visits (status = done)
+            $completedVisitsQuery = DB::table('realisasi_visits')
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->where('status', 'done');
             
-            // Get missed visits
-            $missedVisits = DB::table('realisasi_visits')
-                ->join('plan_visits', 'realisasi_visits.plan_visit_id', '=', 'plan_visits.id')
-                ->whereBetween('plan_visits.tanggal_visit', [$startDate, $endDate])
-                ->where('realisasi_visits.status', 'missed')
-                ->when($user->role === 'sales', function($q) use ($user) {
-                    return $q->where('plan_visits.assigned_to', $user->id);
-                })
-                ->when($user->role === 'sales_manager', function($q) use ($user) {
-                    return $q->where('plan_visits.created_by', $user->id);
-                })
-                ->count();
+            if ($user->role === 'sales') {
+                $completedVisitsQuery->where('visited_by', $user->id);
+            } elseif ($user->role === 'sales_manager') {
+                $salesTeam = DB::table('users')
+                    ->where('role', 'sales')
+                    ->where('is_active', true)
+                    ->pluck('id');
+                $completedVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
+            }
+            
+            $completedVisits = $completedVisitsQuery->count();
+            
+            // Get missed visits (status = missed)
+            $missedVisitsQuery = DB::table('realisasi_visits')
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->where('status', 'missed');
+            
+            if ($user->role === 'sales') {
+                $missedVisitsQuery->where('visited_by', $user->id);
+            } elseif ($user->role === 'sales_manager') {
+                $salesTeam = DB::table('users')
+                    ->where('role', 'sales')
+                    ->where('is_active', true)
+                    ->pluck('id');
+                $missedVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
+            }
+            
+            $missedVisits = $missedVisitsQuery->count();
             
             $performanceRate = $totalVisits > 0 ? round(($completedVisits / $totalVisits) * 100, 2) : 0;
             
-            // Get daily data for chart
-            $periodData = DB::table('plan_visits')
-                ->selectRaw('DATE(tanggal_visit) as date, COUNT(*) as planned')
-                ->whereBetween('tanggal_visit', [$startDate, $endDate])
-                ->when($user->role === 'sales', function($q) use ($user) {
-                    return $q->where('assigned_to', $user->id);
-                })
-                ->when($user->role === 'sales_manager', function($q) use ($user) {
-                    return $q->where('created_by', $user->id);
-                })
+            // Get daily data for chart from realisasi_visits
+            $periodDataQuery = DB::table('realisasi_visits')
+                ->selectRaw('DATE(visit_date) as date, COUNT(*) as total, 
+                            SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed')
+                ->whereBetween('visit_date', [$startDate, $endDate])
+                ->where('status', '!=', 'pending');
+            
+            if ($user->role === 'sales') {
+                $periodDataQuery->where('visited_by', $user->id);
+            } elseif ($user->role === 'sales_manager') {
+                $salesTeam = DB::table('users')
+                    ->where('role', 'sales')
+                    ->where('is_active', true)
+                    ->pluck('id');
+                $periodDataQuery->whereIn('visited_by', $salesTeam->push($user->id));
+            }
+            
+            $periodData = $periodDataQuery
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get()
-                ->map(function($item) use ($user) {
-                    // Get completed count for this date
-                    $completed = DB::table('realisasi_visits')
-                        ->join('plan_visits', 'realisasi_visits.plan_visit_id', '=', 'plan_visits.id')
-                        ->whereDate('plan_visits.tanggal_visit', $item->date)
-                        ->where('realisasi_visits.status', 'done')
-                        ->when($user->role === 'sales', function($q) use ($user) {
-                            return $q->where('plan_visits.assigned_to', $user->id);
-                        })
-                        ->when($user->role === 'sales_manager', function($q) use ($user) {
-                            return $q->where('plan_visits.created_by', $user->id);
-                        })
-                        ->count();
-                    
+                ->map(function($item) {
+                    $rate = $item->total > 0 ? round(($item->completed / $item->total) * 100, 2) : 0;
                     return [
                         'date' => $item->date,
-                        'planned' => $item->planned,
-                        'completed' => $completed,
-                        'rate' => $item->planned > 0 ? round(($completed / $item->planned) * 100, 2) : 0
+                        'planned' => $item->total,
+                        'completed' => $item->completed,
+                        'rate' => $rate
                     ];
                 });
             

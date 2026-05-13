@@ -70,6 +70,9 @@ export default function CreateUnplannedVisitPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    // Prevent double submission
+    if (submitting) return
+    
     // Validations
     if (!formData.customer_id) {
       toast.error('Pilih customer terlebih dahulu')
@@ -149,18 +152,29 @@ export default function CreateUnplannedVisitPage() {
         photos: [photoData.photo]
       }
       
-      await api.createUnplannedVisit(submitData)
+      console.log('Submitting unplanned visit:', submitData)
+      
+      const response = await api.createUnplannedVisit(submitData)
+      
+      console.log('Response:', response)
       
       const message = user.role === 'sales' 
         ? 'Unplanned visit berhasil dibuat dan menunggu approval Sales Manager' 
         : 'Unplanned visit berhasil dibuat'
       
       toast.success(message, { duration: 3000 })
-      navigate('/realisasi-visits')
+      
+      // Navigate after short delay to ensure toast is visible
+      setTimeout(() => {
+        navigate('/realisasi-visits')
+      }, 500)
       
     } catch (error) {
       console.error('Submit error:', error)
-      toast.error(error.message || 'Gagal membuat unplanned visit')
+      console.error('Error response:', error.response?.data)
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Gagal membuat unplanned visit'
+      toast.error(errorMessage)
     } finally {
       setSubmitting(false)
     }

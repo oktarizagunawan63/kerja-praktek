@@ -99,6 +99,7 @@ export default function RealisasiVisitsPage() {
     photo: null
   })
   const [showCamera, setShowCamera] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     // Check if user has permission to access realisasi visits
@@ -219,6 +220,9 @@ export default function RealisasiVisitsPage() {
   const handleSubmitVisit = async (e) => {
     e.preventDefault()
     
+    // Prevent double submission
+    if (submitting) return
+    
     if (!currentLocation) {
       toast.error('Lokasi belum terdeteksi')
       return
@@ -249,12 +253,14 @@ export default function RealisasiVisitsPage() {
       return
     }
     
+    // Validate photo is captured
+    if (!formData.foto_bukti) {
+      toast.error('Foto bukti visit wajib diambil')
+      return
+    }
+    
     try {
-      // Validate photo is captured
-      if (!formData.foto_bukti) {
-        toast.error('Foto bukti visit wajib diambil')
-        return
-      }
+      setSubmitting(true)
       
       const submitData = {
         plan_visit_id: selectedVisit.id,
@@ -292,6 +298,8 @@ export default function RealisasiVisitsPage() {
     } catch (error) {
       console.error('Submit visit error:', error)
       toast.error(error.message || 'Gagal menyimpan realisasi visit')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -1105,13 +1113,18 @@ export default function RealisasiVisitsPage() {
               </div>
               
               <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={submitting}
+                >
                   <CheckCircle size={16} />
-                  Simpan Realisasi
+                  {submitting ? 'Menyimpan...' : 'Simpan Realisasi'}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={submitting}
                   onClick={() => {
                     setShowVisitForm(false)
                     setSelectedVisit(null)
