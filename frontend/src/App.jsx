@@ -7,7 +7,7 @@ import './styles/animations.css'
 import './styles/responsive-global.css'
 import useAuthStore from './store/authStore'
 import { isAdministrator, isSiteManager, isSalesManager, isSales } from './utils/roleUtils'
-import { canAccessVisitManagement, canManageProjects } from './lib/permissions'
+import { canAccessVisitManagement, canAccessVisitRelations, canManageProjects } from './lib/permissions'
 import { clearErrorNotifications } from './utils/clearErrorNotifications'
 
 // Eager load critical components
@@ -73,6 +73,12 @@ function ProjectManagementOnly({ children }) {
 function VisitManagementOnly({ children }) {
   const { user } = useAuthStore()
   if (!canAccessVisitManagement(user)) return <Navigate to="/dashboard" replace />
+  return children
+}
+
+function VisitRelationsOnly({ children }) {
+  const { user } = useAuthStore()
+  if (!canAccessVisitRelations(user)) return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -210,8 +216,8 @@ export default function App() {
             
             {/* Visit Management Routes - Sales Manager + Sales + Administrator */}
             <Route path="customers"        element={<VisitManagementOnly><CustomersPage /></VisitManagementOnly>} />
-            <Route path="plan-visits"      element={<VisitManagementOnly><PlanVisitsPage /></VisitManagementOnly>} />
-            <Route path="realisasi-visits" element={<VisitManagementOnly><RealisasiVisitsPage /></VisitManagementOnly>} />
+            <Route path="plan-visits"      element={<VisitRelationsOnly><PlanVisitsPage /></VisitRelationsOnly>} />
+            <Route path="realisasi-visits" element={<VisitRelationsOnly><RealisasiVisitsPage /></VisitRelationsOnly>} />
             <Route path="create-unplanned-visit" element={<VisitManagementOnly><CreateUnplannedVisitPage /></VisitManagementOnly>} />
             <Route path="attendance"       element={<SalesOnly><AttendancePage /></SalesOnly>} />
             <Route path="visit-reports"    element={<VisitManagementOnly><VisitReportsPage /></VisitManagementOnly>} />

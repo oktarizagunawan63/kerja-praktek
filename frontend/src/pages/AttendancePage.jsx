@@ -337,69 +337,69 @@ function AttendancePage() {
   }
 
   return (
-    <div className="container-responsive spacing-md">
+    <div className="min-h-screen bg-slate-50 p-6">
       {/* Header */}
-      <div className="header-responsive">
+      <div className="mb-6 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="header-title">Attendance</h1>
-          <p className="header-subtitle">Kelola kehadiran dengan GPS tracking</p>
-          <p className="text-responsive-sm font-medium text-gray-700">{today}</p>
+          <h1 className="text-2xl font-bold text-slate-950">Attendance</h1>
+          <p className="mt-1 text-sm text-slate-500">Kelola kehadiran dengan GPS tracking</p>
+          <p className="mt-2 text-sm font-medium text-slate-700">{today}</p>
         </div>
       </div>
 
       {/* Status Cards */}
-      <div className="grid-responsive sm-2 md-3 spacing-md">
-        <div className="stats-card" style={{ borderLeft: '4px solid #10b981' }}>
-          <div className="stats-card-header">
+      <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="stats-card-label">Check In</p>
-              <p className="stats-card-value" style={{ color: '#10b981' }}>
+              <p className="text-sm font-medium text-slate-500">Check In</p>
+              <p className="mt-3 text-2xl font-bold text-slate-950">
                 {todayAttendance?.check_in_time ? formatTime(todayAttendance.check_in_time) : '-'}
               </p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#10b981' }}>
-              <CheckCircle size={20} className="text-white" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <CheckCircle size={20} className="text-[#0f4c81]" />
             </div>
           </div>
         </div>
 
-        <div className="stats-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-          <div className="stats-card-header">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="stats-card-label">Check Out</p>
-              <p className="stats-card-value" style={{ color: '#f59e0b' }}>
+              <p className="text-sm font-medium text-slate-500">Check Out</p>
+              <p className="mt-3 text-2xl font-bold text-slate-950">
                 {todayAttendance?.check_out_time ? formatTime(todayAttendance.check_out_time) : '-'}
               </p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#f59e0b' }}>
-              <XCircle size={20} className="text-white" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <XCircle size={20} className="text-[#0f4c81]" />
             </div>
           </div>
         </div>
 
-        <div className="stats-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-          <div className="stats-card-header">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="stats-card-label">Jam Kerja</p>
-              <p className="stats-card-value" style={{ color: '#3b82f6' }}>
+              <p className="text-sm font-medium text-slate-500">Jam Kerja</p>
+              <p className="mt-3 text-2xl font-bold text-slate-950">
                 {calculateDuration(todayAttendance?.check_in_time, todayAttendance?.check_out_time)}
               </p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#3b82f6' }}>
-              <Clock size={20} className="text-white" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <Clock size={20} className="text-[#0f4c81]" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="action-bar-responsive">
+      <div className="mb-5">
         <div className="form-row-responsive sm-2 md-3">
           {['sales_manager', 'sales'].includes(user?.role) && canCheckIn && (
             <button
               onClick={handleCheckIn}
               disabled={actionLoading}
-              className="btn-responsive primary"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CheckCircle size={16} />
               Check In
@@ -410,7 +410,7 @@ function AttendancePage() {
             <button
               onClick={handleCheckOut}
               disabled={actionLoading}
-              className="btn-responsive secondary"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <XCircle size={16} />
               Check Out
@@ -421,27 +421,27 @@ function AttendancePage() {
 
       {/* Current Location Display */}
       {(currentLocation || todayAttendance?.check_in_latitude) && (
-        <div className="card-compact" style={{ background: '#eff6ff', borderLeft: '4px solid #3b82f6' }}>
+        <div className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <MapPin className="text-blue-600" size={16} />
-            <span className="text-responsive-sm font-medium text-blue-800">
+            <MapPin className="text-[#0f4c81]" size={16} />
+            <span className="text-sm font-semibold text-slate-900">
               {currentLocation ? 'Lokasi Saat Ini' : 'Lokasi Check-in Hari Ini'}
             </span>
           </div>
           
           {currentLocation && (
-            <p className="text-responsive-xs text-blue-700 font-mono">
+            <p className="font-mono text-xs text-slate-600">
               GPS: {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
             </p>
           )}
           
           {todayAttendance?.check_in_latitude && !currentLocation && (
             <>
-              <p className="text-responsive-xs text-blue-700 font-mono">
+              <p className="font-mono text-xs text-slate-600">
                 Check-in: {parseFloat(todayAttendance.check_in_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_in_longitude).toFixed(6)}
               </p>
               {todayAttendance.check_out_latitude && (
-                <p className="text-responsive-xs text-blue-700 font-mono">
+                <p className="font-mono text-xs text-slate-600">
                   Check-out: {parseFloat(todayAttendance.check_out_latitude).toFixed(6)}, {parseFloat(todayAttendance.check_out_longitude).toFixed(6)}
                 </p>
               )}
@@ -451,8 +451,8 @@ function AttendancePage() {
       )}
 
       {/* Attendance History */}
-      <div className="card-compact">
-        <h2 className="text-responsive-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-950">
           <Calendar size={20} />
           Riwayat Kehadiran
         </h2>

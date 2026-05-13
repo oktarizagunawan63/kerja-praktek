@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import {
   LayoutDashboard, FolderKanban, FileText,
-  BarChart3, Bell, Activity, LogOut, Users,
+  BarChart3, Bell, Activity, Users,
   MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp, ClipboardCheck
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
@@ -152,7 +152,7 @@ function AmsarLogo({ size = 40 }) {
 }
 
 export default function Sidebar() {
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   const { notifications } = useAppStore()
   
   // Memoize expensive calculations
@@ -167,24 +167,24 @@ export default function Sidebar() {
   }, [user?.role, notifications])
 
   return (
-    <aside className="w-64 bg-[#0f4c81] flex flex-col h-full shrink-0" data-tour="sidebar">
+    <aside className="flex h-full w-64 shrink-0 flex-col bg-[#123f63]" data-tour="sidebar">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+      <div className="flex items-center gap-3 border-b border-white/10 px-6 py-5">
         <AmsarLogo size={38} />
         <div>
-          <p className="text-white font-bold text-sm leading-tight">PT Amsar</p>
-          <p className="text-blue-200 text-xs">Prima Mandiri</p>
+          <p className="text-sm font-bold leading-tight text-white">PT Amsar</p>
+          <p className="text-xs text-slate-300">Prima Mandiri</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {sections.map((section, sectionIndex) => (
           <div key={sectionIndex}>
             {/* Section Header */}
             {section.title && sections.length > 1 && (
               <div className="px-3 py-2 mt-4 first:mt-0">
-                <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {section.title}
                 </p>
               </div>
@@ -198,10 +198,10 @@ export default function Sidebar() {
                 data-tour={tourId}
                 className={({ isActive }) =>
                   clsx(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-white/15 text-white'
-                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                      ? 'bg-white/[0.12] text-white ring-1 ring-white/10'
+                      : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
                   )
                 }
               >
@@ -221,23 +221,16 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="px-4 py-4 border-t border-white/10">
+      <div className="border-t border-white/10 px-4 py-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.12] text-xs font-bold text-white ring-1 ring-white/15">
             {user?.name?.charAt(0) ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate">{user?.name ?? 'User'}</p>
-            <p className="text-blue-300 text-xs">{getRoleDisplayName(user?.role) ?? '-'}</p>
+            <p className="truncate text-xs font-medium text-white">{user?.name ?? 'User'}</p>
+            <p className="text-xs text-slate-400">{getRoleDisplayName(user?.role) ?? '-'}</p>
           </div>
         </div>
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 text-blue-200 hover:text-white text-xs w-full px-2 py-1.5 rounded hover:bg-white/10 transition-colors"
-        >
-          <LogOut size={14} />
-          Keluar
-        </button>
       </div>
     </aside>
   )

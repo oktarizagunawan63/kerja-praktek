@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Helpers\NotificationHelper;
 use App\Mail\PasswordResetMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -65,6 +66,8 @@ class PasswordResetController extends Controller
                 'description'=> 'Kode verifikasi reset password dikirim ke email',
                 'ip_address' => $request->ip(),
             ]);
+
+            NotificationHelper::passwordResetActivity($user, 'requested', $request->ip());
 
             Log::info("Password reset OTP sent to: {$user->email}");
 
@@ -222,6 +225,8 @@ class PasswordResetController extends Controller
                 'description'=> 'Password berhasil direset',
                 'ip_address' => $request->ip(),
             ]);
+
+            NotificationHelper::passwordResetActivity($user, 'completed', $request->ip());
 
             Log::info("Password successfully reset for user: {$user->email}");
 

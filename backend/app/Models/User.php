@@ -92,29 +92,29 @@ class User extends Authenticatable
     // Check if user can access visit management
     public function canAccessVisitManagement()
     {
-        return in_array($this->role, ['sales_manager', 'sales']) || $this->division === 'sales_manager';
+        return in_array($this->role, ['administrator', 'sales_manager', 'sales'], true);
     }
 
     // Division checking methods
     public function isSiteManagerDivision()
     {
-        return $this->division === 'site_manager';
+        return $this->role === 'site_manager';
     }
 
     public function isSalesManagerDivision()
     {
-        return $this->division === 'sales_manager';
+        return $this->role === 'sales_manager';
     }
 
     // Check if user should see construction projects
     public function canAccessConstructionProjects()
     {
-        return $this->role === 'administrator' || $this->division === 'site_manager';
+        return in_array($this->role, ['administrator', 'site_manager'], true);
     }
 
     // Check if user should see visit management
     public function canAccessVisits()
     {
-        return $this->role === 'administrator' || $this->division === 'sales_manager';
+        return in_array($this->role, ['administrator', 'sales_manager', 'sales'], true);
     }
 }

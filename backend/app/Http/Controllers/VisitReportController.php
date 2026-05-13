@@ -105,56 +105,66 @@ class VisitReportController extends Controller
             $user = $request->user();
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+            $applyLinkedCustomerFilter = function ($query) {
+                $query->leftJoin('plan_visits as report_plan_visits', 'realisasi_visits.plan_visit_id', '=', 'report_plan_visits.id')
+                    ->leftJoin('customers as report_plan_customers', 'report_plan_visits.customer_id', '=', 'report_plan_customers.id')
+                    ->leftJoin('customers as report_direct_customers', 'realisasi_visits.customer_id', '=', 'report_direct_customers.id')
+                    ->where(function ($q) {
+                        $q->where(function ($planned) {
+                            $planned->where(function ($type) {
+                                    $type->whereNull('realisasi_visits.type')
+                                        ->orWhere('realisasi_visits.type', 'planned');
+                                })
+                                ->whereNotNull('report_plan_customers.id');
+                        })->orWhere(function ($unplanned) {
+                            $unplanned->where('realisasi_visits.type', 'unplanned')
+                                ->whereNotNull('report_direct_customers.id');
+                        });
+                    });
+            };
+
+            $applyRoleFilter = function ($query) use ($user) {
+                if ($user->role === 'sales') {
+                    $query->where('realisasi_visits.visited_by', $user->id);
+                } elseif ($user->role === 'sales_manager') {
+                    $salesTeam = DB::table('users')
+                        ->where('role', 'sales')
+                        ->where('is_active', true)
+                        ->pluck('id')
+                        ->merge([$user->id]);
+
+                    $query->whereIn('realisasi_visits.visited_by', $salesTeam);
+                }
+            };
             
             // Count ACTUAL visits from realisasi_visits (both planned and unplanned)
             $totalVisitsQuery = DB::table('realisasi_visits')
-                ->whereBetween('visit_date', [$startDate, $endDate])
-                ->where('status', '!=', 'pending');
-            
-            // Filter by user role
-            if ($user->role === 'sales') {
-                $totalVisitsQuery->where('visited_by', $user->id);
-            } elseif ($user->role === 'sales_manager') {
-                $salesTeam = DB::table('users')
-                    ->where('role', 'sales')
-                    ->where('is_active', true)
-                    ->pluck('id');
-                $totalVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
-            }
+                ->whereBetween('realisasi_visits.visit_date', [$startDate, $endDate])
+                ->where('realisasi_visits.status', '!=', 'pending');
+
+            $applyLinkedCustomerFilter($totalVisitsQuery);
+            $applyRoleFilter($totalVisitsQuery);
             
             $totalVisits = $totalVisitsQuery->count();
             
             // Get completed visits (status = done)
             $completedVisitsQuery = DB::table('realisasi_visits')
-                ->whereBetween('visit_date', [$startDate, $endDate])
-                ->where('status', 'done');
-            
-            if ($user->role === 'sales') {
-                $completedVisitsQuery->where('visited_by', $user->id);
-            } elseif ($user->role === 'sales_manager') {
-                $salesTeam = DB::table('users')
-                    ->where('role', 'sales')
-                    ->where('is_active', true)
-                    ->pluck('id');
-                $completedVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
-            }
+                ->whereBetween('realisasi_visits.visit_date', [$startDate, $endDate])
+                ->where('realisasi_visits.status', 'done');
+
+            $applyLinkedCustomerFilter($completedVisitsQuery);
+            $applyRoleFilter($completedVisitsQuery);
             
             $completedVisits = $completedVisitsQuery->count();
             
             // Get missed visits (status = missed)
             $missedVisitsQuery = DB::table('realisasi_visits')
-                ->whereBetween('visit_date', [$startDate, $endDate])
-                ->where('status', 'missed');
-            
-            if ($user->role === 'sales') {
-                $missedVisitsQuery->where('visited_by', $user->id);
-            } elseif ($user->role === 'sales_manager') {
-                $salesTeam = DB::table('users')
-                    ->where('role', 'sales')
-                    ->where('is_active', true)
-                    ->pluck('id');
-                $missedVisitsQuery->whereIn('visited_by', $salesTeam->push($user->id));
-            }
+                ->whereBetween('realisasi_visits.visit_date', [$startDate, $endDate])
+                ->where('realisasi_visits.status', 'missed');
+
+            $applyLinkedCustomerFilter($missedVisitsQuery);
+            $applyRoleFilter($missedVisitsQuery);
             
             $missedVisits = $missedVisitsQuery->count();
             
@@ -162,20 +172,13 @@ class VisitReportController extends Controller
             
             // Get daily data for chart from realisasi_visits
             $periodDataQuery = DB::table('realisasi_visits')
-                ->selectRaw('DATE(visit_date) as date, COUNT(*) as total, 
-                            SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed')
-                ->whereBetween('visit_date', [$startDate, $endDate])
-                ->where('status', '!=', 'pending');
-            
-            if ($user->role === 'sales') {
-                $periodDataQuery->where('visited_by', $user->id);
-            } elseif ($user->role === 'sales_manager') {
-                $salesTeam = DB::table('users')
-                    ->where('role', 'sales')
-                    ->where('is_active', true)
-                    ->pluck('id');
-                $periodDataQuery->whereIn('visited_by', $salesTeam->push($user->id));
-            }
+                ->selectRaw('DATE(realisasi_visits.visit_date) as date, COUNT(*) as total, 
+                            SUM(CASE WHEN realisasi_visits.status = "done" THEN 1 ELSE 0 END) as completed')
+                ->whereBetween('realisasi_visits.visit_date', [$startDate, $endDate])
+                ->where('realisasi_visits.status', '!=', 'pending');
+
+            $applyLinkedCustomerFilter($periodDataQuery);
+            $applyRoleFilter($periodDataQuery);
             
             $periodData = $periodDataQuery
                 ->groupBy('date')

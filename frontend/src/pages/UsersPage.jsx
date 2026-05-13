@@ -17,6 +17,7 @@ const roleLabel = {
 
 const roleVariant = { 
   administrator: 'info', 
+  sales_manager: 'success',
   site_manager: 'success', 
   engineer: 'default', 
   sales: 'success',
@@ -24,6 +25,7 @@ const roleVariant = {
 }
 
 const divisionLabel = {
+  management: 'Management',
   sales: 'Sales',
   engineering: 'Engineering'
 }
@@ -75,7 +77,12 @@ export default function UsersPage() {
     }
     
     try {
-      const response = await api.createUser(form)
+      const payload = {
+        ...form,
+        division: form.division === 'management' ? null : form.division
+      }
+
+      const response = await api.createUser(payload)
       if (response && (response.data || response.id)) {
         toast.success('User berhasil ditambahkan')
         setOpen(false)
@@ -98,6 +105,11 @@ export default function UsersPage() {
 
   // Get available roles based on selected division
   const getAvailableRoles = () => {
+    if (form.division === 'management') {
+      return [
+        { value: 'administrator', label: 'Administrator' }
+      ]
+    }
     if (form.division === 'sales') {
       return [
         { value: 'sales_manager', label: 'Sales Manager' },
@@ -131,6 +143,18 @@ export default function UsersPage() {
       console.error('Error deleting user:', error)
       toast.error(error.message || 'Gagal menghapus user')
     }
+  }
+
+  const getDivisionDisplay = (user) => {
+    if (user.division) {
+      return divisionLabel[user.division] || user.division
+    }
+
+    if (user.role === 'administrator' || user.role === 'direktur') {
+      return divisionLabel.management
+    }
+
+    return null
   }
 
   const toggleAssign = async (projectId) => {
@@ -192,9 +216,9 @@ export default function UsersPage() {
                   <td className="px-4 py-3 text-gray-600 text-xs">{u.email}</td>
                   <td className="px-4 py-3"><Badge variant={roleVariant[u.role]}>{roleLabel[u.role]}</Badge></td>
                   <td className="px-4 py-3">
-                    {u.division ? (
+                    {getDivisionDisplay(u) ? (
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                        {divisionLabel[u.division] || u.division}
+                        {getDivisionDisplay(u)}
                       </span>
                     ) : (
                       <span className="text-xs text-gray-400">-</span>
@@ -278,6 +302,7 @@ export default function UsersPage() {
             <select value={form.division} onChange={e => handleDivisionChange(e.target.value)} required
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
               <option value="">Pilih divisi...</option>
+              <option value="management">Management</option>
               <option value="sales">Sales</option>
               <option value="engineering">Engineering</option>
             </select>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Filter, Search, Trash2, Edit2, X, ChevronDown } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
@@ -168,55 +168,47 @@ export default function FunnelsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Modern Header with Gradient */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-700 border-b border-blue-500">
-        <div className="px-6 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-1">Sales Funnel</h1>
-              <p className="text-blue-100">Kelola pipeline penjualan Anda</p>
-            </div>
-            <button
-              onClick={() => navigate('/funnels/create')}
-              className="px-6 py-3 bg-white text-blue-700 hover:bg-blue-50 font-semibold rounded-md shadow-lg transition-colors"
-            >
-              + Tambah Deal
-            </button>
+    <div className="min-h-screen bg-slate-50 p-6 overflow-x-hidden">
+      <div className="mx-auto max-w-full space-y-6">
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-950">Sales Funnel</h1>
+            <p className="mt-1 text-sm text-slate-500">Kelola pipeline penjualan Anda</p>
           </div>
-
-          {/* Stats Cards - Integrated in Header */}
-          {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-md p-5 border border-white/20">
-                <p className="text-blue-100 text-sm font-medium mb-1">Active Deals</p>
-                <p className="text-3xl font-bold text-white">{stats.total_deal_open || 0}</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-md p-5 border border-white/20">
-                <p className="text-blue-100 text-sm font-medium mb-1">Won This Month</p>
-                <p className="text-3xl font-bold text-white">
-                  {(Number(stats.total_menang_bulan_ini || 0) / 1000000).toFixed(1)}M
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-md p-5 border border-white/20">
-                <p className="text-blue-100 text-sm font-medium mb-1">Win Rate</p>
-                <p className="text-3xl font-bold text-white">{stats.win_rate_bulan_ini || 0}%</p>
-                <p className="text-xs text-blue-200 mt-1">Bulan ini</p>
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => navigate('/funnels/create')}
+            className="inline-flex items-center justify-center rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68]"
+          >
+            + Tambah Deal
+          </button>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-6 py-6">
+        {stats && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">Active Deals</p>
+              <p className="mt-3 text-3xl font-bold text-slate-950">{stats.total_deal_open || 0}</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">Won This Month</p>
+              <p className="mt-3 text-3xl font-bold text-slate-950">
+                {(Number(stats.total_menang_bulan_ini || 0) / 1000000).toFixed(1)}M
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">Win Rate</p>
+              <p className="mt-3 text-3xl font-bold text-slate-950">{stats.win_rate_bulan_ini || 0}%</p>
+              <p className="mt-1 text-xs text-slate-400">Bulan ini</p>
+            </div>
+          </div>
+        )}
 
       {/* Filters & Search */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 mb-6">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -224,23 +216,23 @@ export default function FunnelsPage() {
                 placeholder="Search customer, company, or location..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-slate-300 py-2.5 pl-11 pr-4 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2.5 rounded-lg border transition-colors font-medium ${
+              className={`px-4 py-2.5 rounded-xl border transition-colors font-medium whitespace-nowrap ${
                 showFilters 
-                  ? 'bg-blue-600 text-white border-blue-600' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ? 'bg-[#0f4c81] text-white border-[#0f4c81]' 
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
               }`}
             >
-              {showFilters ? '✕ Tutup Filter' : '⚙ Filter'}
+              {showFilters ? 'Tutup Filter' : 'Filter'}
             </button>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 font-medium"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
             >
               <option value="created_at">Terbaru</option>
               <option value="deadline_terdekat">Deadline</option>
@@ -250,11 +242,11 @@ export default function FunnelsPage() {
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
                 >
                   <option value="">All Status</option>
                   <option value="open">Open</option>
@@ -265,7 +257,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.segment}
                   onChange={(e) => handleFilterChange('segment', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
                 >
                   <option value="">All Segments</option>
                   <option value="sot">SOT</option>
@@ -277,7 +269,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.channel}
                   onChange={(e) => handleFilterChange('channel', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
                 >
                   <option value="">All Channels</option>
                   <option value="kontraktor">Contractor</option>
@@ -292,7 +284,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.deal_stage}
                   onChange={(e) => handleFilterChange('deal_stage', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
                 >
                   <option value="">All Stages</option>
                   <option value="prospek">Prospect</option>
@@ -305,7 +297,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.win_probability}
                   onChange={(e) => handleFilterChange('win_probability', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
                 >
                   <option value="">All Probability</option>
                   <option value="low">Low</option>
@@ -318,7 +310,7 @@ export default function FunnelsPage() {
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-sm font-medium text-[#0f4c81] hover:text-[#0b3d68]"
                 >
                   Hapus semua filter
                 </button>
@@ -329,11 +321,11 @@ export default function FunnelsPage() {
       </div>
 
       {/* Funnels Table/Cards */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="p-16 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-[#0f4c81]"></div>
             </div>
             <p className="text-gray-600 font-medium">Loading deals...</p>
           </div>
@@ -343,16 +335,16 @@ export default function FunnelsPage() {
             <p className="text-gray-600 mb-6">Mulai tracking peluang penjualan Anda</p>
             <button
               onClick={() => navigate('/funnels/create')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="rounded-xl bg-[#0f4c81] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68]"
             >
               + Tambah Deal Pertama
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-max">
               <thead>
-                <tr className="bg-blue-50 border-b border-gray-200">
+                <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Channel</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
@@ -368,7 +360,7 @@ export default function FunnelsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {funnels.map((funnel) => (
-                  <tr key={funnel.id} className="hover:bg-blue-50 transition-colors group">
+                  <tr key={funnel.id} className="group transition-colors hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-semibold text-gray-900">{funnel.customer_name}</p>
@@ -409,17 +401,17 @@ export default function FunnelsPage() {
                       {getStatusBadge(funnel.status)}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/funnels/${funnel.id}`)}
-                          className="px-3 py-1.5 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-100 rounded-lg transition-colors"
+                          className="rounded-xl px-3 py-1.5 text-sm font-medium text-[#0f4c81] transition-colors hover:bg-slate-100"
                         >
                           Lihat
                         </button>
                         {(funnel.status === 'open' || isAdmin) && (
                           <button
                             onClick={() => navigate(`/funnels/${funnel.id}/edit`)}
-                            className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
                           >
                             Edit
                           </button>
@@ -427,7 +419,7 @@ export default function FunnelsPage() {
                         {isAdmin && (
                           <button
                             onClick={() => handleDelete(funnel)}
-                            className="px-3 py-1.5 text-sm font-medium text-red-700 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm font-medium text-red-700 hover:text-red-900 hover:bg-red-50 rounded-xl transition-colors"
                           >
                             Hapus
                           </button>

@@ -1,4 +1,4 @@
-import { Bell, Search, X } from 'lucide-react'
+import { Bell, LogOut, Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useAuthStore from '../../store/authStore'
@@ -20,7 +20,7 @@ function debounce(func, wait) {
 }
 
 export default function Topbar() {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const { notifications, projects, documents } = useAppStore()
   const unread = (notifications || []).filter(n => !n.isRead).length
@@ -78,18 +78,29 @@ export default function Topbar() {
     setShowResults(false)
   }
 
+  const handleLogout = async () => {
+    try {
+      await api.logout()
+    } catch (error) {
+      console.warn('Logout API error:', error)
+    } finally {
+      logout()
+      navigate('/login', { replace: true })
+    }
+  }
+
   return (
-    <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
       {/* Search */}
       <div className="relative w-80" ref={searchRef}>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
         <input
           type="text"
           value={query}
           onChange={e => { setQuery(e.target.value); setShowResults(true) }}
           onFocus={() => setShowResults(true)}
           placeholder="Cari proyek, dokumen..."
-          className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm text-slate-800 focus:border-[#0f4c81] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
         />
         {query && (
           <button onClick={() => { setQuery(''); setShowResults(false) }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -99,7 +110,7 @@ export default function Topbar() {
 
         {/* Dropdown results */}
         {showResults && query.trim().length >= 2 && (
-          <div className="absolute top-full mt-1 left-0 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+          <div className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
             {isSearching ? (
               <p className="text-xs text-gray-400 px-4 py-3">Mencari...</p>
             ) : !hasResults ? (
@@ -151,7 +162,7 @@ export default function Topbar() {
       {/* Right */}
       <div className="flex items-center gap-4">
         <button onClick={() => navigate('/notifications')}
-          className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700">
           <Bell size={18} />
           {unread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1">
@@ -160,14 +171,21 @@ export default function Topbar() {
           )}
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#0f4c81] flex items-center justify-center text-white text-xs font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f4c81] text-xs font-bold text-white">
             {user?.name?.charAt(0) ?? 'U'}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-800 leading-tight">{user?.name}</p>
-            <p className="text-xs text-gray-400">{getRoleDisplayName(user?.role)}</p>
+            <p className="text-sm font-medium leading-tight text-slate-800">{user?.name}</p>
+            <p className="text-xs text-slate-400">{getRoleDisplayName(user?.role)}</p>
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+        >
+          <LogOut size={16} />
+          Keluar
+        </button>
       </div>
     </header>
   )

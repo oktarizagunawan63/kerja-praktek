@@ -55,13 +55,13 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::get('/sales', [UserController::class, 'getSalesUsers']);
         Route::get('/engineers', [UserController::class, 'getEngineers']);
-        Route::get('/{id}', [UserController::class, 'show']);
+        Route::get('/{user}', [UserController::class, 'show']);
         Route::post('/', [UserController::class, 'store']);
-        Route::put('/{id}', [UserController::class, 'update']);
-        Route::delete('/{id}', [UserController::class, 'destroy']);
-        Route::post('/{id}/approve', [UserController::class, 'approve']);
-        Route::post('/{id}/reject', [UserController::class, 'reject']);
-        Route::post('/{id}/assign-projects', [UserController::class, 'assignProjects']);
+        Route::put('/{user}', [UserController::class, 'update']);
+        Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::post('/{user}/approve', [UserController::class, 'approve']);
+        Route::post('/{user}/reject', [UserController::class, 'reject']);
+        Route::post('/{user}/assign-projects', [UserController::class, 'assignProjects']);
     });
 
     Route::prefix('projects')->group(function () {

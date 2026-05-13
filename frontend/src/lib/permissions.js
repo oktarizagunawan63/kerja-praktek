@@ -44,6 +44,7 @@ export const can = (user, action) => {
     
     // Visit Management - Sales Manager handles visits and sales
     access_visit_management: ['administrator', 'sales_manager', 'sales'],
+    view_visit_relations: ['administrator', 'site_manager', 'engineer', 'sales_manager', 'sales'],
     
     // Customer Management
     create_customer:  ['administrator', 'sales_manager', 'sales'],
@@ -135,6 +136,12 @@ export const canAccessVisitManagement = (user) => {
   if (!user) return false
   const role = normalizeRole(user.role)
   return ['administrator', 'sales_manager', 'sales'].includes(role)
+}
+
+export const canAccessVisitRelations = (user) => {
+  if (!user) return false
+  const role = normalizeRole(user.role)
+  return ['administrator', 'site_manager', 'engineer', 'sales_manager', 'sales'].includes(role)
 }
 
 // Helper function to check if user can manage construction projects

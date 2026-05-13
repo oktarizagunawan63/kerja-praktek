@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\DB;
 
 class SalesManagerController extends Controller
 {
+    private function deleteOrphanUnplannedVisits(): void
+    {
+        RealisasiVisit::where('type', 'unplanned')
+            ->where(function ($query) {
+                $query->whereNull('customer_id')
+                    ->orWhereDoesntHave('directCustomer');
+            })
+            ->delete();
+    }
+
     /**
      * Get sales manager dashboard (alias for getDashboardStats)
      */
@@ -33,7 +43,7 @@ class SalesManagerController extends Controller
                 ->where('is_active', true)
                 ->pluck('id');
             
-            $teamIds = $salesTeam->push($user->id); // Include sales manager
+            $teamIds = $salesTeam->merge([$user->id]); // Include sales manager
 
             // Customer statistics
             $totalCustomers = Customer::whereIn('created_by', $teamIds)->count();
@@ -51,9 +61,11 @@ class SalesManagerController extends Controller
                 ->count();
             
             $pendingVisits = PlanVisit::whereIn('created_by', $teamIds)
-                ->whereDoesntHave('realisasiVisit')
-                ->orWhereHas('realisasiVisit', function($q) {
-                    $q->where('status', 'pending');
+                ->where(function($query) {
+                    $query->whereDoesntHave('realisasiVisit')
+                        ->orWhereHas('realisasiVisit', function($q) {
+                            $q->where('status', 'pending');
+                        });
                 })
                 ->count();
 
@@ -222,7 +234,7 @@ class SalesManagerController extends Controller
                 ->where('is_active', true)
                 ->pluck('id');
             
-            $teamIds = $salesTeam->push($user->id);
+            $teamIds = $salesTeam->merge([$user->id]);
 
             $customers = Customer::whereIn('created_by', $teamIds)
                 ->with('creator')
@@ -269,10 +281,12 @@ class SalesManagerController extends Controller
                 ->where('is_active', true)
                 ->pluck('id');
             
-            $teamIds = $salesTeam->push($user->id);
+            $teamIds = $salesTeam->merge([$user->id]);
 
-            $planVisits = PlanVisit::whereIn('created_by', $teamIds)
-                ->orWhereIn('assigned_to', $salesTeam)
+            $planVisits = PlanVisit::where(function($query) use ($teamIds, $salesTeam) {
+                    $query->whereIn('created_by', $teamIds)
+                        ->orWhereIn('assigned_to', $salesTeam);
+                })
                 ->with(['customer', 'assignedTo', 'creator', 'realisasiVisit'])
                 ->orderBy('tanggal_visit', 'desc')
                 ->get()
@@ -320,16 +334,20 @@ class SalesManagerController extends Controller
                 ->where('is_active', true)
                 ->pluck('id');
             
-            $teamIds = $salesTeam->push($user->id);
+            $teamIds = $salesTeam->merge([$user->id]);
 
             $realizations = RealisasiVisit::whereHas('planVisit', function($q) use ($teamIds, $salesTeam) {
                     $q->whereIn('created_by', $teamIds)
                       ->orWhereIn('assigned_to', $salesTeam);
                 })
-                ->with(['planVisit.customer', 'visitedBy'])
+                ->with(['planVisit.customer', 'visitor'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function($realisasi) {
+                    $photos = is_array($realisasi->photos)
+                        ? $realisasi->photos
+                        : json_decode($realisasi->photos ?? '[]', true);
+
                     return [
                         'id' => $realisasi->id,
                         'plan_visit_id' => $realisasi->plan_visit_id,
@@ -341,8 +359,8 @@ class SalesManagerController extends Controller
                         'notes' => $realisasi->notes,
                         'latitude' => $realisasi->latitude,
                         'longitude' => $realisasi->longitude,
-                        'photos' => json_decode($realisasi->photos ?? '[]', true),
-                        'visited_by' => $realisasi->visitedBy->name ?? 'Unknown',
+                        'photos' => $photos ?: [],
+                        'visited_by' => $realisasi->visitor->name ?? 'Unknown',
                         'created_at' => $realisasi->created_at->format('Y-m-d H:i')
                     ];
                 });
@@ -366,6 +384,8 @@ class SalesManagerController extends Controller
     public function getPendingUnplannedVisits(Request $request)
     {
         try {
+            $this->deleteOrphanUnplannedVisits();
+
             $user = $request->user();
             
             // Get sales team IDs

@@ -28,6 +28,16 @@ function sendVisitNotif($userId, $type, $title, $message) {
 
 class RealisasiVisitController extends Controller
 {
+    private function deleteOrphanUnplannedVisits(): void
+    {
+        RealisasiVisit::where('type', 'unplanned')
+            ->where(function ($query) {
+                $query->whereNull('customer_id')
+                    ->orWhereDoesntHave('directCustomer');
+            })
+            ->delete();
+    }
+
     /**
      * Get all completed visits for Riwayat Visit tab
      * Returns ALL realisasi visits with status = done (both planned and unplanned)
@@ -35,11 +45,34 @@ class RealisasiVisitController extends Controller
     public function index(Request $request)
     {
         try {
+            $this->deleteOrphanUnplannedVisits();
+
             $user = Auth::user();
+            
+            // Block Site Manager and Engineer from accessing visit tracking
+            if (in_array($user->role, ['site_manager', 'engineer'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Visit tracking bukan urusan role Anda.',
+                    'data' => []
+                ], 403);
+            }
             
             // Get ALL completed visits (planned + unplanned) for Riwayat Visit
             $query = RealisasiVisit::with(['planVisit.customer', 'directCustomer', 'visitor'])
-                ->where('status', 'done');
+                ->where('status', 'done')
+                ->where(function ($q) {
+                    $q->where(function ($planned) {
+                        $planned->where(function ($type) {
+                                $type->whereNull('type')
+                                    ->orWhere('type', 'planned');
+                            })
+                            ->whereHas('planVisit.customer');
+                    })->orWhere(function ($unplanned) {
+                        $unplanned->where('type', 'unplanned')
+                            ->whereHas('directCustomer');
+                    });
+                });
             
             // Role-based filtering
             if ($user->role === 'sales') {
@@ -50,7 +83,7 @@ class RealisasiVisitController extends Controller
                 $salesTeam = \App\Models\User::where('role', 'sales')
                     ->where('is_active', true)
                     ->pluck('id');
-                $query->whereIn('visited_by', $salesTeam->push($user->id));
+                $query->whereIn('visited_by', $salesTeam->merge([$user->id]));
             }
             // Administrator sees all
             
@@ -77,6 +110,8 @@ class RealisasiVisitController extends Controller
     public function getMyUnplannedVisits(Request $request)
     {
         try {
+            $this->deleteOrphanUnplannedVisits();
+
             $user = Auth::user();
             
             // Get ONLY unplanned visits that are approved and done
@@ -92,7 +127,7 @@ class RealisasiVisitController extends Controller
                 $salesTeam = \App\Models\User::where('role', 'sales')
                     ->where('is_active', true)
                     ->pluck('id');
-                $query->whereIn('visited_by', $salesTeam->push($user->id));
+                $query->whereIn('visited_by', $salesTeam->merge([$user->id]));
             }
             
             $unplannedVisits = $query->orderBy('visit_date', 'desc')->get();
@@ -115,6 +150,16 @@ class RealisasiVisitController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = Auth::user();
+            
+            // Block Site Manager and Engineer from creating realisasi visits
+            if (in_array($user->role, ['site_manager', 'engineer'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Visit tracking bukan urusan role Anda.'
+                ], 403);
+            }
+            
             $validator = Validator::make($request->all(), [
                 'plan_visit_id' => 'required|exists:plan_visits,id',
                 'status' => 'required|in:done,missed',
@@ -231,12 +276,12 @@ class RealisasiVisitController extends Controller
         try {
             $realisasiVisit = RealisasiVisit::findOrFail($id);
             
-            // Check if user can edit this realisasi visit
+            // Permission check: Sales, Engineer, and Site Manager CANNOT update
             $user = Auth::user();
-            if ($user->role === 'sales' && $realisasiVisit->visited_by !== $user->id) {
+            if (in_array($user->role, ['sales', 'engineer', 'site_manager'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized to edit this visit realisasi'
+                    'message' => 'Anda tidak memiliki akses untuk mengubah data realisasi visit'
                 ], 403);
             }
             
@@ -378,6 +423,16 @@ class RealisasiVisitController extends Controller
     public function storeUnplanned(Request $request)
     {
         try {
+            $user = Auth::user();
+            
+            // Block Site Manager and Engineer from creating unplanned visits
+            if (in_array($user->role, ['site_manager', 'engineer'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Visit tracking bukan urusan role Anda.'
+                ], 403);
+            }
+            
             $validator = Validator::make($request->all(), [
                 // Explicitly nullable for unplanned visits
                 'plan_visit_id' => 'nullable|exists:plan_visits,id',
@@ -630,6 +685,8 @@ class RealisasiVisitController extends Controller
     public function pendingUnplanned()
     {
         try {
+            $this->deleteOrphanUnplannedVisits();
+
             $user = Auth::user();
             
             $query = RealisasiVisit::with(['directCustomer', 'visitor'])
@@ -654,6 +711,37 @@ class RealisasiVisitController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch pending unplanned visits: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+}
+
+    
+    public function destroy($id)
+    {
+        try {
+            $realisasiVisit = RealisasiVisit::findOrFail($id);
+            
+            // Permission check: Sales, Engineer, and Site Manager CANNOT delete
+            $user = Auth::user();
+            if (in_array($user->role, ['sales', 'engineer', 'site_manager'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menghapus data realisasi visit'
+                ], 403);
+            }
+            
+            $realisasiVisit->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Visit realisasi berhasil dihapus'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete visit realisasi: ' . $e->getMessage()
             ], 500);
         }
     }

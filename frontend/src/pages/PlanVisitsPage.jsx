@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -20,6 +20,8 @@ export default function PlanVisitsPage() {
   const [editingVisit, setEditingVisit] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailVisit, setDetailVisit] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const submitLockRef = useRef(false)
   const [formData, setFormData] = useState({
     customer_id: '',
     assigned_to: '',
@@ -40,7 +42,7 @@ export default function PlanVisitsPage() {
       
       const [visitsResponse, customersResponse, salesResponse] = await Promise.allSettled([
         api.getPlanVisits({ search: searchQuery }),
-        api.getCustomers(),
+        can(user, 'create_plan_visit') ? api.getCustomers() : Promise.resolve({ data: [] }),
         can(user, 'assign_visits') ? api.getSalesUsers() : Promise.resolve({ data: [] })
       ])
       
@@ -68,6 +70,11 @@ export default function PlanVisitsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitLockRef.current) return
+
+    submitLockRef.current = true
+    setSubmitting(true)
+
     try {
       const submitData = { ...formData }
       
@@ -89,6 +96,9 @@ export default function PlanVisitsPage() {
       fetchData()
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan plan visit')
+    } finally {
+      submitLockRef.current = false
+      setSubmitting(false)
     }
   }
 
@@ -279,6 +289,7 @@ export default function PlanVisitsPage() {
         {['sales', 'sales_manager'].includes(user?.role) && (
           <button 
             onClick={() => setShowAddForm(true)}
+            disabled={submitting}
             className="btn-responsive primary"
           >
             <Plus size={16} />
@@ -474,7 +485,13 @@ export default function PlanVisitsPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
-                <button className="btn-responsive secondary flex-1 min-w-0">
+                <button
+                  onClick={() => {
+                    setDetailVisit(visit)
+                    setShowDetailModal(true)
+                  }}
+                  className="btn-responsive secondary flex-1 min-w-0"
+                >
                   <Eye size={14} />
                   <span className="mobile-hidden">Detail</span>
                 </button>
@@ -512,10 +529,12 @@ export default function PlanVisitsPage() {
               </h2>
               <button
                 onClick={() => {
+                  if (submitting) return
                   setShowAddForm(false)
                   setEditingVisit(null)
                   resetForm()
                 }}
+                disabled={submitting}
                 className="text-gray-400 hover:text-gray-600 p-1"
               >
                 ✕
@@ -529,6 +548,7 @@ export default function PlanVisitsPage() {
                   value={formData.customer_id}
                   onChange={(e) => handleCustomerChange(e.target.value)}
                   className="input-responsive"
+                  disabled={submitting}
                   required
                 >
                   <option value="">Pilih Customer</option>
@@ -547,6 +567,7 @@ export default function PlanVisitsPage() {
                     value={formData.assigned_to}
                     onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
                     className="input-responsive"
+                    disabled={submitting}
                     required
                   >
                     <option value="">Pilih Sales</option>
@@ -567,6 +588,7 @@ export default function PlanVisitsPage() {
                     value={formData.tanggal_visit}
                     onChange={(e) => setFormData(prev => ({ ...prev, tanggal_visit: e.target.value }))}
                     className="input-responsive"
+                    disabled={submitting}
                   />
                 </div>
                 
@@ -577,6 +599,7 @@ export default function PlanVisitsPage() {
                     value={formData.waktu_visit}
                     onChange={(e) => setFormData(prev => ({ ...prev, waktu_visit: e.target.value }))}
                     className="input-responsive"
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -589,6 +612,7 @@ export default function PlanVisitsPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, lokasi: e.target.value }))}
                   placeholder="Alamat lokasi visit"
                   className="input-responsive"
+                  disabled={submitting}
                   required
                 />
               </div>
@@ -601,6 +625,7 @@ export default function PlanVisitsPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, tujuan: e.target.value }))}
                   placeholder="Tujuan kunjungan"
                   className="input-responsive"
+                  disabled={submitting}
                   required
                 />
               </div>
@@ -613,21 +638,28 @@ export default function PlanVisitsPage() {
                   className="input-responsive"
                   style={{ minHeight: '80px' }}
                   placeholder="Catatan tambahan"
+                  disabled={submitting}
                 />
               </div>
               
               <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="submit" className="btn-responsive primary flex-1">
-                  {editingVisit ? 'Perbarui' : 'Simpan'}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-responsive primary flex-1 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? 'Menyimpan...' : (editingVisit ? 'Perbarui' : 'Simpan')}
                 </button>
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => {
+                    if (submitting) return
                     setShowAddForm(false)
                     setEditingVisit(null)
                     resetForm()
                   }}
-                  className="btn-responsive secondary flex-1"
+                  className="btn-responsive secondary flex-1 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Batal
                 </button>

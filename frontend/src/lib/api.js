@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+const pendingGetRequests = new Map()
 
 const getToken = () => {
   try {
@@ -12,14 +13,24 @@ const getToken = () => {
   }
 }
 
-const request = async (endpoint, options = {}) => {
+const request = (endpoint, options = {}) => {
+  const { dedupeKey, ...fetchOptions } = options
   const url = `${API_BASE}${endpoint}`
   const token = getToken()
+  const method = fetchOptions.method || 'GET'
+  const requestKey = dedupeKey
+    ? `${method}:${url}:${dedupeKey}:${token || ''}`
+    : method === 'GET'
+      ? `${method}:${url}:${token || ''}`
+      : null
+  if (requestKey && pendingGetRequests.has(requestKey)) {
+    return pendingGetRequests.get(requestKey)
+  }
   
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    ...options.headers
+    ...fetchOptions.headers
   }
   
   if (token) {
@@ -27,39 +38,51 @@ const request = async (endpoint, options = {}) => {
   }
   
   const config = {
-    ...options,
+    ...fetchOptions,
     headers
   }
 
-  try {
-    const response = await fetch(url, config)
-    
-    if (response.status === 401) {
-      localStorage.removeItem('amsar-auth')
-      window.location.href = '/login'
-      throw new Error('Session expired. Please login again.')
-    }
-    
-    if (response.status === 403) {
-      throw new Error('You do not have permission to perform this action.')
-    }
-    
-    if (response.status === 422) {
-      const data = await response.json()
-      console.error('Validation errors:', data.errors)
-      throw { message: data.message || 'Validation error', errors: data.errors || {}, status: 422 }
-    }
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-    }
+  const requestPromise = (async () => {
+    try {
+      const response = await fetch(url, config)
+      
+      if (response.status === 401) {
+        localStorage.removeItem('amsar-auth')
+        window.location.href = '/login'
+        throw new Error('Session expired. Please login again.')
+      }
+      
+      if (response.status === 403) {
+        throw new Error('You do not have permission to perform this action.')
+      }
+      
+      if (response.status === 422) {
+        const data = await response.json()
+        console.error('Validation errors:', data.errors)
+        throw { message: data.message || 'Validation error', errors: data.errors || {}, status: 422 }
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
 
-    return response.json()
-  } catch (error) {
-    console.error(`API Error [${config.method || 'GET'} ${url}]:`, error)
-    throw error
+      return response.json()
+    } catch (error) {
+      console.error(`API Error [${config.method || 'GET'} ${url}]:`, error)
+      throw error
+    } finally {
+      if (requestKey) {
+        pendingGetRequests.delete(requestKey)
+      }
+    }
+  })()
+
+  if (requestKey) {
+    pendingGetRequests.set(requestKey, requestPromise)
   }
+
+  return requestPromise
 }
 
 // Simple API object - just the basics
@@ -80,7 +103,7 @@ export const api = {
   
   // Password reset
   sendResetToken: (email) => request('/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
-  verifyResetToken: (token) => request('/password/verify', { method: 'POST', body: JSON.stringify({ token }) }),
+  verifyResetToken: (email, token) => request('/password/verify', { method: 'POST', body: JSON.stringify({ email, token }) }),
   resetPassword: (data) => request('/password/reset', { method: 'POST', body: JSON.stringify(data) }),
   
   // Users
@@ -95,10 +118,20 @@ export const api = {
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
   approveUser: (id) => request(`/users/${id}/approve`, { method: 'POST' }),
-  rejectUser: (id, reason) => request(`/users/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
+  rejectUser: (id, reason) => request(`/users/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  assignProject: (id, projectId) => request(`/users/${id}/assign-projects`, { method: 'POST', body: JSON.stringify({ project_id: projectId }) }),
   
   // Customers
-  getCustomers: () => request('/customers'),
+  getCustomers: (params = {}) => {
+    const cleanParams = {}
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        cleanParams[key] = params[key]
+      }
+    })
+    const queryString = new URLSearchParams(cleanParams).toString()
+    return request(`/customers${queryString ? '?' + queryString : ''}`)
+  },
   getPendingCustomers: () => request('/customers/pending'),
   createCustomer: (data) => request('/customers', { method: 'POST', body: JSON.stringify(data) }),
   getCustomer: (id) => request(`/customers/${id}`),
@@ -115,8 +148,8 @@ export const api = {
   },
   getApprovedPlanVisits: () => request('/plan-visits/approved'),
   getPendingPlanVisits: () => request('/plan-visits/pending'),
-  createPlanVisit: (data) => request('/plan-visits', { method: 'POST', body: JSON.stringify(data) }),
-  updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  createPlanVisit: (data) => request('/plan-visits', { method: 'POST', body: JSON.stringify(data), dedupeKey: JSON.stringify(data) }),
+  updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data), dedupeKey: JSON.stringify(data) }),
   deletePlanVisit: (id) => request(`/plan-visits/${id}`, { method: 'DELETE' }),
   approvePlanVisit: (id) => request(`/plan-visits/${id}/approve`, { method: 'POST' }),
   rejectPlanVisit: (id, reason) => request(`/plan-visits/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),

@@ -19,13 +19,16 @@ export default function LoginPage() {
       setAuth(res.token, res.user)
       
       // Role-based redirect
-      const redirectRole = res.user.role.toLowerCase();
+      const redirectRole = String(res.user.role || '').toLowerCase()
       if (redirectRole === 'sales_manager') {
         navigate('/manager/dashboard')
       } else if (redirectRole === 'sales') {
         navigate('/sales/dashboard')
+      } else if (redirectRole === 'site_manager') {
+        navigate('/site/dashboard')
+      } else if (redirectRole === 'engineer') {
+        navigate('/engineer/dashboard')
       } else {
-        // Administrator and others go to normal dashboard
         navigate('/dashboard')
       }
     } catch (err) {

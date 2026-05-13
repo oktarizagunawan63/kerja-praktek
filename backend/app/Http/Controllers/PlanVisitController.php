@@ -24,30 +24,8 @@ class PlanVisitController extends Controller
                 })
                 ->orderBy('tanggal_visit', 'desc');
             
-            // Role-based filtering
-            switch ($user->role) {
-                case 'administrator':
-                case 'admin':
-                    // Admin sees ALL plan visits
-                    break;
-                    
-                case 'sales_manager':
-                    // Sales manager sees ALL plan visits they created
-                    $query->where('created_by', $user->id);
-                    break;
-                    
-                case 'sales':
-                    // Sales sees only plan visits assigned to them
-                    $query->where('assigned_to', $user->id);
-                    break;
-                    
-                default:
-                    // Other roles have no access
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tidak memiliki akses ke data plan visit'
-                    ], 403);
-            }
+            // All roles can see all plan visits (no filtering by role)
+            // Sales and engineer can only view, not edit/delete (handled in update/destroy methods)
             
             // Search functionality
             if ($request->has('search') && !empty($request->search)) {
@@ -77,6 +55,8 @@ class PlanVisitController extends Controller
             }
             
             $planVisits = $query->get();
+            
+            \Log::info('PlanVisit index - User: ' . $user->email . ' (Role: ' . $user->role . '), Results: ' . $planVisits->count());
             
             return response()->json([
                 'success' => true,
@@ -176,6 +156,16 @@ class PlanVisitController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = Auth::user();
+            
+            // Block Site Manager and Engineer from creating plan visits
+            if (in_array($user->role, ['site_manager', 'engineer'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Visit tracking bukan urusan role Anda.'
+                ], 403);
+            }
+            
             \Log::info('PlanVisit store request data:', $request->all());
             
             $validator = Validator::make($request->all(), [
@@ -256,8 +246,7 @@ class PlanVisitController extends Controller
     public function show($id)
     {
         try {
-            $user = Auth::user();
-            $planVisit = PlanVisit::with(['customer', 'assignedTo', 'createdBy'])->find($id);
+            $planVisit = PlanVisit::with(['customer', 'assignedUser', 'creator'])->find($id);
             
             if (!$planVisit) {
                 return response()->json([
@@ -266,13 +255,7 @@ class PlanVisitController extends Controller
                 ], 404);
             }
             
-            // Role-based access control
-            if ($user->role === 'sales' && $planVisit->assigned_to !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access'
-                ], 403);
-            }
+            // All roles can view plan visits
             
             return response()->json([
                 'success' => true,
@@ -290,13 +273,25 @@ class PlanVisitController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $user = Auth::user();
+            
+            // Sales and engineer cannot update
+            if (in_array($user->role, ['sales', 'engineer'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk mengubah data plan visit'
+                ], 403);
+            }
+            
             $validator = Validator::make($request->all(), [
                 'customer_id' => 'sometimes|exists:customers,id',
                 'assigned_to' => 'sometimes|exists:users,id',
                 'tanggal_visit' => 'sometimes|date',
-                'lokasi' => 'sometimes|string|max:255',
-                'keterangan' => 'nullable|string|max:1000',
-                'status' => 'sometimes|in:pending,completed,cancelled',
+                'waktu_visit' => 'sometimes|string',
+                'lokasi' => 'sometimes|string|max:500',
+                'tujuan' => 'sometimes|string|max:500',
+                'catatan' => 'nullable|string|max:1000',
+                'status' => 'sometimes|in:pending,approved,rejected',
             ]);
 
             if ($validator->fails()) {
@@ -307,7 +302,6 @@ class PlanVisitController extends Controller
                 ], 422);
             }
 
-            $user = Auth::user();
             $planVisit = PlanVisit::find($id);
             
             if (!$planVisit) {
@@ -317,22 +311,14 @@ class PlanVisitController extends Controller
                 ], 404);
             }
             
-            // Role-based access control
-            if ($user->role === 'sales' && $planVisit->assigned_to !== $user->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access'
-                ], 403);
-            }
-            
             $planVisit->update($request->only([
-                'customer_id', 'assigned_to', 'tanggal_visit', 'lokasi', 'keterangan', 'status'
+                'customer_id', 'assigned_to', 'tanggal_visit', 'waktu_visit', 'lokasi', 'tujuan', 'catatan', 'status'
             ]));
 
             return response()->json([
                 'success' => true,
                 'message' => 'Plan visit berhasil diperbarui',
-                'data' => $planVisit->load(['customer', 'assignedTo', 'createdBy'])
+                'data' => $planVisit->load(['customer', 'assignedUser', 'creator'])
             ]);
             
         } catch (\Exception $e) {
@@ -356,11 +342,11 @@ class PlanVisitController extends Controller
                 ], 404);
             }
             
-            // Only sales_manager and admin can delete
-            if (!in_array($user->role, ['sales_manager', 'administrator'])) {
+            // Permission check: Sales and Engineer CANNOT delete
+            if (in_array($user->role, ['sales', 'engineer'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access'
+                    'message' => 'Anda tidak memiliki akses untuk menghapus data plan visit'
                 ], 403);
             }
             
@@ -652,11 +638,6 @@ class PlanVisitController extends Controller
                     $query->where('assigned_to', $user->id);
                     break;
                     
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tidak memiliki akses'
-                    ], 403);
             }
             
             $completedVisits = $query->get();

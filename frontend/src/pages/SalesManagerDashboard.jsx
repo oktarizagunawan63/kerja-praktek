@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Users, Calendar, CheckSquare, TrendingUp, AlertTriangle, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import { api } from '../lib/api'
@@ -17,47 +17,55 @@ export default function SalesManagerDashboard() {
   const [warnings, setWarnings] = useState([])
   const [pendingUnplannedVisits, setPendingUnplannedVisits] = useState([])
   const [loading, setLoading] = useState(true)
+  const [processingVisitIds, setProcessingVisitIds] = useState(new Set())
+  const isLoadingRef = useRef(false)
 
   useEffect(() => {
     loadDashboardData()
     
     // Auto-refresh data every 60 seconds
     const interval = setInterval(() => {
-      loadDashboardData()
+      loadDashboardData({ silent: true })
     }, 60000)
     
     return () => clearInterval(interval)
   }, [])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async ({ silent = false } = {}) => {
+    if (isLoadingRef.current) return
+
     try {
-      setLoading(true)
+      isLoadingRef.current = true
+      if (!silent) setLoading(true)
       
-      // Load dashboard stats with fallback
+      // Load sales-manager dashboard data directly from the DB-backed endpoint.
       try {
-        const statsResponse = await api.getDashboardStats()
-        setStats(statsResponse.data || stats)
+        const dashboardResponse = await api.getSalesManagerDashboard()
+        const dashboardData = dashboardResponse.data || {}
+
+        setStats({
+          total_customers: dashboardData.customers?.total || 0,
+          total_plan_visits: dashboardData.visits?.total || 0,
+          completed_visits: dashboardData.visits?.completed || 0,
+          total_sales: dashboardData.team?.sales_count || 0,
+          completion_rate: dashboardData.visits?.completion_rate || 0,
+          visits_this_month: dashboardData.visits?.this_month || 0,
+          active_warnings: dashboardData.warnings?.active_count || 0
+        })
+        setRecentCustomers(dashboardData.recent_customers || [])
+        setRecentVisits(dashboardData.upcoming_visits || [])
       } catch (error) {
-        console.warn('Dashboard stats failed, using defaults:', error.message)
-      }
-      
-      // Load recent customers with fallback
-      try {
-        const customersResponse = await api.getCustomers({ limit: 3 })
-        const customersData = customersResponse.data?.data || customersResponse.data || []
-        setRecentCustomers(customersData)
-      } catch (error) {
-        console.warn('Customers API failed:', error.message)
+        console.warn('Sales manager dashboard API failed:', error.message)
+        setStats({
+          total_customers: 0,
+          total_plan_visits: 0,
+          completed_visits: 0,
+          total_sales: 0,
+          completion_rate: 0,
+          visits_this_month: 0,
+          active_warnings: 0
+        })
         setRecentCustomers([])
-      }
-      
-      // Load recent plan visits with fallback
-      try {
-        const visitsResponse = await api.getPlanVisits({ limit: 3 })
-        const visitsData = visitsResponse.data?.data || visitsResponse.data || []
-        setRecentVisits(visitsData)
-      } catch (error) {
-        console.warn('Plan visits API failed:', error.message)
         setRecentVisits([])
       }
       
@@ -83,21 +91,33 @@ export default function SalesManagerDashboard() {
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
+      isLoadingRef.current = false
       setLoading(false)
     }
   }
 
   const handleApproveUnplanned = async (visitId) => {
+    if (processingVisitIds.has(visitId)) return
+
     try {
+      setProcessingVisitIds(prev => new Set(prev).add(visitId))
       await api.approveUnplannedVisit(visitId)
       toast.success('Unplanned visit approved')
-      loadDashboardData()
+      await loadDashboardData({ silent: true })
     } catch (error) {
       toast.error('Failed to approve: ' + error.message)
+    } finally {
+      setProcessingVisitIds(prev => {
+        const next = new Set(prev)
+        next.delete(visitId)
+        return next
+      })
     }
   }
 
   const handleRejectUnplanned = async (visitId) => {
+    if (processingVisitIds.has(visitId)) return
+
     const reason = prompt('Enter rejection reason (min 10 characters):')
     if (!reason || reason.length < 10) {
       toast.error('Rejection reason minimal 10 karakter')
@@ -105,349 +125,303 @@ export default function SalesManagerDashboard() {
     }
 
     try {
+      setProcessingVisitIds(prev => new Set(prev).add(visitId))
       await api.rejectUnplannedVisit(visitId, { rejection_reason: reason })
       toast.success('Unplanned visit rejected')
-      loadDashboardData()
+      await loadDashboardData({ silent: true })
     } catch (error) {
       toast.error('Failed to reject: ' + error.message)
+    } finally {
+      setProcessingVisitIds(prev => {
+        const next = new Set(prev)
+        next.delete(visitId)
+        return next
+      })
     }
   }
 
+  const uniqueRecentCustomers = useMemo(() => {
+    return Array.from(new Map((recentCustomers || []).map((customer) => [customer.id, customer])).values())
+  }, [recentCustomers])
+
+  const uniqueRecentVisits = useMemo(() => {
+    return Array.from(new Map((recentVisits || []).map((visit) => [visit.id, visit])).values())
+  }, [recentVisits])
+
+  const uniqueWarnings = useMemo(() => {
+    return Array.from(new Map((warnings || []).map((warning) => [warning.id, warning])).values())
+  }, [warnings])
+
+  const uniquePendingUnplannedVisits = useMemo(() => {
+    return Array.from(new Map((pendingUnplannedVisits || []).map((visit) => [visit.id, visit])).values())
+  }, [pendingUnplannedVisits])
+
+  const statCards = [
+    { label: 'Total Customers', value: stats.total_customers || 0, icon: Users, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+    { label: 'Plan Visits', value: stats.total_plan_visits || 0, icon: Calendar, color: 'text-blue-700', bg: 'bg-blue-50' },
+    { label: 'Completed Visits', value: stats.completed_visits || 0, icon: CheckSquare, color: 'text-green-700', bg: 'bg-green-50' },
+    { label: 'Active Sales', value: stats.total_sales || 0, icon: TrendingUp, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+  ]
+
+  const quickActions = [
+    { label: 'Manage Customers', icon: Users, path: '/customers' },
+    { label: 'Plan Visits', icon: Calendar, path: '/plan-visits' },
+    { label: 'View Reports', icon: TrendingUp, path: '/visit-reports' },
+    { label: 'Manage Warnings', icon: AlertTriangle, path: '/warnings' },
+  ]
+
   return (
-    <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
-            <Users className="text-white" size={20} />
-          </div>
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="border-b border-slate-200 pb-5">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sales Manager Dashboard</h1>
-            <p className="text-green-700">Welcome back, {user?.name}</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Sales Management</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-950">Sales Manager Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Welcome back, {user?.name}. Monitor team activity, visit approval, and monthly performance.</p>
           </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-green-700">Loading dashboard data...</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-green-50 rounded-xl p-6 border border-green-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Customers</p>
-                  <p className="text-2xl font-bold text-green-700">{stats.total_customers}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                  <Users className="text-white" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 rounded-xl p-6 border border-green-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Plan Visits</p>
-                  <p className="text-2xl font-bold text-green-700">{stats.total_plan_visits}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                  <Calendar className="text-white" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 rounded-xl p-6 border border-green-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Completed Visits</p>
-                  <p className="text-2xl font-bold text-green-700">{stats.completed_visits}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-700 rounded-lg flex items-center justify-center">
-                  <CheckSquare className="text-white" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Active Sales</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.total_sales}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="text-white" size={24} />
-                </div>
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-600"></div>
+              <p className="text-sm font-medium text-emerald-700">Loading dashboard data...</p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Customer List */}
-            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="text-green-600" size={20} />
-                  <h2 className="text-lg font-semibold text-gray-900">Recent Customers</h2>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+                <div key={label} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-500">{label}</p>
+                      <p className={`mt-3 text-3xl font-bold ${color}`}>{value}</p>
+                    </div>
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${bg}`}>
+                      <Icon className={color} size={22} />
+                    </div>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => window.location.href = '/customers'}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                >
-                  Lihat Semua
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {recentCustomers.length > 0 ? recentCustomers.map((customer) => (
-                  <div key={customer.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                        <Users className="text-white" size={14} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{customer.name}</p>
-                        <p className="text-sm text-gray-600">{customer.company || customer.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">{customer.phone}</p>
-                      <p className="text-xs text-green-600">{customer.address}</p>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p className="text-sm">No customers yet</p>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
 
-            {/* Recent Plan Visits */}
-            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="text-green-600" size={20} />
-                  <h2 className="text-lg font-semibold text-gray-900">Recent Plan Visits</h2>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Recent Customers</h2>
+                    <p className="text-sm text-slate-500">Customer terbaru dari sales manager dan team.</p>
+                  </div>
+                  <button onClick={() => window.location.href = '/customers'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                    Lihat Semua
+                  </button>
                 </div>
-                <button 
-                  onClick={() => window.location.href = '/plan-visits'}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                >
-                  Lihat Semua
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {recentVisits.length > 0 ? recentVisits.map((visit) => (
-                  <div key={visit.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                        <MapPin className="text-white" size={14} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{visit.customer?.name || 'Unknown Customer'}</p>
-                        <p className="text-sm text-gray-600">{visit.lokasi}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-green-700">
-                        {new Date(visit.tanggal_visit).toLocaleDateString('id-ID')}
-                      </p>
-                      <p className="text-xs text-gray-500">{visit.assigned_to?.name || 'Unassigned'}</p>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p className="text-sm">No visits planned yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Additional Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-            {/* Pending Unplanned Visits - NEW */}
-            {pendingUnplannedVisits.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 lg:col-span-2">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="text-orange-500" size={20} />
-                    <h2 className="text-lg font-semibold text-gray-900">Pending Unplanned Visits Approval</h2>
-                    <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-                      {pendingUnplannedVisits.length} pending
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  {pendingUnplannedVisits.map((visit) => (
-                    <div key={visit.id} className="flex items-start justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center shrink-0">
-                          <MapPin className="text-white" size={18} />
+                <div className="space-y-3">
+                  {uniqueRecentCustomers.length > 0 ? uniqueRecentCustomers.map((customer) => (
+                    <div key={customer.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                          <Users className="text-emerald-700" size={17} />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-gray-900">{visit.customer_name}</p>
-                            <span className="bg-orange-200 text-orange-800 px-2 py-0.5 rounded text-xs font-medium">
-                              Unplanned
-                            </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{customer.name}</p>
+                          <p className="truncate text-sm text-slate-600">{customer.company || customer.name}</p>
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs text-slate-500">{customer.phone || '-'}</p>
+                        <p className="mt-1 text-xs font-medium text-emerald-700">{customer.created_by || customer.address || '-'}</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="py-8 text-center text-sm text-slate-500">No customers yet</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Recent Plan Visits</h2>
+                    <p className="text-sm text-slate-500">Agenda visit terdekat dari team sales.</p>
+                  </div>
+                  <button onClick={() => window.location.href = '/plan-visits'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                    Lihat Semua
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {uniqueRecentVisits.length > 0 ? uniqueRecentVisits.map((visit) => (
+                    <div key={visit.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                          <MapPin className="text-blue-700" size={17} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{visit.customer_name || visit.customer?.name || 'Unknown Customer'}</p>
+                          <p className="truncate text-sm text-slate-600">{visit.lokasi || '-'}</p>
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-blue-700">{new Date(visit.tanggal_visit).toLocaleDateString('id-ID')}</p>
+                        <p className="mt-1 text-xs text-slate-500">{visit.assigned_to || 'Unassigned'}</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="py-8 text-center text-sm text-slate-500">No visits planned yet</div>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {uniquePendingUnplannedVisits.length > 0 && (
+              <section className="rounded-lg border border-amber-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+                      <Clock className="text-amber-700" size={20} />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-950">Pending Unplanned Visits Approval</h2>
+                      <p className="text-sm text-slate-500">Review kunjungan tidak terencana dari team.</p>
+                    </div>
+                  </div>
+                  <span className="w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                    {uniquePendingUnplannedVisits.length} pending
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {uniquePendingUnplannedVisits.map((visit) => (
+                    <div key={visit.id} className="flex flex-col gap-4 rounded-lg border border-amber-100 bg-amber-50 p-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                          <MapPin className="text-amber-700" size={18} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-slate-950">{visit.customer_name}</p>
+                            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Unplanned</span>
                           </div>
-                          <p className="text-sm text-gray-700 mb-1">{visit.customer_company}</p>
-                          <p className="text-sm text-gray-600 mb-2">{visit.visit_purpose}</p>
-                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                            <div>
-                              <span className="font-medium">Sales:</span> {visit.visited_by}
-                            </div>
-                            <div>
-                              <span className="font-medium">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}
-                            </div>
-                            <div>
-                              <span className="font-medium">Outcome:</span> {visit.visit_outcome}
-                            </div>
+                          <p className="text-sm text-slate-700">{visit.customer_company || '-'}</p>
+                          <p className="mt-1 text-sm text-slate-600">{visit.visit_purpose}</p>
+                          <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+                            <div><span className="font-semibold">Sales:</span> {visit.visited_by}</div>
+                            <div><span className="font-semibold">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}</div>
+                            <div><span className="font-semibold">Outcome:</span> {visit.visit_outcome}</div>
                             {visit.deal_amount && (
-                              <div>
-                                <span className="font-medium">Deal:</span> Rp {Number(visit.deal_amount).toLocaleString('id-ID')}
-                              </div>
+                              <div><span className="font-semibold">Deal:</span> Rp {Number(visit.deal_amount).toLocaleString('id-ID')}</div>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex shrink-0 gap-2">
                         <button
                           onClick={() => handleApproveUnplanned(visit.id)}
-                          className="flex items-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                          disabled={processingVisitIds.has(visit.id)}
+                          className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
                         >
                           <CheckCircle size={16} />
-                          Approve
+                          {processingVisitIds.has(visit.id) ? 'Processing...' : 'Approve'}
                         </button>
                         <button
                           onClick={() => handleRejectUnplanned(visit.id)}
-                          className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                          disabled={processingVisitIds.has(visit.id)}
+                          className="inline-flex items-center justify-center gap-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
                         >
                           <XCircle size={16} />
-                          Reject
+                          {processingVisitIds.has(visit.id) ? 'Processing...' : 'Reject'}
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Warnings */}
-            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="text-red-500" size={20} />
-                  <h2 className="text-lg font-semibold text-gray-900">Recent Warnings</h2>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Recent Warnings</h2>
+                    <p className="text-sm text-slate-500">Warning terbaru dari aktivitas sales.</p>
+                  </div>
+                  <button onClick={() => window.location.href = '/warnings'} className="text-sm font-semibold text-red-700 hover:text-red-800">
+                    Lihat Semua
+                  </button>
                 </div>
-                <button 
-                  onClick={() => window.location.href = '/warnings'}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
-                >
-                  Lihat Semua
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {warnings.length > 0 ? warnings.map((warning) => (
-                  <div key={warning.id} className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
-                    <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shrink-0">
-                      <AlertTriangle className="text-white" size={14} />
+
+                <div className="space-y-3">
+                  {uniqueWarnings.length > 0 ? uniqueWarnings.map((warning) => (
+                    <div key={warning.id} className="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 p-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100">
+                        <AlertTriangle className="text-red-700" size={17} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-950">{warning.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{warning.message}</p>
+                        <p className="mt-2 text-xs font-medium text-red-700">{warning.user?.name || 'System'}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{warning.title}</p>
-                      <p className="text-sm text-gray-600 mb-1">{warning.message}</p>
-                      <p className="text-xs text-red-600">{warning.user?.name || 'System'}</p>
-                    </div>
+                  )) : (
+                    <div className="py-8 text-center text-sm text-slate-500">No warnings</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Sales Performance</h2>
+                    <p className="text-sm text-slate-500">Ringkasan performa sales bulan ini.</p>
                   </div>
-                )) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p className="text-sm">No warnings</p>
+                  <button onClick={() => window.location.href = '/visit-reports'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                    Lihat Detail
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-3">
+                    <span className="text-sm text-slate-700">Total Sales Active</span>
+                    <span className="font-semibold text-emerald-700">{stats.total_sales}</span>
                   </div>
-                )}
-              </div>
+                  <div className="flex items-center justify-between rounded-lg bg-blue-50 px-4 py-3">
+                    <span className="text-sm text-slate-700">Visits This Month</span>
+                    <span className="font-semibold text-blue-700">{stats.visits_this_month || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-amber-50 px-4 py-3">
+                    <span className="text-sm text-slate-700">Completion Rate</span>
+                    <span className="font-semibold text-amber-700">{stats.completion_rate || 0}%</span>
+                  </div>
+                </div>
+              </section>
             </div>
 
-            {/* Sales Performance Summary */}
-            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="text-green-600" size={20} />
-                  <h2 className="text-lg font-semibold text-gray-900">Sales Performance</h2>
-                </div>
-                <button 
-                  onClick={() => window.location.href = '/visit-reports'}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                >
-                  Lihat Detail
-                </button>
+            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
+                <p className="text-sm text-slate-500">Akses cepat untuk kerja harian sales manager.</p>
               </div>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <span className="text-gray-700">Total Sales Active</span>
-                  <span className="font-semibold text-green-700">{stats.total_sales}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <span className="text-gray-700">Visits This Month</span>
-                  <span className="font-semibold text-blue-700">{stats.total_plan_visits}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-gray-700">Completion Rate</span>
-                  <span className="font-semibold text-yellow-700">
-                    {stats.total_plan_visits > 0 ? Math.round((stats.completed_visits / stats.total_plan_visits) * 100) : 0}%
-                  </span>
-                </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {quickActions.map(({ label, icon: Icon, path }) => (
+                  <button
+                    key={label}
+                    onClick={() => window.location.href = path}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left transition-colors hover:border-emerald-200 hover:bg-emerald-50"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                      <Icon className="text-emerald-700" size={20} />
+                    </span>
+                    <span className="text-sm font-semibold text-slate-800">{label}</span>
+                  </button>
+                ))}
               </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="mt-8 bg-white rounded-xl shadow-sm border border-green-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button 
-                onClick={() => window.location.href = '/customers'}
-                className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-              >
-                <Users className="text-green-600" size={24} />
-                <span className="text-sm font-medium text-green-700">Manage Customers</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/plan-visits'}
-                className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-              >
-                <Calendar className="text-green-600" size={24} />
-                <span className="text-sm font-medium text-green-700">Plan Visits</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/visit-reports'}
-                className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-              >
-                <TrendingUp className="text-green-600" size={24} />
-                <span className="text-sm font-medium text-green-700">View Reports</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/warnings'}
-                className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-              >
-                <AlertTriangle className="text-green-600" size={24} />
-                <span className="text-sm font-medium text-green-700">Manage Warnings</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   )
 }

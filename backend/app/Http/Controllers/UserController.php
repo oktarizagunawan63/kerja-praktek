@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    private function expectedDivisionForRole(string $role): ?string
+    {
+        return match ($role) {
+            'sales_manager', 'sales' => 'sales',
+            'site_manager', 'engineer' => 'engineering',
+            default => null,
+        };
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -53,6 +62,16 @@ class UserController extends Controller
         }
     }
 
+    public function show(User $user)
+    {
+        return response()->json($this->format($user->loadMissing('approver:id,name')));
+    }
+
+    public function register(Request $request)
+    {
+        return $this->store($request);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -75,26 +94,23 @@ class UserController extends Controller
         
         $normalizedRole = $roleMap[$data['role']] ?? strtolower($data['role']);
 
-        // Validate division-role hierarchy (skip for administrator)
-        if (!in_array($normalizedRole, ['administrator', 'admin'])) {
-            if ($data['division'] === 'sales' && !in_array($normalizedRole, ['sales_manager', 'sales'])) {
-                return response()->json(['message' => 'Divisi Sales hanya bisa memiliki role Sales Manager atau Sales'], 422);
-            }
-            
-            if ($data['division'] === 'engineering' && !in_array($normalizedRole, ['site_manager', 'engineer'])) {
-                return response()->json(['message' => 'Divisi Engineering hanya bisa memiliki role Site Manager atau Engineer'], 422);
-            }
+        $expectedDivision = $this->expectedDivisionForRole($normalizedRole);
+
+        if ($expectedDivision && ($data['division'] ?? null) !== $expectedDivision) {
+            return response()->json(['message' => "Role {$normalizedRole} harus berada di divisi {$expectedDivision}"], 422);
         }
 
         $user = User::create([
             'name'              => $data['name'],
             'email'             => $data['email'],
             'password'          => Hash::make($data['password']),
-            'role'              => $normalizedRole, // Use normalized role
-            'division'          => $data['division'] ?? (in_array($normalizedRole, ['administrator', 'admin']) ? null : 'engineering'),
+            'role'              => $normalizedRole,
+            'division'          => $expectedDivision,
             'is_active'         => true,
-            'status'            => 'approved', // Direct approval for manual creation
-            'assigned_projects' => [], // Empty array for new users
+            'status'            => 'approved',
+            'approved_by'       => request()->user()?->id,
+            'approved_at'       => now(),
+            'assigned_projects' => [],
         ]);
 
         // Send welcome notification
@@ -108,6 +124,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name'      => 'sometimes|string|max:255',
             'role'      => 'sometimes|in:administrator,admin,site_manager,sales_manager,sales,engineer',
+            'division'  => 'sometimes|nullable|in:sales,engineering',
             'is_active' => 'sometimes|boolean',
             'password'  => 'sometimes|string|min:6',
             'assigned_projects' => 'sometimes|array',
@@ -126,10 +143,42 @@ class UserController extends Controller
                 'engineer' => 'engineer'
             ];
             $data['role'] = $roleMap[$data['role']] ?? strtolower($data['role']);
+
+            $expectedDivision = $this->expectedDivisionForRole($data['role']);
+            if ($expectedDivision) {
+                if (array_key_exists('division', $data) && $data['division'] !== $expectedDivision) {
+                    return response()->json(['message' => "Role {$data['role']} harus berada di divisi {$expectedDivision}"], 422);
+                }
+
+                $data['division'] = $expectedDivision;
+            } elseif (array_key_exists('division', $data) && $data['division'] === '') {
+                $data['division'] = null;
+            }
+        } elseif (array_key_exists('division', $data) && $data['division'] === '') {
+            $data['division'] = null;
         }
 
         $user->update($data);
         return response()->json($this->format($user->fresh()));
+    }
+
+    public function approve(Request $request, User $user)
+    {
+        return $this->approveUser($request, $user);
+    }
+
+    public function reject(Request $request, User $user)
+    {
+        if ($request->has('rejection_reason') && !$request->has('reason')) {
+            $request->merge(['reason' => $request->input('rejection_reason')]);
+        }
+
+        return $this->rejectUser($request, $user);
+    }
+
+    public function assignProjects(Request $request, User $user)
+    {
+        return $this->assignProject($request, $user);
     }
 
     public function destroy(User $user)

@@ -103,12 +103,14 @@ export default function RealisasiVisitsPage() {
 
   useEffect(() => {
     // Check if user has permission to access realisasi visits
-    if (!can(user, 'access_visit_management')) {
+    if (!can(user, 'view_visit_relations')) {
       return
     }
     
     fetchData()
-    fetchCustomers()
+    if (can(user, 'create_realisasi_visit')) {
+      fetchCustomers()
+    }
   }, [])
 
   const fetchData = async () => {
@@ -590,7 +592,7 @@ export default function RealisasiVisitsPage() {
   ]
 
   // Check permissions first
-  if (!can(user, 'access_visit_management')) {
+  if (!can(user, 'view_visit_relations')) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -608,27 +610,29 @@ export default function RealisasiVisitsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Realisasi Visit</h1>
           <p className="text-gray-600">Lakukan kunjungan ke customer dengan GPS tracking</p>
         </div>
-        <Button
-          onClick={async () => {
-            try {
-              setLocationLoading(true)
-              toast.loading('Mendapatkan lokasi...', { id: 'unplanned-location' })
-              const location = await getCurrentLocation()
-              setCurrentLocation(location)
-              toast.success('Lokasi berhasil didapatkan', { id: 'unplanned-location' })
-              setShowUnplannedForm(true)
-            } catch (error) {
-              toast.error(error.message, { id: 'unplanned-location' })
-            } finally {
-              setLocationLoading(false)
-            }
-          }}
-          disabled={locationLoading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus size={16} />
-          Tambah Unplanned Visit
-        </Button>
+        {can(user, 'create_realisasi_visit') && (
+          <Button
+            onClick={async () => {
+              try {
+                setLocationLoading(true)
+                toast.loading('Mendapatkan lokasi...', { id: 'unplanned-location' })
+                const location = await getCurrentLocation()
+                setCurrentLocation(location)
+                toast.success('Lokasi berhasil didapatkan', { id: 'unplanned-location' })
+                setShowUnplannedForm(true)
+              } catch (error) {
+                toast.error(error.message, { id: 'unplanned-location' })
+              } finally {
+                setLocationLoading(false)
+              }
+            }}
+            disabled={locationLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus size={16} />
+            Tambah Unplanned Visit
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}

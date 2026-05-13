@@ -69,6 +69,11 @@ class AuthController extends Controller
                 'name'  => $user->name,
                 'email' => $user->email,
                 'role'  => $user->role,
+                'division' => $user->division,
+                'status' => $user->status,
+                'is_active' => (bool) $user->is_active,
+                'approved_at' => $user->approved_at,
+                'created_at' => $user->created_at,
             ],
         ]);
     }

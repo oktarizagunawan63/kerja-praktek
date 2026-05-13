@@ -46,8 +46,9 @@ export default function VisitReportsPage() {
       const allVisits = Array.isArray(visitsResponse.data) ? visitsResponse.data : []
 
       const filteredVisits = allVisits.filter(visit => {
+        const hasLinkedCustomer = Boolean(visit.plan_visit?.customer?.id || visit.direct_customer?.id)
         const visitDate = visit.visit_date || visit.visit_time?.split('T')[0] || visit.created_at?.split('T')[0]
-        return visitDate >= filters.start_date && visitDate <= filters.end_date
+        return hasLinkedCustomer && visitDate >= filters.start_date && visitDate <= filters.end_date
       })
       const finalVisits = filters.sales_id
         ? filteredVisits.filter(v => String(v.visited_by) === String(filters.sales_id))
@@ -116,24 +117,24 @@ export default function VisitReportsPage() {
   const periodData = reportData?.period_data || []
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-50 p-6">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="mb-6 flex items-start justify-between border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Laporan Kunjungan</h1>
-          <p className="text-sm text-gray-500">Laporan dan analisis kunjungan sales</p>
+          <h1 className="mb-1 text-2xl font-bold text-slate-950">Laporan Kunjungan</h1>
+          <p className="text-sm text-slate-500">Laporan dan analisis kunjungan sales</p>
         </div>
         <button
           onClick={handleExportPDF}
           disabled={detailedVisits.length === 0}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          className="rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68] disabled:bg-slate-300"
         >
-          📥 Export PDF
+          Export PDF
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">⚙ Filter Laporan</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -141,7 +142,7 @@ export default function VisitReportsPage() {
             <select
               value={filters.period}
               onChange={e => handleFilterChange('period', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
             >
               <option value="daily">Harian</option>
               <option value="weekly">Mingguan</option>
@@ -152,20 +153,20 @@ export default function VisitReportsPage() {
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Tanggal Mulai</label>
             <input type="date" value={filters.start_date}
               onChange={e => handleFilterChange('start_date', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" />
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Tanggal Akhir</label>
             <input type="date" value={filters.end_date}
               onChange={e => handleFilterChange('end_date', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" />
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15" />
           </div>
           {isSalesManager && (
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Sales</label>
               <select value={filters.sales_id}
                 onChange={e => handleFilterChange('sales_id', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15">
                 <option value="">Semua Sales</option>
                 {salesUsers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -178,7 +179,7 @@ export default function VisitReportsPage() {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+            <div key={i} className="animate-pulse rounded-lg border border-slate-200 bg-white p-5">
               <div className="h-4 bg-gray-100 rounded mb-3 w-3/4"></div>
               <div className="h-8 bg-gray-100 rounded w-1/2"></div>
             </div>
@@ -192,7 +193,7 @@ export default function VisitReportsPage() {
             { label: 'Terlewat', value: summary.missed_visits, sub: 'tidak dilakukan' },
             { label: 'Performance', value: `${summary.performance_rate}%`, sub: 'tingkat keberhasilan' },
           ].map((card, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+              <div key={i} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-medium text-gray-500 mb-3">{card.label}</p>
                 <p className="text-3xl font-bold text-gray-900 mb-1">{card.value}</p>
                 <p className="text-xs text-gray-400">{card.sub}</p>
@@ -204,9 +205,9 @@ export default function VisitReportsPage() {
 
       {/* Period Data Table — FIX: pakai item.date bukan item.period */}
       {periodData.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+        <div className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-800">📊 Data Per Periode</h2>
+            <h2 className="text-sm font-semibold text-slate-800">Data Per Periode</h2>
             <span className="text-xs text-gray-400">{periodData.length} periode</span>
           </div>
           <div className="overflow-x-auto">
@@ -247,9 +248,9 @@ export default function VisitReportsPage() {
       )}
 
       {/* Detail Kunjungan Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+      <div className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-800">📍 Riwayat Kunjungan Detail</h2>
+          <h2 className="text-sm font-semibold text-slate-800">Riwayat Kunjungan Detail</h2>
           <span className="text-xs text-gray-400">{detailedVisits.length} kunjungan</span>
         </div>
         {loading ? (
@@ -287,13 +288,13 @@ export default function VisitReportsPage() {
                       <td className="px-5 py-3.5 text-sm text-gray-600">{salesName}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">{visitDate}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${visit.type === 'unplanned' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${visit.type === 'unplanned' ? 'bg-slate-100 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>
                           {visit.type === 'unplanned' ? 'Unplanned' : 'Planned'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${visit.status === 'done' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                          {visit.status === 'done' ? '✓ Selesai' : '✗ Terlewat'}
+                          {visit.status === 'done' ? 'Selesai' : 'Terlewat'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
@@ -312,9 +313,9 @@ export default function VisitReportsPage() {
 
       {/* Sales Performance (Sales Manager Only) */}
       {isSalesManager && salesPerformance.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-800">👥 Performance Per Sales</h2>
+            <h2 className="text-sm font-semibold text-slate-800">Performance Per Sales</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -332,7 +333,7 @@ export default function VisitReportsPage() {
                     <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f4c81]">
                             <span className="text-white text-xs font-bold">{item.name?.charAt(0)?.toUpperCase()}</span>
                           </div>
                           <div>

@@ -231,7 +231,7 @@ export default function FunnelDetailPage() {
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           {/* Deal Info */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Deal</h2>
             
             <div className="grid grid-cols-2 gap-4">
@@ -268,7 +268,7 @@ export default function FunnelDetailPage() {
           </div>
 
           {/* Customer & Location */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer & Lokasi</h2>
             
             <div className="space-y-3">
@@ -298,7 +298,7 @@ export default function FunnelDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Assigned To */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Ditugaskan Ke</h3>
             <div>
               <p className="font-medium text-gray-900">{funnel.assigned_user?.name}</p>
@@ -307,7 +307,7 @@ export default function FunnelDetailPage() {
           </div>
 
           {/* Created By */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Dibuat Oleh</h3>
             <div>
               <p className="font-medium text-gray-900">{funnel.creator?.name}</p>
@@ -319,7 +319,7 @@ export default function FunnelDetailPage() {
 
           {/* Won/Lost Info */}
           {funnel.status === 'won' && (
-            <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+            <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
               <h3 className="text-sm font-semibold text-green-900 mb-3">
                 ✓ Deal Menang!
               </h3>
@@ -351,7 +351,7 @@ export default function FunnelDetailPage() {
           )}
 
           {funnel.status === 'lost' && (
-            <div className="bg-red-50 rounded-lg p-6 border border-red-200">
+            <div className="bg-red-50 rounded-2xl p-6 border border-red-200">
               <h3 className="text-sm font-semibold text-red-900 mb-3">
                 ✕ Deal Kalah
               </h3>
@@ -388,7 +388,7 @@ export default function FunnelDetailPage() {
       {/* Mark as Won Modal */}
       {showWonModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Mark as Won</h2>
             <form onSubmit={handleMarkAsWon}>
               <div className="space-y-4">
@@ -399,7 +399,7 @@ export default function FunnelDetailPage() {
                   <select
                     value={wonForm.won_reason_category}
                     onChange={(e) => setWonForm(prev => ({ ...prev, won_reason_category: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
                     <option value="">Pilih Alasan</option>
@@ -419,7 +419,7 @@ export default function FunnelDetailPage() {
                   <textarea
                     value={wonForm.won_notes}
                     onChange={(e) => setWonForm(prev => ({ ...prev, won_notes: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     rows={3}
                     placeholder="Jelaskan kenapa menang..."
                   />
@@ -433,7 +433,7 @@ export default function FunnelDetailPage() {
                     type="date"
                     value={wonForm.won_date}
                     onChange={(e) => setWonForm(prev => ({ ...prev, won_date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
@@ -455,7 +455,7 @@ export default function FunnelDetailPage() {
       {/* Mark as Lost Modal */}
       {showLostModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Mark as Lost</h2>
             <form onSubmit={handleMarkAsLost}>
               <div className="space-y-4">
@@ -466,7 +466,7 @@ export default function FunnelDetailPage() {
                   <select
                     value={lostForm.lost_reason_category}
                     onChange={(e) => setLostForm(prev => ({ ...prev, lost_reason_category: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     required
                   >
                     <option value="">Pilih Alasan</option>
@@ -489,7 +489,7 @@ export default function FunnelDetailPage() {
                       type="text"
                       value={lostForm.lost_competitor}
                       onChange={(e) => setLostForm(prev => ({ ...prev, lost_competitor: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                       placeholder="PT Competitor ABC"
                       required
                     />
@@ -503,7 +503,7 @@ export default function FunnelDetailPage() {
                   <textarea
                     value={lostForm.lost_notes}
                     onChange={(e) => setLostForm(prev => ({ ...prev, lost_notes: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     rows={3}
                     placeholder="Jelaskan kenapa kalah..."
                   />
@@ -517,7 +517,7 @@ export default function FunnelDetailPage() {
                     type="date"
                     value={lostForm.lost_date}
                     onChange={(e) => setLostForm(prev => ({ ...prev, lost_date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     required
                   />
                 </div>

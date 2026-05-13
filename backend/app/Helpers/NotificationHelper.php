@@ -177,6 +177,40 @@ class NotificationHelper
     }
 
     /**
+     * Notify administrators about password reset events.
+     */
+    public static function passwordResetActivity($user, string $stage, ?string $ipAddress = null)
+    {
+        $admins = User::where('role', 'administrator')->get();
+        $titles = [
+            'requested' => 'Permintaan Reset Password',
+            'completed' => 'Password Berhasil Direset',
+        ];
+        $messages = [
+            'requested' => "User {$user->name} ({$user->email}) meminta reset password.",
+            'completed' => "User {$user->name} ({$user->email}) berhasil mengganti password.",
+        ];
+
+        foreach ($admins as $admin) {
+            ProjectNotification::create([
+                'user_id' => $admin->id,
+                'type' => 'security',
+                'title' => $titles[$stage] ?? 'Aktivitas Password',
+                'message' => $messages[$stage] ?? "Ada aktivitas password dari {$user->name} ({$user->email}).",
+                'is_read' => false,
+                'metadata' => json_encode([
+                    'subject_user_id' => $user->id,
+                    'subject_name' => $user->name,
+                    'subject_email' => $user->email,
+                    'stage' => $stage,
+                    'ip_address' => $ipAddress,
+                    'happened_at' => now()->toISOString(),
+                ]),
+            ]);
+        }
+    }
+
+    /**
      * Notify when a visit is completed
      */
     public static function visitCompleted($visit, $customer)
