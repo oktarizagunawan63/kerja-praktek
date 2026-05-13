@@ -1173,7 +1173,10 @@ export default function RealisasiVisitsPage() {
             
             <form onSubmit={async (e) => {
               e.preventDefault()
-              
+
+              // ⚑ Guard: prevent double-submit
+              if (submitting) return
+
               if (!currentLocation) {
                 toast.error('Lokasi belum terdeteksi')
                 return
@@ -1220,6 +1223,7 @@ export default function RealisasiVisitsPage() {
               }
               
               try {
+                setSubmitting(true)
                 const submitData = {
                   customer_id: parseInt(unplannedFormData.customer_id),
                   visit_date: unplannedFormData.visit_date,
@@ -1256,6 +1260,8 @@ export default function RealisasiVisitsPage() {
                 
               } catch (error) {
                 toast.error(error.message || 'Gagal menyimpan unplanned visit')
+              } finally {
+                setSubmitting(false)
               }
             }} className="space-y-4">
               {/* Customer Selection */}
@@ -1465,7 +1471,7 @@ export default function RealisasiVisitsPage() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700">
                   <CheckCircle size={16} />
                   Simpan Unplanned Visit
                 </Button>

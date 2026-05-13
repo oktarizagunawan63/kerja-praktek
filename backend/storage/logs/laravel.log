@@ -22,3 +22,99 @@
 [2026-05-13 14:07:32] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (35) and `approval_status` = approved order by `name` asc)  
 [2026-05-13 14:07:34] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (35) and `approval_status` = approved order by `name` asc)  
 [2026-05-13 14:07:34] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city` from `customers` where `id` in (35) and `approval_status` = approved order by `name` asc)  
+[2026-05-13 14:29:32] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:29:32] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:31:02] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:31:02] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:31:08] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:31:08] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 14:40:49] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:02:05] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:02:05] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:53] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:54] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:55] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:56] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:56] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:17:56] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:20:44] local.ERROR: Cannot redeclare App\Http\Controllers\ProjectController::store() {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Http\\Controllers\\ProjectController::store() at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/ProjectController.php:175)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 15:25:56] local.ERROR: syntax error, unexpected token "public", expecting end of file {"exception":"[object] (ParseError(code: 0): syntax error, unexpected token \"public\", expecting end of file at C:/laragon/www/kerjapraktek/backend/app/Http/Controllers/SalesManagerController.php:367)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/composer/ClassLoader.php(427): Composer/Autoload/{closure}('C://laragon//www//...')
+#1 [internal function]: Composer/Autoload/ClassLoader->loadClass('App//Http//Contro...')
+#2 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(1117): is_a('App//Http//Contro...', 'Illuminate//Rout...', true)
+#3 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(1054): Illuminate/Routing/Route->controllerMiddleware()
+#4 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(820): Illuminate/Routing/Route->gatherMiddleware()
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(211): Illuminate/Routing/Router->gatherRouteMiddleware(Object(Illuminate/Routing/Route))
+#6 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(148): Illuminate/Foundation/Console/RouteListCommand->getMiddleware(Object(Illuminate/Routing/Route))
+#7 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(118): Illuminate/Foundation/Console/RouteListCommand->getRouteInformation(Object(Illuminate/Routing/Route))
+#8 [internal function]: Illuminate/Foundation/Console/RouteListCommand->Illuminate/Foundation/Console/{closure}(Object(Illuminate/Routing/Route), 115)
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Collections/Arr.php(609): array_map(Object(Closure), Array, Array)
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Collections/Collection.php(799): Illuminate/Support/Arr::map(Array, Object(Closure))
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(117): Illuminate/Support/Collection->map(Object(Closure))
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(103): Illuminate/Foundation/Console/RouteListCommand->getRoutes()
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate/Foundation/Console/RouteListCommand->handle()
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#16 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#18 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#19 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#20 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#21 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#22 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Foundation/Console/RouteListCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#23 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#24 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#25 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#26 {main}
+"} 
+[2026-05-13 15:38:56] local.INFO: PlanVisit store request data: {"customer_id":"38","assigned_to":13,"tanggal_visit":"2026-05-13","waktu_visit":"15:40","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Follow Up nursecall","catatan":null} 
+[2026-05-13 15:38:56] local.INFO: PlanVisit created successfully: {"id":36} 

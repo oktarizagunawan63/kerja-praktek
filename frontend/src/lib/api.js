@@ -68,7 +68,7 @@ export const api = {
   getProjects: () => request('/projects'),
   createProject: (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) }),
   updateProject: (id, data) => request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteProject: (id) => request(`/projects/${id}`, { method: 'DELETE' }),
+  deleteProject: (id, data = {}) => request(`/projects/${id}`, { method: 'DELETE', body: JSON.stringify(data) }),
   
   // Test endpoint
   test: () => request('/test'),
@@ -197,7 +197,19 @@ export const api = {
     const queryString = new URLSearchParams(params).toString()
     return request(`/documents${queryString ? '?' + queryString : ''}`)
   },
-  uploadDocument: (data) => request('/documents', { method: 'POST', body: JSON.stringify(data) }),
+  uploadDocument: (formData) => {
+    // FormData upload — must NOT set Content-Type (browser sets multipart boundary automatically)
+    const token = getToken()
+    const url = `${API_BASE}/documents`
+    const headers = { 'Accept': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    return fetch(url, { method: 'POST', headers, body: formData })
+      .then(async res => {
+        if (res.status === 401) { localStorage.removeItem('amsar-auth'); window.location.href = '/login'; throw new Error('Session expired') }
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw { message: d.message || `HTTP ${res.status}`, errors: d.errors || {}, status: res.status } }
+        return res.json()
+      })
+  },
   deleteDocument: (id) => request(`/documents/${id}`, { method: 'DELETE' }),
   
   // Materials

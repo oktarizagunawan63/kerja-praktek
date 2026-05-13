@@ -359,7 +359,6 @@ class SalesManagerController extends Controller
             ], 500);
         }
     }
-}
 
     /**
      * Get pending unplanned visits for approval

@@ -12,7 +12,7 @@ class Document extends Model
     // type: daily_report | weekly_report | photo | technical_doc
     protected $fillable = [
         'project_id', 'uploaded_by', 'type',
-        'name', 'file_path', 'file_size', 'mime_type',
+        'name', 'file_path', 'file_url', 'file_size', 'mime_type',
     ];
 
     public function project()

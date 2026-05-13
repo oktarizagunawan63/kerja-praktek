@@ -691,7 +691,7 @@ class SalesFunnelController extends Controller
             // Get customer details
             $customers = \App\Models\Customer::whereIn('id', $allVisitedCustomerIds)
                 ->where('approval_status', 'approved')
-                ->select('id', 'name', 'company', 'phone', 'email', 'address')
+                ->select('id', 'name', 'company', 'phone', 'email', 'address', 'city', 'province')
                 ->orderBy('name')
                 ->get();
             

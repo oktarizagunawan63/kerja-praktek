@@ -50,6 +50,19 @@ class DocumentController extends Controller
         return response()->json($this->format($doc->load(['project:id,name', 'uploader:id,name'])), 201);
     }
 
+    public function show(Document $document)
+    {
+        return response()->json($this->format($document->load(['project:id,name', 'uploader:id,name'])));
+    }
+
+    public function download(Document $document)
+    {
+        if (!Storage::disk('public')->exists($document->file_path)) {
+            return response()->json(['message' => 'File tidak ditemukan'], 404);
+        }
+        return Storage::disk('public')->download($document->file_path, $document->name);
+    }
+
     public function destroy(Request $request, Document $document)
     {
         Storage::disk('public')->delete($document->file_path);

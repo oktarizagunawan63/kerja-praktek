@@ -28,8 +28,9 @@ const useAppStore = create((set, get) => ({
   // Notifications state (default empty to prevent undefined errors)
   notifications: [],
 
-  // Documents state (default empty)
+  // Documents state
   documents: [],
+  documentsLoading: false,
 
   // Fetch projects directly from Laravel
   fetchProjects: async () => {
@@ -173,11 +174,67 @@ const useAppStore = create((set, get) => ({
     }
   },
 
+  // Fetch documents from API
+  fetchDocuments: async (params = {}) => {
+    set({ documentsLoading: true })
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const queryString = new URLSearchParams(params).toString()
+      const response = await fetch(`${API_BASE}/documents${queryString ? '?' + queryString : ''}`, { headers })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      set({ documents: Array.isArray(data) ? data : [], documentsLoading: false })
+    } catch (error) {
+      console.error('Failed to fetch documents:', error)
+      set({ documents: [], documentsLoading: false })
+    }
+  },
+
+  // Upload a document (pass FormData with project_id, type, file)
+  addDoc: async (formData) => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/documents`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      })
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}))
+        throw { message: d.message || `HTTP ${response.status}`, errors: d.errors || {}, status: response.status }
+      }
+      const newDoc = await response.json()
+      set(state => ({ documents: [newDoc, ...state.documents] }))
+      return newDoc
+    } catch (error) {
+      console.error('Failed to upload document:', error)
+      throw error
+    }
+  },
+
+  // Delete a document by ID
+  deleteDoc: async (id) => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/documents/${id}`, { method: 'DELETE', headers })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      set(state => ({ documents: state.documents.filter(d => d.id !== id) }))
+      return true
+    } catch (error) {
+      console.error('Failed to delete document:', error)
+      throw error
+    }
+  },
+
   // Check notifications (placeholder - implement when notification system is ready)
   checkNotifications: async () => {
     try {
-      // TODO: Implement notification checking when backend is ready
-      // For now, just return empty to prevent errors
       set({ notifications: [] })
     } catch (error) {
       console.error('Failed to check notifications:', error)
@@ -235,6 +292,11 @@ const useAppStore = create((set, get) => ({
   // Empty trash
   emptyTrash: () => {
     set({ trash: [] })
+  },
+
+  // Activity log (no-op stub — kept for backwards compat with ProjectsPage)
+  addActivity: (_activity) => {
+    // Activities are logged server-side via ActivityLogger; no local state needed.
   },
 }))
 

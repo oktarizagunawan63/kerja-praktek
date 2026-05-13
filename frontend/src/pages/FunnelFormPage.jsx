@@ -27,10 +27,12 @@ export default function FunnelFormPage() {
     channel: '',
     channel_other: '',
     city: '',
+    province: '',
     segment: '',
     segment_custom: '',
     qty: '',
     unit: 'unit',
+    estimated_value: '',
     deal_stage: 'prospek',
     deadline_date: '',
     target_close_date: '',
@@ -114,6 +116,13 @@ export default function FunnelFormPage() {
     setSelectedCustomer(customer)
     setCustomerSearch(customer.name)
     setShowDropdown(false)
+
+    // Try to match customer city to INDONESIAN_CITIES list
+    const rawCity = customer.city || customer.address || ''
+    const matchedCity = INDONESIAN_CITIES.find(
+      c => c.toLowerCase() === rawCity.toLowerCase()
+    ) || rawCity
+
     setFormData(prev => ({
       ...prev,
       customer_id: customer.id || '',
@@ -121,7 +130,8 @@ export default function FunnelFormPage() {
       customer_company: customer.company || '',
       customer_phone: customer.phone || '',
       customer_email: customer.email || '',
-      city: prev.city || customer.city || '',
+      city: matchedCity || prev.city || '',
+      province: customer.province || prev.province || '',
     }))
     toast.success(`Data ${customer.name} berhasil di-load!`, { duration: 2000 })
   }
@@ -157,7 +167,6 @@ export default function FunnelFormPage() {
     if (!formData.qty || formData.qty <= 0) return toast.error('QTY harus diisi dengan angka positif')
     if (!formData.deadline_date) return toast.error('Deadline date harus diisi')
     if (!formData.target_close_date) return toast.error('Target close date harus diisi')
-    if (!formData.initial_notes.trim() || formData.initial_notes.trim().length < 10) return toast.error('Catatan minimal 10 karakter')
 
     try {
       setLoading(true)
@@ -456,8 +465,8 @@ export default function FunnelFormPage() {
         {/* ===== CATATAN ===== */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Catatan / Deskripsi <span className="text-red-500">*</span>
-            <span className="ml-2 text-xs text-gray-400 font-normal">(minimal 10 karakter)</span>
+            Catatan / Deskripsi
+            <span className="ml-2 text-xs text-gray-400 font-normal">(opsional)</span>
           </label>
           <textarea
             name="initial_notes"
@@ -466,10 +475,10 @@ export default function FunnelFormPage() {
             rows={4}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
             placeholder="Deskripsikan kebutuhan, situasi, atau info penting lainnya..."
-            required
-            minLength={10}
           />
-          <p className="text-xs text-gray-400 mt-1">{formData.initial_notes.length} karakter</p>
+          {formData.initial_notes.length > 0 && (
+            <p className="text-xs text-gray-400 mt-1">{formData.initial_notes.length} karakter</p>
+          )}
         </div>
 
         {/* Submit */}
