@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit, TrendingUp, TrendingDown, Users, MapPin, Package, Award, AlertCircle } from 'lucide-react'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
@@ -56,7 +55,9 @@ export default function FunnelDetailPage() {
       await api.markFunnelAsWon(id, wonForm)
       toast.success('Funnel berhasil ditandai sebagai menang!')
       setShowWonModal(false)
-      navigate('/funnels')
+      
+      // Force refresh stats by navigating with state
+      navigate('/funnels', { state: { refreshStats: true, timestamp: Date.now() } })
     } catch (error) {
       console.error('Error marking as won:', error)
       toast.error('Gagal menandai sebagai menang')
@@ -80,7 +81,9 @@ export default function FunnelDetailPage() {
       await api.markFunnelAsLost(id, lostForm)
       toast.success('Funnel berhasil ditandai sebagai kalah')
       setShowLostModal(false)
-      navigate('/funnels')
+      
+      // Force refresh stats by navigating with state
+      navigate('/funnels', { state: { refreshStats: true, timestamp: Date.now() } })
     } catch (error) {
       console.error('Error marking as lost:', error)
       toast.error('Gagal menandai sebagai kalah')
@@ -89,43 +92,66 @@ export default function FunnelDetailPage() {
 
   const getDealStageBadge = (stage) => {
     const badges = {
-      prospek: { color: 'bg-gray-100 text-gray-700', label: 'Prospek' },
-      qualified: { color: 'bg-blue-100 text-blue-700', label: 'Qualified' },
-      proposal: { color: 'bg-yellow-100 text-yellow-700', label: 'Proposal' },
-      negosiasi: { color: 'bg-orange-100 text-orange-700', label: 'Negosiasi' },
-      closing: { color: 'bg-green-100 text-green-700', label: 'Closing' }
+      prospek: 'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
+      qualified: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+      proposal: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+      negosiasi: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
+      closing: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
     }
-    const badge = badges[stage] || badges.prospek
-    return <span className={`text-xs px-2 py-1 rounded-full font-medium ${badge.color}`}>{badge.label}</span>
+    
+    const labels = {
+      prospek: 'Prospect',
+      qualified: 'Qualified',
+      proposal: 'Proposal',
+      negosiasi: 'Negotiation',
+      closing: 'Closing'
+    }
+    
+    return <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${badges[stage]}`}>{labels[stage]}</span>
   }
 
   const getWinProbabilityBadge = (probability) => {
     const badges = {
-      low: { color: 'bg-red-100 text-red-700', label: 'Low' },
-      middle: { color: 'bg-yellow-100 text-yellow-700', label: 'Middle' },
-      high: { color: 'bg-green-100 text-green-700', label: 'High' },
-      very_high: { color: 'bg-blue-100 text-blue-700', label: 'Very High' }
+      low: 'bg-red-50 text-red-700 ring-1 ring-red-200',
+      middle: 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200',
+      high: 'bg-green-50 text-green-700 ring-1 ring-green-200',
+      very_high: 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200'
     }
-    const badge = badges[probability] || badges.middle
-    return <span className={`text-xs px-2 py-1 rounded-full font-medium ${badge.color}`}>{badge.label}</span>
+    
+    const labels = {
+      low: 'Low',
+      middle: 'Medium',
+      high: 'High',
+      very_high: 'Very High'
+    }
+    
+    return <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${badges[probability]}`}>{labels[probability]}</span>
   }
 
   const getStatusBadge = (status) => {
     const badges = {
-      open: { color: 'bg-blue-100 text-blue-700', label: 'Open' },
-      won: { color: 'bg-green-100 text-green-700', label: 'Menang' },
-      lost: { color: 'bg-red-100 text-red-700', label: 'Kalah' }
+      open: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+      won: 'bg-green-50 text-green-700 ring-1 ring-green-200',
+      lost: 'bg-red-50 text-red-700 ring-1 ring-red-200'
     }
-    const badge = badges[status] || badges.open
-    return <span className={`text-xs px-2 py-1 rounded-full font-medium ${badge.color}`}>{badge.label}</span>
+    
+    const labels = {
+      open: 'Open',
+      won: 'Won',
+      lost: 'Lost'
+    }
+    
+    return <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${badges[status]}`}>{labels[status]}</span>
   }
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading funnel...</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+          <p className="text-gray-600 font-medium">Loading deal...</p>
         </div>
       </div>
     )
@@ -133,14 +159,19 @@ export default function FunnelDetailPage() {
 
   if (!funnel) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertCircle className="text-red-600 mx-auto mb-4" size={48} />
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Funnel Not Found</h2>
-          <p className="text-red-600 mb-4">Funnel yang Anda cari tidak ditemukan</p>
-          <Button onClick={() => navigate('/funnels')} className="bg-red-600 hover:bg-red-700">
-            Kembali ke List
-          </Button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
+            <AlertCircle className="text-red-600" size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Deal Tidak Ditemukan</h2>
+          <p className="text-gray-600 mb-6">Deal yang Anda cari tidak ada</p>
+          <button 
+            onClick={() => navigate('/funnels')} 
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            ← Kembali ke Daftar
+          </button>
         </div>
       </div>
     )
@@ -148,46 +179,60 @@ export default function FunnelDetailPage() {
 
 
   return (
-    <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Button variant="outline" onClick={() => navigate('/funnels')} className="mb-4">
-            <ArrowLeft size={16} />
-            Kembali
-          </Button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{funnel.customer_name}</h1>
-            {getStatusBadge(funnel.status)}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Dark Theme */}
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-700 border-b border-blue-500">
+        <div className="px-6 py-6">
+          <button
+            onClick={() => navigate('/funnels')}
+            className="px-4 py-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-md mb-4 transition-colors font-medium"
+          >
+            ← Kembali ke Daftar
+          </button>
+          
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-white">{funnel.customer_name}</h1>
+                {getStatusBadge(funnel.status)}
+              </div>
+              <p className="text-blue-100 text-lg">{funnel.customer_company}</p>
+            </div>
+            
+            {funnel.status === 'open' && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/funnels/${id}/edit`)}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors font-medium"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setShowWonModal(true)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  ✓ Menang
+                </button>
+                <button
+                  onClick={() => setShowLostModal(true)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  ✕ Kalah
+                </button>
+              </div>
+            )}
           </div>
-          <p className="text-gray-600">{funnel.customer_company}</p>
-        </div>
-        <div className="flex gap-2">
-          {funnel.status === 'open' && (
-            <>
-              <Button variant="outline" onClick={() => navigate(`/funnels/${id}/edit`)}>
-                <Edit size={16} />
-                Edit
-              </Button>
-              <Button onClick={() => setShowWonModal(true)} className="bg-green-600 hover:bg-green-700">
-                <TrendingUp size={16} />
-                Menang
-              </Button>
-              <Button onClick={() => setShowLostModal(true)} className="bg-red-600 hover:bg-red-700">
-                <TrendingDown size={16} />
-                Kalah
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content */}
+      <div className="px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           {/* Deal Info */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Deal Information</h2>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Informasi Deal</h2>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -223,37 +268,28 @@ export default function FunnelDetailPage() {
           </div>
 
           {/* Customer & Location */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer & Location</h2>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer & Lokasi</h2>
             
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <Users className="text-gray-400 mt-0.5" size={18} />
-                <div>
-                  <p className="text-sm text-gray-600">Contact</p>
-                  <p className="text-sm font-medium text-gray-900">{funnel.customer_phone || '-'}</p>
-                  <p className="text-sm text-gray-700">{funnel.customer_email || '-'}</p>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Kontak</p>
+                <p className="text-sm font-medium text-gray-900">{funnel.customer_phone || '-'}</p>
+                <p className="text-sm text-gray-700">{funnel.customer_email || '-'}</p>
               </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="text-gray-400 mt-0.5" size={18} />
-                <div>
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p className="text-sm font-medium text-gray-900">{funnel.city}</p>
-                  {funnel.province && <p className="text-sm text-gray-700">{funnel.province}</p>}
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Lokasi</p>
+                <p className="text-sm font-medium text-gray-900">{funnel.city}</p>
+                {funnel.province && <p className="text-sm text-gray-700">{funnel.province}</p>}
               </div>
-              <div className="flex items-start gap-3">
-                <Package className="text-gray-400 mt-0.5" size={18} />
-                <div>
-                  <p className="text-sm text-gray-600">Channel & Segment</p>
-                  <p className="text-sm font-medium text-gray-900 capitalize">
-                    {funnel.channel === 'lainnya' ? funnel.channel_other : funnel.channel.replace('_', ' ')}
-                  </p>
-                  <p className="text-sm text-gray-700 uppercase">
-                    {funnel.segment === 'umum' ? funnel.segment_custom : funnel.segment}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Channel & Segment</p>
+                <p className="text-sm font-medium text-gray-900 capitalize">
+                  {funnel.channel === 'lainnya' ? funnel.channel_other : funnel.channel.replace('_', ' ')}
+                </p>
+                <p className="text-sm text-gray-700 uppercase">
+                  {funnel.segment === 'umum' ? funnel.segment_custom : funnel.segment}
+                </p>
               </div>
             </div>
           </div>
@@ -262,41 +298,30 @@ export default function FunnelDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Assigned To */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Assigned To</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <Users className="text-red-600" size={18} />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{funnel.assigned_user?.name}</p>
-                <p className="text-xs text-gray-500">Sales</p>
-              </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Ditugaskan Ke</h3>
+            <div>
+              <p className="font-medium text-gray-900">{funnel.assigned_user?.name}</p>
+              <p className="text-xs text-gray-500">Sales</p>
             </div>
           </div>
 
           {/* Created By */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Created By</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="text-blue-600" size={18} />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{funnel.creator?.name}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(funnel.created_at).toLocaleDateString('id-ID')}
-                </p>
-              </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Dibuat Oleh</h3>
+            <div>
+              <p className="font-medium text-gray-900">{funnel.creator?.name}</p>
+              <p className="text-xs text-gray-500">
+                {new Date(funnel.created_at).toLocaleDateString('id-ID')}
+              </p>
             </div>
           </div>
 
           {/* Won/Lost Info */}
           {funnel.status === 'won' && (
-            <div className="bg-green-50 rounded-xl p-6 border border-green-200">
-              <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
-                <Award size={16} />
-                Deal Won!
+            <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+              <h3 className="text-sm font-semibold text-green-900 mb-3">
+                ✓ Deal Menang!
               </h3>
               <div className="space-y-2">
                 <div>
@@ -326,10 +351,9 @@ export default function FunnelDetailPage() {
           )}
 
           {funnel.status === 'lost' && (
-            <div className="bg-red-50 rounded-xl p-6 border border-red-200">
-              <h3 className="text-sm font-semibold text-red-900 mb-3 flex items-center gap-2">
-                <AlertCircle size={16} />
-                Deal Lost
+            <div className="bg-red-50 rounded-lg p-6 border border-red-200">
+              <h3 className="text-sm font-semibold text-red-900 mb-3">
+                ✕ Deal Kalah
               </h3>
               <div className="space-y-2">
                 <div>
@@ -359,11 +383,12 @@ export default function FunnelDetailPage() {
           )}
         </div>
       </div>
+      </div>
 
       {/* Mark as Won Modal */}
       {showWonModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Mark as Won</h2>
             <form onSubmit={handleMarkAsWon}>
               <div className="space-y-4">
@@ -430,7 +455,7 @@ export default function FunnelDetailPage() {
       {/* Mark as Lost Modal */}
       {showLostModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Mark as Lost</h2>
             <form onSubmit={handleMarkAsLost}>
               <div className="space-y-4">

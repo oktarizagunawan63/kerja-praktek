@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, Calendar, Users, TrendingUp, Download, Filter, CheckCircle, XCircle, Clock, MapPin, Award } from 'lucide-react'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
@@ -117,36 +116,25 @@ export default function VisitReportsPage() {
   const periodData = reportData?.period_data || []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-sm">
-              <BarChart3 className="text-white" size={20} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Visit Reports</h1>
-              <p className="text-sm text-gray-500">Laporan dan analisis kunjungan sales</p>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Laporan Kunjungan</h1>
+          <p className="text-sm text-gray-500">Laporan dan analisis kunjungan sales</p>
         </div>
         <button
           onClick={handleExportPDF}
           disabled={detailedVisits.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-xl shadow-sm transition-colors"
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
         >
-          <Download size={16} />
-          Export PDF
+          📥 Export PDF
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter size={16} className="text-blue-600" />
-          <h2 className="text-sm font-semibold text-gray-700">Filter Laporan</h2>
-        </div>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">⚙ Filter Laporan</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Periode</label>
@@ -190,7 +178,7 @@ export default function VisitReportsPage() {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
               <div className="h-4 bg-gray-100 rounded mb-3 w-3/4"></div>
               <div className="h-8 bg-gray-100 rounded w-1/2"></div>
             </div>
@@ -199,42 +187,27 @@ export default function VisitReportsPage() {
       ) : summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Total Kunjungan', value: summary.total_visits, icon: Calendar, color: 'blue', sub: 'dalam periode ini' },
-            { label: 'Selesai', value: summary.completed_visits, icon: CheckCircle, color: 'emerald', sub: 'kunjungan berhasil' },
-            { label: 'Terlewat', value: summary.missed_visits, icon: XCircle, color: 'red', sub: 'tidak dilakukan' },
-            { label: 'Performance', value: `${summary.performance_rate}%`, icon: Award, color: 'purple', sub: 'tingkat keberhasilan' },
-          ].map((card, i) => {
-            const Icon = card.icon
-            const colors = {
-              blue: 'from-blue-500 to-blue-600 bg-blue-50 text-blue-600',
-              emerald: 'from-emerald-500 to-emerald-600 bg-emerald-50 text-emerald-600',
-              red: 'from-red-500 to-red-600 bg-red-50 text-red-600',
-              purple: 'from-purple-500 to-purple-600 bg-purple-50 text-purple-600',
-            }
-            const [grad, bgLight, textColor] = colors[card.color].split(' ')
-            return (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-xs font-medium text-gray-500">{card.label}</p>
-                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} ${bgLight} flex items-center justify-center`}>
-                    <Icon size={16} className={textColor} />
-                  </div>
-                </div>
+            { label: 'Total Kunjungan', value: summary.total_visits, sub: 'dalam periode ini' },
+            { label: 'Selesai', value: summary.completed_visits, sub: 'kunjungan berhasil' },
+            { label: 'Terlewat', value: summary.missed_visits, sub: 'tidak dilakukan' },
+            { label: 'Performance', value: `${summary.performance_rate}%`, sub: 'tingkat keberhasilan' },
+          ].map((card, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <p className="text-xs font-medium text-gray-500 mb-3">{card.label}</p>
                 <p className="text-3xl font-bold text-gray-900 mb-1">{card.value}</p>
                 <p className="text-xs text-gray-400">{card.sub}</p>
               </div>
             )
-          })}
+          )}
         </div>
       )}
 
       {/* Period Data Table — FIX: pakai item.date bukan item.period */}
       {periodData.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-hidden">
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50">
-            <BarChart3 size={16} className="text-blue-600" />
-            <h2 className="text-sm font-semibold text-gray-800">Data Per Periode</h2>
-            <span className="ml-auto text-xs text-gray-400">{periodData.length} periode</span>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-800">📊 Data Per Periode</h2>
+            <span className="text-xs text-gray-400">{periodData.length} periode</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -274,24 +247,19 @@ export default function VisitReportsPage() {
       )}
 
       {/* Detail Kunjungan Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-hidden">
-        <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50">
-          <MapPin size={16} className="text-blue-600" />
-          <h2 className="text-sm font-semibold text-gray-800">Riwayat Kunjungan Detail</h2>
-          <span className="ml-auto text-xs text-gray-400">{detailedVisits.length} kunjungan</span>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-800">📍 Riwayat Kunjungan Detail</h2>
+          <span className="text-xs text-gray-400">{detailedVisits.length} kunjungan</span>
         </div>
         {loading ? (
           <div className="p-8 text-center text-gray-400">
-            <Clock size={32} className="mx-auto mb-3 animate-spin opacity-30" />
             <p className="text-sm">Memuat data...</p>
           </div>
         ) : detailedVisits.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BarChart3 size={28} className="text-gray-300" />
-            </div>
-            <p className="text-sm font-medium text-gray-500">Tidak ada data kunjungan</p>
-            <p className="text-xs text-gray-400 mt-1">Coba ubah filter tanggal atau pilih periode lain</p>
+            <p className="text-sm font-medium text-gray-500 mb-1">Tidak ada data kunjungan</p>
+            <p className="text-xs text-gray-400">Coba ubah filter tanggal atau pilih periode lain</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -344,10 +312,9 @@ export default function VisitReportsPage() {
 
       {/* Sales Performance (Sales Manager Only) */}
       {isSalesManager && salesPerformance.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-50">
-            <Users size={16} className="text-emerald-600" />
-            <h2 className="text-sm font-semibold text-gray-800">Performance Per Sales</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-800">👥 Performance Per Sales</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

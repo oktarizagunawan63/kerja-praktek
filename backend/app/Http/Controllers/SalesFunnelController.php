@@ -234,6 +234,11 @@ class SalesFunnelController extends Controller
                 $data['estimated_value'] = 0;
             }
 
+            // Default initial_notes to empty string if not provided (field removed from UI)
+            if (!isset($data['initial_notes']) || empty($data['initial_notes'])) {
+                $data['initial_notes'] = '';
+            }
+
             // Auto-assign
             if (!isset($data['assigned_to'])) {
                 $data['assigned_to'] = $user->id;
