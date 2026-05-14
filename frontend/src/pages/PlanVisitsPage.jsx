@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock } from 'lucide-react'
+import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
@@ -309,7 +309,7 @@ export default function PlanVisitsPage() {
         
         if (todayVisits.length > 0) {
           return (
-            <div className="card-compact" style={{ background: '#f0f9ff', borderLeft: '4px solid #0ea5e9' }}>
+            <div className="card-compact" style={{ background: '#f3faf1', borderLeft: '4px solid #de168c' }}>
               <h3 className="text-responsive-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
                 <Clock size={20} />
                 Visit Hari Ini
@@ -331,7 +331,7 @@ export default function PlanVisitsPage() {
                         className="btn-responsive primary"
                         style={{ fontSize: '12px', padding: '6px 12px' }}
                       >
-                        → <span className="mobile-hidden">Ke Realisasi</span>
+                        â†’ <span className="mobile-hidden">Ke Realisasi</span>
                       </button>
                     </div>
                   </div>
@@ -339,7 +339,7 @@ export default function PlanVisitsPage() {
               </div>
               <div className="mt-3 p-3 bg-blue-100 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  💡 Untuk menyelesaikan visit, buka halaman <strong>Realisasi Visit</strong> → Tab <strong>Pending Visits</strong> → Klik <strong>Mulai Visit</strong>
+                  ðŸ’¡ Untuk menyelesaikan visit, buka halaman <strong>Realisasi Visit</strong> â†’ Tab <strong>Pending Visits</strong> â†’ Klik <strong>Mulai Visit</strong>
                 </p>
               </div>
             </div>
@@ -462,7 +462,7 @@ export default function PlanVisitsPage() {
                 {(visit.customer?.latitude || visit.customer?.longitude) && (
                   <div className="flex items-center gap-2">
                     <span className="text-responsive-xs text-gray-500 font-mono">
-                      📍 {visit.customer?.latitude}, {visit.customer?.longitude}
+                      ðŸ“ {visit.customer?.latitude}, {visit.customer?.longitude}
                     </span>
                   </div>
                 )}
@@ -537,7 +537,7 @@ export default function PlanVisitsPage() {
                 disabled={submitting}
                 className="text-gray-400 hover:text-gray-600 p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
             
@@ -682,7 +682,7 @@ export default function PlanVisitsPage() {
                 }}
                 className="text-gray-400 hover:text-gray-600 p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
             
@@ -753,7 +753,7 @@ export default function PlanVisitsPage() {
                   {(detailVisit.customer?.latitude && detailVisit.customer?.longitude) && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500 font-mono ml-6">
-                        📍 GPS: {detailVisit.customer.latitude}, {detailVisit.customer.longitude}
+                        ðŸ“ GPS: {detailVisit.customer.latitude}, {detailVisit.customer.longitude}
                       </span>
                     </div>
                   )}
@@ -815,7 +815,7 @@ export default function PlanVisitsPage() {
                     }}
                     className="btn-responsive primary flex-1"
                   >
-                    → Ke Realisasi Visit
+                    â†’ Ke Realisasi Visit
                   </button>
                 )}
                 <button
@@ -835,3 +835,5 @@ export default function PlanVisitsPage() {
     </div>
   )
 }
+
+

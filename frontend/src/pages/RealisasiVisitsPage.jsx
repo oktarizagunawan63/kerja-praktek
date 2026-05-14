@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X } from 'lucide-react'
+import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
@@ -336,7 +336,7 @@ export default function RealisasiVisitsPage() {
     if (!reason) return
     
     try {
-      await api.rejectUnplannedVisit(visitId, { rejection_reason: reason })
+      await api.rejectUnplannedVisit(visitId, reason)
       toast.success('Unplanned visit berhasil direject')
       fetchData()
     } catch (error) {
@@ -1178,7 +1178,7 @@ export default function RealisasiVisitsPage() {
             <form onSubmit={async (e) => {
               e.preventDefault()
 
-              // ⚑ Guard: prevent double-submit
+              // âš‘ Guard: prevent double-submit
               if (submitting) return
 
               if (!currentLocation) {

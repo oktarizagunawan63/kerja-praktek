@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@icons': fileURLToPath(new URL('./src/lib/icons.jsx', import.meta.url)),
+    },
+  },
   server: {
     port: 5173,
     host: true,
@@ -35,7 +41,7 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'chart-vendor': ['recharts'],
-          'ui-vendor': ['lucide-react', 'react-hot-toast'],
+          'ui-vendor': ['react-icons', 'react-hot-toast'],
         }
       }
     },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Key, Clock, AlertCircle, CheckCircle, Eye, EyeOff, Mail } from 'lucide-react'
+import { ArrowLeft, Key, Clock, AlertCircle, CheckCircle, Eye, EyeOff, Mail } from '@icons'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import Input from '../components/ui/Input'
@@ -304,7 +304,7 @@ export default function ResetPasswordPage() {
           <p className={`text-xs mt-1 ${
             password === passwordConfirmation ? 'text-green-600' : 'text-red-600'
           }`}>
-            {password === passwordConfirmation ? '✓ Password cocok' : '✗ Password tidak cocok'}
+            {password === passwordConfirmation ? 'âœ“ Password cocok' : 'âœ— Password tidak cocok'}
           </p>
         )}
       </div>
@@ -336,9 +336,9 @@ export default function ResetPasswordPage() {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <p className="text-sm text-green-700">
           <strong>Keamanan Akun:</strong><br />
-          • Semua sesi login sebelumnya telah dihapus<br />
-          • Gunakan password baru untuk login<br />
-          • Jaga kerahasiaan password Anda
+          â€¢ Semua sesi login sebelumnya telah dihapus<br />
+          â€¢ Gunakan password baru untuk login<br />
+          â€¢ Jaga kerahasiaan password Anda
         </p>
       </div>
 
@@ -377,7 +377,7 @@ export default function ResetPasswordPage() {
                       [STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? 'bg-green-600 text-white' :
                       'bg-gray-200 text-gray-600'
                     }`}>
-                      {[STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? '✓' : index + 1}
+                      {[STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? 'âœ“' : index + 1}
                     </div>
                     {index < 1 && (
                       <div className={`w-8 h-0.5 ${
@@ -399,7 +399,7 @@ export default function ResetPasswordPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            © 2026 PT Amsar Prima Mandiri
+            Â© 2026 PT Amsar Prima Mandiri
           </p>
         </div>
       </div>

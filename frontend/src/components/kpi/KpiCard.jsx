@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus } from '@icons'
 
 /**
  * KpiCard - reusable KPI metric card

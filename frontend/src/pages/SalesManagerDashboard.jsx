@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Users, Calendar, CheckSquare, TrendingUp, AlertTriangle, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { Users, Calendar, CheckSquare, TrendingUp, AlertTriangle, MapPin, Clock, CheckCircle, XCircle } from '@icons'
 import useAuthStore from '../store/authStore'
 import { api } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -126,7 +126,7 @@ export default function SalesManagerDashboard() {
 
     try {
       setProcessingVisitIds(prev => new Set(prev).add(visitId))
-      await api.rejectUnplannedVisit(visitId, { rejection_reason: reason })
+      await api.rejectUnplannedVisit(visitId, reason)
       toast.success('Unplanned visit rejected')
       await loadDashboardData({ silent: true })
     } catch (error) {

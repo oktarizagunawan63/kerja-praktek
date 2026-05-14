@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+const COLORS = ['#237043', '#5a9844', '#8ac04a', '#de168c', '#b7cdc0']
 
 const MOCK_DATA = [
   { name: 'Dokter', value: 12 },
@@ -36,3 +36,4 @@ export default function ManpowerChart({ data = MOCK_DATA }) {
     </div>
   )
 }
+

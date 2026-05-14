@@ -1,4 +1,4 @@
-import { CheckCircle, FolderPlus, AlertTriangle, Info } from 'lucide-react'
+import { CheckCircle, FolderPlus, AlertTriangle, Info } from '@icons'
 
 /**
  * Custom toast components for project-related notifications

@@ -127,7 +127,7 @@ export default function VisitReportsPage() {
         <button
           onClick={handleExportPDF}
           disabled={detailedVisits.length === 0}
-          className="rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68] disabled:bg-slate-300"
+          className="rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844] disabled:bg-slate-300"
         >
           Export PDF
         </button>
@@ -142,7 +142,7 @@ export default function VisitReportsPage() {
             <select
               value={filters.period}
               onChange={e => handleFilterChange('period', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
             >
               <option value="daily">Harian</option>
               <option value="weekly">Mingguan</option>
@@ -153,20 +153,20 @@ export default function VisitReportsPage() {
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Tanggal Mulai</label>
             <input type="date" value={filters.start_date}
               onChange={e => handleFilterChange('start_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15" />
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Tanggal Akhir</label>
             <input type="date" value={filters.end_date}
               onChange={e => handleFilterChange('end_date', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15" />
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15" />
           </div>
           {isSalesManager && (
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Sales</label>
               <select value={filters.sales_id}
                 onChange={e => handleFilterChange('sales_id', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15">
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15">
                 <option value="">Semua Sales</option>
                 {salesUsers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -333,7 +333,7 @@ export default function VisitReportsPage() {
                     <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f4c81]">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#237043]">
                             <span className="text-white text-xs font-bold">{item.name?.charAt(0)?.toUpperCase()}</span>
                           </div>
                           <div>
@@ -364,3 +364,4 @@ export default function VisitReportsPage() {
     </div>
   )
 }
+

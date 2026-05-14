@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X } from '@icons'
 import { useEffect } from 'react'
 
 export default function Modal({ open, onClose, title, children, size = 'md' }) {

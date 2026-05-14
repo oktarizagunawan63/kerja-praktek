@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, Users,
   MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp, ClipboardCheck
-} from 'lucide-react'
+} from '@icons'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
 import { getRoleDisplayName, normalizeRole } from '../../utils/roleUtils'
@@ -151,7 +151,7 @@ function AmsarLogo({ size = 40 }) {
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onClose, onNavigate }) {
   const { user } = useAuthStore()
   const { notifications } = useAppStore()
   
@@ -167,7 +167,12 @@ export default function Sidebar() {
   }, [user?.role, notifications])
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col bg-[#123f63]" data-tour="sidebar">
+    <>
+      <div
+        className={`fixed inset-0 z-40 bg-slate-950/40 transition-opacity duration-200 lg:hidden ${mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        onClick={onClose}
+      />
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[272px] max-w-[86vw] shrink-0 flex-col bg-[#237043] shadow-xl transition-transform duration-200 lg:pointer-events-auto lg:static lg:z-auto lg:h-full lg:w-64 lg:max-w-none lg:translate-x-0 lg:shadow-none ${mobileOpen ? 'pointer-events-auto translate-x-0' : 'pointer-events-none -translate-x-full'}`} data-tour="sidebar">
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-white/10 px-6 py-5">
         <AmsarLogo size={38} />
@@ -195,6 +200,7 @@ export default function Sidebar() {
               <NavLink
                 key={to}
                 to={to}
+                onClick={onNavigate}
                 data-tour={tourId}
                 className={({ isActive }) =>
                   clsx(
@@ -233,5 +239,7 @@ export default function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   )
 }
+

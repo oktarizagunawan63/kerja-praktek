@@ -1,6 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+const getAuthToken = () => {
+  try {
+    const authData = localStorage.getItem('amsar-auth')
+    if (!authData) return null
+    const parsed = JSON.parse(authData)
+    return parsed?.state?.token || null
+  } catch (error) {
+    console.error('UserStore: Failed to parse auth token', error)
+    return null
+  }
+}
+
 /**
  * User management store
  * Administrator bisa buat akun sales_manager dan engineer
@@ -55,7 +67,7 @@ const useUserStore = create(
       // Fetch users from backend API
       fetchUsers: async () => {
         try {
-          const token = localStorage.getItem('token');
+          const token = getAuthToken();
           if (!token) {
             console.warn('UserStore: No token found, cannot fetch users');
             return [];

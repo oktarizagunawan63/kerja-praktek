@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Camera, MapPin, ArrowLeft, DollarSign } from 'lucide-react'
+import { Camera, MapPin, ArrowLeft, DollarSign } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'

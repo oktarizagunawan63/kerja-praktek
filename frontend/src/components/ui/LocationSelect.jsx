@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, MapPin, ChevronDown, X, Loader2 } from 'lucide-react'
+import { Search, MapPin, ChevronDown, X, Loader2 } from '@icons'
 import { api } from '../../lib/api'
 import { useAsync } from '../../hooks/useAsync'
 import clsx from 'clsx'
@@ -101,7 +101,7 @@ export default function LocationSelect({
         disabled={disabled}
         className={clsx(
           'w-full px-3 py-2 text-sm border rounded-lg transition-colors text-left flex items-center justify-between',
-          'focus:outline-none focus:ring-2 focus:ring-[#0f4c81] focus:border-transparent',
+          'focus:outline-none focus:ring-2 focus:ring-[#237043] focus:border-transparent',
           'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
           error 
             ? 'border-red-300 focus:ring-red-500' 
@@ -160,7 +160,7 @@ export default function LocationSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari kota/kabupaten..."
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f4c81]"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#237043]"
               />
             </div>
 
@@ -168,7 +168,7 @@ export default function LocationSelect({
             <select
               value={selectedProvince}
               onChange={(e) => setSelectedProvince(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f4c81]"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#237043]"
             >
               <option value="">Semua Provinsi</option>
               {provinces.map(province => (

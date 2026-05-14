@@ -2,7 +2,7 @@
 
 .plan-visits-container {
   min-height: 100vh;
-  background: #f8fafc;
+  background: #f3faf1;
   padding: 24px;
 }
 
@@ -17,19 +17,19 @@
 .plan-visits-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1e293b;
+  color: #237043;
   margin: 0 0 8px 0;
 }
 
 .plan-visits-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: #5a9844;
   margin: 0;
 }
 
 /* Quick Actions */
 .quick-actions-container {
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  background: linear-gradient(135deg, #5a9844 0%, #237043 100%);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
@@ -75,7 +75,7 @@
 
 .btn-quick-complete {
   background: white;
-  color: #16a34a;
+  color: #5a9844;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -87,7 +87,7 @@
 }
 
 .btn-quick-complete:hover {
-  background: #f8fafc;
+  background: #f3faf1;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -112,7 +112,7 @@
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: #5a9844;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -120,12 +120,12 @@
 }
 
 .filter-tab:hover {
-  background: #f1f5f9;
-  color: #374151;
+  background: #b7cdc0;
+  color: #237043;
 }
 
 .filter-tab.active {
-  background: #2563eb;
+  background: #237043;
   color: white;
 }
 
@@ -146,16 +146,16 @@
 .search-input {
   width: 100%;
   padding: 12px 16px 12px 40px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #b7cdc0;
   border-radius: 8px;
   font-size: 14px;
-  background: #f8fafc;
+  background: #f3faf1;
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #237043;
   background: white;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
@@ -165,7 +165,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: #a4ca9a;
 }
 
 /* Plan Visit Cards */
@@ -181,7 +181,7 @@
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #b7cdc0;
 }
 
 .plan-visit-card:hover {
@@ -204,14 +204,14 @@
 .customer-name {
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: #237043;
   margin: 0 0 4px 0;
   line-height: 1.3;
 }
 
 .customer-company {
   font-size: 13px;
-  color: #64748b;
+  color: #5a9844;
   margin: 0;
 }
 
@@ -225,28 +225,28 @@
 }
 
 .status-scheduled {
-  background: #eff6ff;
-  color: #2563eb;
+  background: #f3faf1;
+  color: #237043;
 }
 
 .status-berjalan {
-  background: #fff7ed;
-  color: #ea580c;
+  background: #f3faf1;
+  color: #8ac04a;
 }
 
 .status-selesai {
-  background: #dcfce7;
-  color: #16a34a;
+  background: #f3faf1;
+  color: #5a9844;
 }
 
 .status-dibatalkan {
-  background: #fef2f2;
-  color: #dc2626;
+  background: #f399cc;
+  color: #d54496;
 }
 
 /* Card Divider */
 .card-divider {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #b7cdc0;
   margin: 12px 0;
 }
 
@@ -263,11 +263,11 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #374151;
+  color: #237043;
 }
 
 .detail-icon {
-  color: #94a3b8;
+  color: #a4ca9a;
   flex-shrink: 0;
 }
 
@@ -278,7 +278,7 @@
 
 /* Purpose Section */
 .purpose-section {
-  background: #f8fafc;
+  background: #f3faf1;
   padding: 8px 12px;
   border-radius: 6px;
   margin-bottom: 16px;
@@ -286,14 +286,14 @@
 
 .purpose-label {
   font-weight: 500;
-  color: #374151;
+  color: #237043;
   font-size: 12px;
   margin-bottom: 2px;
 }
 
 .purpose-text {
   font-size: 13px;
-  color: #64748b;
+  color: #5a9844;
   line-height: 1.4;
   margin: 0;
 }
@@ -304,7 +304,7 @@
   gap: 8px;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #b7cdc0;
 }
 
 .btn-action {
@@ -323,47 +323,47 @@
 .btn-detail {
   flex: 1;
   background: white;
-  color: #374151;
-  border: 1px solid #e2e8f0;
+  color: #237043;
+  border: 1px solid #b7cdc0;
 }
 
 .btn-detail:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: #f3faf1;
+  border-color: #a4ca9a;
 }
 
 .btn-complete {
   flex: 1;
-  background: #16a34a;
+  background: #5a9844;
   color: white;
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
 }
 
 .btn-complete:hover {
-  background: #15803d;
+  background: #237043;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(22, 163, 74, 0.3);
 }
 
 .btn-edit {
   flex: 1;
-  background: #2563eb;
+  background: #237043;
   color: white;
 }
 
 .btn-edit:hover {
-  background: #1d4ed8;
+  background: #5a9844;
 }
 
 .btn-delete {
-  background: #dc2626;
+  background: #d54496;
   color: white;
   padding: 8px 12px;
 }
 
 .btn-delete:hover {
-  background: #b91c1c;
+  background: #de168c;
 }
 
 /* Empty State */
@@ -376,20 +376,20 @@
 }
 
 .empty-icon {
-  color: #cbd5e1;
+  color: #a4ca9a;
   margin-bottom: 16px;
 }
 
 .empty-title {
   font-size: 18px;
   font-weight: 600;
-  color: #374151;
+  color: #237043;
   margin: 0 0 8px 0;
 }
 
 .empty-description {
   font-size: 14px;
-  color: #64748b;
+  color: #5a9844;
   margin: 0 0 24px 0;
 }
 
@@ -419,19 +419,19 @@
 
 .modal-header {
   padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #b7cdc0;
   margin-bottom: 24px;
 }
 
 .modal-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: #237043;
   margin: 0 0 16px 0;
 }
 
 .modal-customer-info {
-  background: #f8fafc;
+  background: #f3faf1;
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -439,19 +439,19 @@
 
 .modal-customer-name {
   font-weight: 600;
-  color: #374151;
+  color: #237043;
   margin: 0 0 4px 0;
 }
 
 .modal-customer-company {
   font-size: 13px;
-  color: #64748b;
+  color: #5a9844;
   margin: 0;
 }
 
 .modal-info-notice {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: #f3faf1;
+  border: 1px solid #b7cdc0;
   border-radius: 6px;
   padding: 12px;
   margin-top: 12px;
@@ -459,7 +459,7 @@
 
 .modal-info-notice p {
   font-size: 13px;
-  color: #1e40af;
+  color: #5a9844;
   margin: 0;
   line-height: 1.4;
 }
@@ -476,14 +476,14 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: #237043;
   margin-bottom: 6px;
 }
 
 .form-textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #b7cdc0;
   border-radius: 8px;
   font-size: 14px;
   resize: vertical;
@@ -492,12 +492,12 @@
 
 .form-textarea:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #237043;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .photo-upload {
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed #b7cdc0;
   border-radius: 8px;
   padding: 20px;
   text-align: center;
@@ -506,13 +506,13 @@
 }
 
 .photo-upload:hover {
-  border-color: #2563eb;
-  background: #f8fafc;
+  border-color: #237043;
+  background: #f3faf1;
 }
 
 .photo-upload-text {
   font-size: 14px;
-  color: #64748b;
+  color: #5a9844;
   margin: 8px 0 0 0;
 }
 
@@ -520,7 +520,7 @@
   display: flex;
   gap: 12px;
   padding-top: 20px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #b7cdc0;
 }
 
 .btn-modal {
@@ -535,22 +535,22 @@
 }
 
 .btn-modal-primary {
-  background: #16a34a;
+  background: #5a9844;
   color: white;
 }
 
 .btn-modal-primary:hover {
-  background: #15803d;
+  background: #237043;
 }
 
 .btn-modal-secondary {
-  background: #f8fafc;
-  color: #374151;
-  border: 1px solid #e2e8f0;
+  background: #f3faf1;
+  color: #237043;
+  border: 1px solid #b7cdc0;
 }
 
 .btn-modal-secondary:hover {
-  background: #f1f5f9;
+  background: #b7cdc0;
 }
 
 /* Loading State */
@@ -567,8 +567,8 @@
 .loading-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid #e2e8f0;
-  border-top: 2px solid #2563eb;
+  border: 2px solid #b7cdc0;
+  border-top: 2px solid #237043;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -580,7 +580,7 @@
 
 .loading-text {
   margin-left: 12px;
-  color: #64748b;
+  color: #5a9844;
   font-size: 14px;
 }
 
@@ -624,22 +624,22 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  border: 2px dashed #d1d5db;
+  border: 2px dashed #a4ca9a;
   border-radius: 8px;
-  background: #f9fafb;
+  background: #f3faf1;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .photo-upload:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: #237043;
+  background: #f3faf1;
 }
 
 .photo-upload-text {
   margin: 8px 0 0 0;
   font-size: 14px;
-  color: #6b7280;
+  color: #5a9844;
   text-align: center;
 }
 
@@ -654,7 +654,7 @@
   max-width: 300px;
   height: auto;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #b7cdc0;
 }
 
 .photo-actions {
@@ -677,19 +677,19 @@
 }
 
 .btn-retake {
-  background: #3b82f6;
+  background: #237043;
   color: white;
 }
 
 .btn-retake:hover {
-  background: #2563eb;
+  background: #237043;
 }
 
 .btn-remove {
-  background: #ef4444;
+  background: #de168c;
   color: white;
 }
 
 .btn-remove:hover {
-  background: #dc2626;
+  background: #d54496;
 }

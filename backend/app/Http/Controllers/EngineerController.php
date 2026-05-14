@@ -33,6 +33,33 @@ class EngineerController extends Controller
                 $query->where('user_id', $user->id)->latest();
             }])->get();
 
+            $formattedProjects = $assignedProjects->map(function ($project) use ($user) {
+                $engineerReports = $project->progressReports
+                    ->where('user_id', $user->id)
+                    ->values()
+                    ->map(function ($report) {
+                        return [
+                            'id' => $report->id,
+                            'progress_percentage' => $report->progress_percentage,
+                            'notes' => $report->notes,
+                            'photo' => $report->photo,
+                            'reported_at' => $report->reported_at,
+                        ];
+                    });
+
+                return [
+                    'id' => $project->id,
+                    'name' => $project->name,
+                    'description' => $project->description,
+                    'location' => $project->location,
+                    'progress' => $project->progress ?? 0,
+                    'status' => $project->status ?? 'on_track',
+                    'deadline' => $project->end_date,
+                    'end_date' => $project->end_date,
+                    'engineer_progress_reports' => $engineerReports,
+                ];
+            });
+
             // Get recent progress reports
             $recentReports = EngineerProgressReport::where('user_id', $user->id)
                 ->with('project')
@@ -40,17 +67,35 @@ class EngineerController extends Controller
                 ->take(5)
                 ->get();
 
+            $averageProgress = (int) round($formattedProjects->avg('progress') ?? 0);
+            $inProgressProjects = $formattedProjects->where('progress', '<', 100)->count();
+            $completedProjects = $formattedProjects->where('progress', '>=', 100)->count();
+            $totalReports = EngineerProgressReport::where('user_id', $user->id)->count();
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'assigned_projects' => $assignedProjects,
+                    'assigned_projects' => $formattedProjects,
                     'recent_reports' => $recentReports,
                     'stats' => [
-                        'total_projects' => $assignedProjects->count(),
-                        'completed_projects' => $assignedProjects->where('progress', '>=', 100)->count(),
-                        'in_progress_projects' => $assignedProjects->where('progress', '<', 100)->count(),
-                        'total_reports' => EngineerProgressReport::where('user_id', $user->id)->count()
-                    ]
+                        'total_projects' => $formattedProjects->count(),
+                        'completed_projects' => $completedProjects,
+                        'in_progress_projects' => $inProgressProjects,
+                        'total_reports' => $totalReports,
+                        'projects' => [
+                            'assigned' => $formattedProjects->count(),
+                            'active' => $inProgressProjects,
+                        ],
+                        'progress' => [
+                            'average' => $averageProgress,
+                        ],
+                        'reports' => [
+                            'submitted' => $totalReports,
+                        ],
+                        'tasks' => [
+                            'completed' => $completedProjects,
+                        ],
+                    ],
                 ]
             ]);
         } catch (\Exception $e) {
@@ -84,14 +129,22 @@ class EngineerController extends Controller
                 ->whereNull('deleted_at')
                 ->get()
                 ->map(function($p) {
+                    $reports = $p->engineerProgressReports()
+                        ->where('user_id', auth()->id())
+                        ->latest()
+                        ->get(['id', 'progress_percentage', 'notes', 'photo', 'reported_at']);
+
                     return [
                         'id' => $p->id,
                         'name' => $p->name,
+                        'description' => $p->description,
                         'location' => $p->location ?? '',
                         'progress' => $p->progress ?? 0,
                         'deadline' => $p->end_date ?? $p->deadline,
+                        'end_date' => $p->end_date ?? $p->deadline,
                         'status' => $p->status ?? 'on_track',
                         'rab' => $p->budget ?? $p->rab ?? 0,
+                        'engineer_progress_reports' => $reports,
                     ];
                 });
             

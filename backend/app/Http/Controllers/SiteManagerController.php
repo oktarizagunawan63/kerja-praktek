@@ -119,8 +119,21 @@ class SiteManagerController extends Controller
                         'percentage' => $rabPercentage
                     ],
                     'engineers' => [
+                        'total'           => User::where('role', 'engineer')->where('is_active', true)->count(),
+                        'assigned'        => $engineers->where('assigned_projects_count', '>', 0)->count(),
+                        'active'          => $engineers->where('active_projects', '>', 0)->count(),
                         'assigned_count'  => User::where('role', 'engineer')->where('is_active', true)->count(),
                         'total_available' => User::where('role', 'engineer')->where('is_active', true)->count()
+                    ],
+                    'deadlines' => [
+                        'upcoming' => $projects->filter(function ($project) {
+                            if (!$project->end_date || $project->status === 'completed') {
+                                return false;
+                            }
+
+                            $daysRemaining = now()->diffInDays($project->end_date, false);
+                            return $daysRemaining >= 0 && $daysRemaining <= 7;
+                        })->count(),
                     ],
                     'status_breakdown'  => $statusBreakdown,
                     'recent_projects'   => $recentProjects,

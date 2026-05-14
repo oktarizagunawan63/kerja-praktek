@@ -1,5 +1,5 @@
 import { useDropzone } from 'react-dropzone'
-import { Upload, File, X } from 'lucide-react'
+import { Upload, File, X } from '@icons'
 import { useState } from 'react'
 import clsx from 'clsx'
 

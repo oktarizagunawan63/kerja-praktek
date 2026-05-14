@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FolderKanban, Calendar, MapPin, User, Plus } from 'lucide-react'
+import { FolderKanban, Calendar, MapPin, User, Plus } from '@icons'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
 import DataTable from '../components/ui/DataTable'

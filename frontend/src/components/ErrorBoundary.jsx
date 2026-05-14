@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangle, RefreshCw } from '@icons'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -45,7 +45,7 @@ class ErrorBoundary extends React.Component {
             <div className="space-y-3">
               <button
                 onClick={this.handleRetry}
-                className="w-full flex items-center justify-center gap-2 bg-[#0f4c81] text-white py-2.5 px-4 rounded-lg hover:bg-[#1a6bb5] transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-[#237043] text-white py-2.5 px-4 rounded-lg hover:bg-[#5a9844] transition-colors"
               >
                 <RefreshCw size={16} />
                 Coba Lagi

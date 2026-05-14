@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from '@icons'
 import clsx from 'clsx'
 
 /**
@@ -19,7 +19,7 @@ const Button = forwardRef(({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
   
   const variants = {
-    primary: 'bg-[#0f4c81] text-white hover:bg-[#1a6bb5] focus:ring-[#0f4c81]',
+    primary: 'bg-[#237043] text-white hover:bg-[#5a9844] focus:ring-[#237043]',
     secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-500',
     success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
     warning: 'bg-orange-600 text-white hover:bg-orange-700 focus:ring-orange-500',

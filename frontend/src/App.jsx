@@ -172,10 +172,10 @@ export default function App() {
             maxWidth: '320px',
           },
           success: {
-            iconTheme: { primary: '#16a34a', secondary: '#fff' },
+            iconTheme: { primary: '#5a9844', secondary: '#f3faf1' },
           },
           error: {
-            iconTheme: { primary: '#dc2626', secondary: '#fff' },
+            iconTheme: { primary: '#d54496', secondary: '#f3faf1' },
           },
           duration: 3000,
         }}
@@ -245,3 +245,4 @@ export default function App() {
     </>
   )
 }
+

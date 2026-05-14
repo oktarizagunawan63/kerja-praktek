@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Search, ChevronDown, X, Users, MapPin } from 'lucide-react'
+import { ArrowLeft, Save, Search, ChevronDown, X, Users, MapPin } from '@icons'
 import { api } from '../lib/api'
 import { INDONESIAN_CITIES } from '../constants/cities'
 import Button from '../components/ui/Button'
@@ -221,11 +221,11 @@ export default function FunnelFormPage() {
             Informasi Customer
           </h2>
 
-          {/* Customer Searchable Dropdown — full width */}
+          {/* Customer Searchable Dropdown â€” full width */}
           <div className="mb-4" ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nama Customer <span className="text-red-500">*</span>
-              <span className="ml-2 text-xs text-blue-500 font-normal">↓ pilih untuk auto-isi data</span>
+              <span className="ml-2 text-xs text-blue-500 font-normal">â†“ pilih untuk auto-isi data</span>
             </label>
             <div className="relative">
               <div className={`flex items-center border rounded-lg bg-white overflow-hidden transition-all ${showDropdown ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'}`}>
@@ -268,21 +268,21 @@ export default function FunnelFormPage() {
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900 text-sm">{customer.name}</p>
                             {customer.company && (
-                              <p className="text-xs text-gray-500 mt-0.5">🏥 {customer.company}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">ðŸ¥ {customer.company}</p>
                             )}
                             {(customer.city || customer.address) && (
-                              <p className="text-xs text-gray-400 mt-0.5 truncate">📍 {customer.city || customer.address}</p>
+                              <p className="text-xs text-gray-400 mt-0.5 truncate">ðŸ“ {customer.city || customer.address}</p>
                             )}
                           </div>
                           {customer.phone && (
-                            <span className="text-xs text-gray-400 shrink-0 mt-0.5">📞 {customer.phone}</span>
+                            <span className="text-xs text-gray-400 shrink-0 mt-0.5">ðŸ“ž {customer.phone}</span>
                           )}
                         </div>
                       </button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                      {customerSearch ? `Tidak ditemukan "${customerSearch}" — isi manual di bawah` : 'Ketik untuk mencari customer...'}
+                      {customerSearch ? `Tidak ditemukan "${customerSearch}" â€” isi manual di bawah` : 'Ketik untuk mencari customer...'}
                     </div>
                   )}
                 </div>
@@ -291,7 +291,7 @@ export default function FunnelFormPage() {
 
             {selectedCustomer && (
               <div className="mt-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-xs text-green-700">
-                <span>✅</span>
+                <span>âœ…</span>
                 <span>Data <strong>{selectedCustomer.name}</strong> berhasil diisi otomatis dari Customer List</span>
               </div>
             )}

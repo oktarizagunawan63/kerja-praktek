@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, CheckCircle, ArrowRight, Users, FolderOpen, Bell, Settings } from 'lucide-react'
+import { X, CheckCircle, ArrowRight, Users, FolderOpen, Bell, Settings } from '@icons'
 import Button from './Button'
 
 export default function WelcomeModal({ 
@@ -63,7 +63,7 @@ export default function WelcomeModal({
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Selamat Bergabung! 🎉</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Selamat Bergabung! ðŸŽ‰</h2>
           <button
             onClick={onClose}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"

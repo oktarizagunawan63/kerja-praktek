@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X } from '@icons'
 import { api } from '../lib/api'
 import toast from 'react-hot-toast'
 

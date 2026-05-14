@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, CheckCircle, Users, FolderOpen, Bell } from 'lucide-react'
+import { X, CheckCircle, Users, FolderOpen, Bell } from '@icons'
 import Button from './Button'
 
 export default function WelcomeCard({ user, onDismiss }) {
@@ -117,7 +117,7 @@ export default function WelcomeCard({ user, onDismiss }) {
 
           <div className="mt-4 pt-4 border-t border-blue-200">
             <p className="text-xs text-gray-500">
-              💡 <strong>Tips:</strong> Jelajahi menu di sidebar untuk memulai. 
+              ðŸ’¡ <strong>Tips:</strong> Jelajahi menu di sidebar untuk memulai. 
               Jika ada pertanyaan, hubungi administrator sistem.
             </p>
           </div>

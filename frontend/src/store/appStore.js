@@ -32,6 +32,10 @@ const useAppStore = create((set, get) => ({
   documents: [],
   documentsLoading: false,
 
+  // Materials state
+  materials: [],
+  materialsLoading: false,
+
   // Fetch projects directly from Laravel
   fetchProjects: async () => {
     set({ projectsLoading: true, projectsError: null })
@@ -192,6 +196,31 @@ const useAppStore = create((set, get) => ({
     }
   },
 
+  fetchMaterials: async (params = {}) => {
+    set({ materialsLoading: true })
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const queryString = new URLSearchParams(params).toString()
+      const response = await fetch(`${API_BASE}/materials${queryString ? '?' + queryString : ''}`, { headers })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      set({ materials: Array.isArray(data) ? data : [], materialsLoading: false })
+      return Array.isArray(data) ? data : []
+    } catch (error) {
+      console.error('Failed to fetch materials:', error)
+      set({ materials: [], materialsLoading: false })
+      return []
+    }
+  },
+
+  getDocs: (projectId) =>
+    get().documents.filter(d => String(d.projectId) === String(projectId)),
+
+  getMaterials: (projectId) =>
+    get().materials.filter(m => String(m.projectId) === String(projectId)),
+
   // Upload a document (pass FormData with project_id, type, file)
   addDoc: async (formData) => {
     try {
@@ -208,7 +237,7 @@ const useAppStore = create((set, get) => ({
         throw { message: d.message || `HTTP ${response.status}`, errors: d.errors || {}, status: response.status }
       }
       const newDoc = await response.json()
-      set(state => ({ documents: [newDoc, ...state.documents] }))
+      set(state => ({ documents: [newDoc, ...state.documents.filter(d => d.id !== newDoc.id)] }))
       return newDoc
     } catch (error) {
       console.error('Failed to upload document:', error)
@@ -228,6 +257,93 @@ const useAppStore = create((set, get) => ({
       return true
     } catch (error) {
       console.error('Failed to delete document:', error)
+      throw error
+    }
+  },
+
+  addMaterial: async (projectId, materialData) => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/materials`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          project_id: projectId,
+          ...materialData,
+        }),
+      })
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}))
+        throw { message: d.message || `HTTP ${response.status}`, errors: d.errors || {}, status: response.status }
+      }
+      const newMaterial = await response.json()
+      set(state => ({
+        materials: [
+          ...state.materials.filter(m => m.id !== newMaterial.id),
+          { ...newMaterial, projectId: String(projectId) },
+        ],
+      }))
+      get().fetchProjects()
+      return { ...newMaterial, projectId: String(projectId) }
+    } catch (error) {
+      console.error('Failed to create material:', error)
+      throw error
+    }
+  },
+
+  updateMaterialQty: async (projectId, materialId, qty, catatan = '') => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/materials/${materialId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          project_id: projectId,
+          qty_terpasang: qty,
+          catatan,
+        }),
+      })
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}))
+        throw { message: d.message || `HTTP ${response.status}`, errors: d.errors || {}, status: response.status }
+      }
+      const updatedMaterial = await response.json()
+      set(state => ({
+        materials: state.materials.map(material =>
+          material.id === materialId
+            ? { ...updatedMaterial, projectId: String(projectId) }
+            : material
+        ),
+      }))
+      get().fetchProjects()
+      return { ...updatedMaterial, projectId: String(projectId) }
+    } catch (error) {
+      console.error('Failed to update material:', error)
+      throw error
+    }
+  },
+
+  deleteMaterial: async (projectId, materialId) => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/materials/${materialId}`, {
+        method: 'DELETE',
+        headers,
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      set(state => ({
+        materials: state.materials.filter(material => material.id !== materialId),
+      }))
+      get().fetchProjects()
+      return true
+    } catch (error) {
+      console.error('Failed to delete material:', error)
       throw error
     }
   },
@@ -260,12 +376,26 @@ const useAppStore = create((set, get) => ({
   },
 
   // Mark project as complete
-  markComplete: (projectId) => {
-    set(state => ({
-      projects: state.projects.map(p => 
-        p.id === projectId ? { ...p, status: 'completed', progress: 100 } : p
-      )
-    }))
+  markComplete: async (projectId, note = '') => {
+    try {
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE}/projects/${projectId}/complete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ note }),
+      })
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}))
+        throw new Error(d.message || `HTTP ${response.status}`)
+      }
+      await get().fetchProjects()
+      return true
+    } catch (error) {
+      console.error('Failed to mark project complete:', error)
+      throw error
+    }
   },
 
   // Restore project from trash

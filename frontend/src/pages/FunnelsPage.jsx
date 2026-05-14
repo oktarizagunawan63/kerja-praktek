@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { Search } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
@@ -177,7 +177,7 @@ export default function FunnelsPage() {
           </div>
           <button
             onClick={() => navigate('/funnels/create')}
-            className="inline-flex items-center justify-center rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68]"
+            className="inline-flex items-center justify-center rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844]"
           >
             + Tambah Deal
           </button>
@@ -216,14 +216,14 @@ export default function FunnelsPage() {
                 placeholder="Search customer, company, or location..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full rounded-xl border border-slate-300 py-2.5 pl-11 pr-4 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                className="w-full rounded-xl border border-slate-300 py-2.5 pl-11 pr-4 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`px-4 py-2.5 rounded-xl border transition-colors font-medium whitespace-nowrap ${
                 showFilters 
-                  ? 'bg-[#0f4c81] text-white border-[#0f4c81]' 
+                  ? 'bg-[#237043] text-white border-[#237043]' 
                   : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
               }`}
             >
@@ -232,7 +232,7 @@ export default function FunnelsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
             >
               <option value="created_at">Terbaru</option>
               <option value="deadline_terdekat">Deadline</option>
@@ -246,7 +246,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
                 >
                   <option value="">All Status</option>
                   <option value="open">Open</option>
@@ -257,7 +257,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.segment}
                   onChange={(e) => handleFilterChange('segment', e.target.value)}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
                 >
                   <option value="">All Segments</option>
                   <option value="sot">SOT</option>
@@ -269,7 +269,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.channel}
                   onChange={(e) => handleFilterChange('channel', e.target.value)}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
                 >
                   <option value="">All Channels</option>
                   <option value="kontraktor">Contractor</option>
@@ -284,7 +284,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.deal_stage}
                   onChange={(e) => handleFilterChange('deal_stage', e.target.value)}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
                 >
                   <option value="">All Stages</option>
                   <option value="prospek">Prospect</option>
@@ -297,7 +297,7 @@ export default function FunnelsPage() {
                 <select
                   value={filters.win_probability}
                   onChange={(e) => handleFilterChange('win_probability', e.target.value)}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#0f4c81] focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/15"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
                 >
                   <option value="">All Probability</option>
                   <option value="low">Low</option>
@@ -310,7 +310,7 @@ export default function FunnelsPage() {
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={clearFilters}
-                  className="text-sm font-medium text-[#0f4c81] hover:text-[#0b3d68]"
+                  className="text-sm font-medium text-[#237043] hover:text-[#5a9844]"
                 >
                   Hapus semua filter
                 </button>
@@ -325,7 +325,7 @@ export default function FunnelsPage() {
         {loading ? (
           <div className="p-16 text-center">
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-[#0f4c81]"></div>
+              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-[#237043]"></div>
             </div>
             <p className="text-gray-600 font-medium">Loading deals...</p>
           </div>
@@ -335,7 +335,7 @@ export default function FunnelsPage() {
             <p className="text-gray-600 mb-6">Mulai tracking peluang penjualan Anda</p>
             <button
               onClick={() => navigate('/funnels/create')}
-              className="rounded-xl bg-[#0f4c81] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68]"
+              className="rounded-xl bg-[#237043] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844]"
             >
               + Tambah Deal Pertama
             </button>
@@ -404,7 +404,7 @@ export default function FunnelsPage() {
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         <button
                           onClick={() => navigate(`/funnels/${funnel.id}`)}
-                          className="rounded-xl px-3 py-1.5 text-sm font-medium text-[#0f4c81] transition-colors hover:bg-slate-100"
+                          className="rounded-xl px-3 py-1.5 text-sm font-medium text-[#237043] transition-colors hover:bg-slate-100"
                         >
                           Lihat
                         </button>
@@ -437,3 +437,4 @@ export default function FunnelsPage() {
   </div>
   )
 }
+

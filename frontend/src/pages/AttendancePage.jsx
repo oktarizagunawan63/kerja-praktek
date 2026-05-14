@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CheckCircle, XCircle, Calendar, User, Trash2 } from 'lucide-react'
+import { Clock, MapPin, CheckCircle, XCircle, Calendar, User, Trash2 } from '@icons'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import { isAdministrator } from '../utils/roleUtils'
@@ -358,7 +358,7 @@ function AttendancePage() {
               </p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <CheckCircle size={20} className="text-[#0f4c81]" />
+              <CheckCircle size={20} className="text-[#237043]" />
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ function AttendancePage() {
               </p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <XCircle size={20} className="text-[#0f4c81]" />
+              <XCircle size={20} className="text-[#237043]" />
             </div>
           </div>
         </div>
@@ -386,7 +386,7 @@ function AttendancePage() {
               </p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <Clock size={20} className="text-[#0f4c81]" />
+              <Clock size={20} className="text-[#237043]" />
             </div>
           </div>
         </div>
@@ -399,7 +399,7 @@ function AttendancePage() {
             <button
               onClick={handleCheckIn}
               disabled={actionLoading}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0f4c81] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b3d68] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CheckCircle size={16} />
               Check In
@@ -423,7 +423,7 @@ function AttendancePage() {
       {(currentLocation || todayAttendance?.check_in_latitude) && (
         <div className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <MapPin className="text-[#0f4c81]" size={16} />
+            <MapPin className="text-[#237043]" size={16} />
             <span className="text-sm font-semibold text-slate-900">
               {currentLocation ? 'Lokasi Saat Ini' : 'Lokasi Check-in Hari Ini'}
             </span>
@@ -490,3 +490,4 @@ function AttendancePage() {
 }
 
 export default AttendancePage
+

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileDown, Loader2 } from 'lucide-react'
+import { FileDown, Loader2 } from '@icons'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import useAppStore from '../store/appStore'
 import { formatRupiah } from '../lib/formatRupiah'
@@ -28,14 +28,14 @@ export default function ReportsPage() {
 
   // Data untuk bar chart RAB vs Realisasi
   const budgetData = active.map(p => ({
-    name: p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name,
+    name: p.name.length > 12 ? p.name.slice(0, 12) + 'â€¦' : p.name,
     RAB: p.rab || 0,
     Realisasi: p.realisasi || 0,
   }))
 
   // Data untuk line chart progress
   const progressData = active.map(p => ({
-    name: p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name,
+    name: p.name.length > 12 ? p.name.slice(0, 12) + 'â€¦' : p.name,
     Progress: p.progress || 0,
   }))
 
@@ -45,7 +45,7 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Laporan & Analitik</h1>
         <button onClick={handleExportPDF} disabled={loading}
-          className="flex items-center gap-2 bg-[#0f4c81] hover:bg-[#1a6bb5] disabled:opacity-60 text-white text-sm px-4 py-2 rounded-lg font-medium">
+          className="flex items-center gap-2 bg-[#237043] hover:bg-[#5a9844] disabled:opacity-60 text-white text-sm px-4 py-2 rounded-lg font-medium">
           {loading ? <><Loader2 size={15} className="animate-spin"/> Generating...</> : <><FileDown size={15}/> Export PDF</>}
         </button>
       </div>
@@ -61,11 +61,11 @@ export default function ReportsPage() {
             <h3 className="text-sm font-semibold text-gray-700 mb-4">Progress per Proyek (%)</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={progressData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#b7cdc0"/>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }}/>
                 <YAxis tick={{ fontSize: 12 }} unit="%"/>
                 <Tooltip formatter={v => `${v}%`}/>
-                <Bar dataKey="Progress" fill="#3b82f6" radius={[4,4,0,0]}/>
+                <Bar dataKey="Progress" fill="#237043" radius={[4,4,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -75,13 +75,13 @@ export default function ReportsPage() {
             <h3 className="text-sm font-semibold text-gray-700 mb-4">RAB vs Realisasi per Proyek</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={budgetData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#b7cdc0"/>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }}/>
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatRupiah(v).replace('Rp ','')}/>
                 <Tooltip formatter={v => formatRupiah(v)}/>
                 <Legend/>
-                <Bar dataKey="RAB" fill="#e2e8f0" name="RAB" radius={[4,4,0,0]}/>
-                <Bar dataKey="Realisasi" fill="#3b82f6" name="Realisasi" radius={[4,4,0,0]}/>
+                <Bar dataKey="RAB" fill="#b7cdc0" name="RAB" radius={[4,4,0,0]}/>
+                <Bar dataKey="Realisasi" fill="#237043" name="Realisasi" radius={[4,4,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -128,3 +128,4 @@ export default function ReportsPage() {
     </div>
   )
 }
+

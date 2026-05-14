@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Users, Calendar, CheckSquare, Clock, TrendingUp, MapPin, Target, AlertCircle } from 'lucide-react'
+import { Users, Calendar, CheckSquare, Clock, TrendingUp, MapPin, Target, AlertCircle } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { request } from '../lib/api'

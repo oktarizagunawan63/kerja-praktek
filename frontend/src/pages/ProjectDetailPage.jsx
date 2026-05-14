@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
-  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail
-} from 'lucide-react'
+  CheckCircle, Clock, AlertTriangle, X, ZoomIn, Download, Users, Mail,
+  BarChart3, FolderOpen, TrendingUp, DollarSign
+} from '@icons'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import FileUpload from '../components/ui/FileUpload'
@@ -11,13 +12,13 @@ import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useAppStore from '../store/appStore'
 import useUserStore from '../store/userStore'
-import { fileToBase64, downloadFile } from '../lib/fileUtils'
+import { downloadFile } from '../lib/fileUtils'
 import { formatRupiah } from '../lib/formatRupiah'
 import { can } from '../lib/permissions'
 import { exportProyekPDF } from '../lib/exportPdf'
 import { api } from '../lib/api'
 
-// ── constants ─────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ constants Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 const HIcon = {
   material: <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center"><Plus size={13} className="text-blue-600"/></div>,
@@ -26,13 +27,13 @@ const HIcon = {
   system:   <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"><Clock size={13} className="text-gray-500"/></div>,
 }
 
-// ── component ─────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ component Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 export default function ProjectDetailPage() {
-  // ── All hooks at the very top ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ All hooks at the very top Ã¢â€â‚¬Ã¢â€â‚¬
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc } = useAppStore()
+  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc, fetchDocuments, fetchMaterials } = useAppStore()
   const { users, updateUser, fetchUsers } = useUserStore()
   
   const [project, setProject] = useState(null)
@@ -62,17 +63,19 @@ export default function ProjectDetailPage() {
   const [teamOpen, setTeamOpen] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
 
-  // ── Effects ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Effects Ã¢â€â‚¬Ã¢â€â‚¬
   useEffect(() => {
     fetchProject()
     fetchEngineers()
+    fetchDocuments({ project_id: id })
+    fetchMaterials({ project_id: id })
   }, [id])
 
   useEffect(() => {
     // Future: Load progress reports and RAB realisasi here
   }, [project, user])
 
-  // ── Helper functions ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Helper functions Ã¢â€â‚¬Ã¢â€â‚¬
   const currentUser = user?.name || 'Unknown'
   
   const fetchProject = async () => {
@@ -88,7 +91,7 @@ export default function ProjectDetailPage() {
 
   const fetchEngineers = async () => {
     try {
-      const res = await api.get('/site/engineers')
+      const res = await api.get('/projects/engineers/list')
       const data = res.data?.data || res.data || []
       setEngineers(Array.isArray(data) ? data : [])
     } catch(e) {
@@ -98,13 +101,19 @@ export default function ProjectDetailPage() {
 
   const handleAssign = async (engineerId, isCurrentlyAssigned) => {
     try {
-      console.log('Assigning engineers:', [engineerId])
-      const res = await api.post('/projects/' + id + '/assign', {
-        engineer_ids: [engineerId]
+      const currentAssignedIds = Array.isArray(project?.assignedEngineers)
+        ? project.assignedEngineers.map(value => parseInt(value, 10)).filter(Number.isFinite)
+        : []
+      const nextAssignedIds = isCurrentlyAssigned
+        ? currentAssignedIds.filter(value => value !== engineerId)
+        : [...new Set([...currentAssignedIds, engineerId])]
+
+      const res = await api.assignEngineersToProject({
+        project_id: parseInt(id, 10),
+        engineer_ids: nextAssignedIds
       })
-      console.log('Assign response:', res.data)
       
-      if (res.data.success) {
+      if (res.success) {
         // Update local state
         const assigned = users.find(u => u.id === engineerId)?.assignedProjects || []
         if (isCurrentlyAssigned) {
@@ -116,11 +125,11 @@ export default function ProjectDetailPage() {
         }
         fetchProject()
       } else {
-        toast.error('Gagal: ' + (res.data.message || 'Unknown error'))
+        toast.error('Gagal: ' + (res.message || 'Unknown error'))
       }
     } catch(e) {
-      console.error('Assign failed:', e.response?.data)
-      toast.error('Gagal: ' + (e.response?.data?.message || e.message))
+      console.error('Assign failed:', e)
+      toast.error('Gagal: ' + (e?.message || 'Unknown error'))
     }
   }
 
@@ -137,7 +146,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  // ── Early returns ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Early returns Ã¢â€â‚¬Ã¢â€â‚¬
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-gray-500">Memuat proyek...</div>
@@ -150,45 +159,50 @@ export default function ProjectDetailPage() {
     </div>
   )
 
-  // ── Derived data ──
-  const materials = getMaterials(id)
-  const docs      = getDocs(id) // baca dari appStore, otomatis sync
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Derived data Ã¢â€â‚¬Ã¢â€â‚¬
+  const materials = getMaterials(id).length ? getMaterials(id) : (project?.materials || [])
+  const docs      = getDocs(id).length ? getDocs(id) : (project?.documents || [])
   const isCompleted = project?.status === 'completed'
 
   const progressVal = materials.length
     ? Math.round(materials.reduce((s, m) => s + Math.min((m.qty_terpasang / m.qty_plan) * 100, 100), 0) / materials.length)
     : project?.progress || 0
 
-  // ── early return after all hooks ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ early return after all hooks Ã¢â€â‚¬Ã¢â€â‚¬
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400">
         <p className="text-lg font-semibold">Proyek tidak ditemukan</p>
-        <button onClick={() => navigate('/projects')} className="mt-4 text-sm text-[#0f4c81] hover:underline">Kembali</button>
+        <button onClick={() => navigate('/projects')} className="mt-4 text-sm text-[#237043] hover:underline">Kembali</button>
       </div>
     )
   }
 
-  // ── helpers ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ helpers Ã¢â€â‚¬Ã¢â€â‚¬
   const addHist = (e) => setHistory(p => [{ id: Date.now(), ...e, time: new Date().toLocaleString('id-ID') }, ...p])
 
-  // ── handlers ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ handlers Ã¢â€â‚¬Ã¢â€â‚¬
   const handleMatSubmit = async (e) => {
     e.preventDefault()
     if (!matForm.qty || matForm.files.length === 0) { toast.error('Isi qty dan upload dokumen perintah'); return }
     const qty = parseInt(matForm.qty)
-    updateMaterialQty(id, selMat.id, qty, matForm.catatan)
+    await updateMaterialQty(id, selMat.id, qty, matForm.catatan)
     await Promise.all(matForm.files.map(async file => {
       const isImg = file.type.startsWith('image/')
-      addDoc({ name: file.name, type: isImg ? 'Foto' : 'Dokumen Teknis', uploader: currentUser, date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : 'pdf', projectId: id })
+      const formData = new FormData()
+      formData.append('project_id', id)
+      formData.append('type', isImg ? 'Foto' : 'Dokumen Teknis')
+      formData.append('file', file)
+      await addDoc(formData)
     }))
-    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' — ' + matForm.catatan : ''}`
+    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' Ã¢â‚¬â€ ' + matForm.catatan : ''}`
     addHist({ action: 'Update Material Terpasang', detail, user: currentUser, type: 'material' })
     toast.success('Material berhasil diupdate')
+    fetchProject()
     setMatOpen(false); setMatForm({ qty: '', catatan: '', files: [] })
   }
 
-  const handleAddMat = (e) => {
+  const handleAddMat = async (e) => {
     e.preventDefault()
     if (!newMat.name || !newMat.qty_plan || !newMat.unit) { 
       toast.error('Nama material, satuan, dan qty rencana wajib diisi'); 
@@ -213,7 +227,7 @@ export default function ProjectDetailPage() {
       return
     }
     
-    const mat = addMaterial(id, { 
+    const mat = await addMaterial(id, { 
       name: newMat.name.trim(), 
       unit: newMat.unit.trim(), 
       qty_plan: qtyPlan, 
@@ -228,6 +242,7 @@ export default function ProjectDetailPage() {
     })
     
     toast.success(`${mat.name} ditambahkan`)
+    fetchProject()
     setAddMatOpen(false)
     setNewMat({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
   }
@@ -236,18 +251,23 @@ export default function ProjectDetailPage() {
     if (docForm.files.length === 0) { toast.error('Pilih file terlebih dahulu'); return }
     const file = docForm.files[0]
     const isImg = file.type.startsWith('image/')
-    const isPdf = file.type === 'application/pdf'
     const type  = isImg ? 'Foto' : docForm.type
-    addDoc({ name: file.name, type, uploader: currentUser, date: new Date().toLocaleDateString('id-ID'), previewUrl: await fileToBase64(file), fileType: isImg ? 'image' : isPdf ? 'pdf' : 'other', projectId: id })
+    const formData = new FormData()
+    formData.append('project_id', id)
+    formData.append('type', type)
+    formData.append('file', file)
+    await addDoc(formData)
     addHist({ action: 'Upload Dokumen', detail: `Upload ${type}: ${file.name}`, user: currentUser, type: 'dokumen' })
     toast.success('Dokumen berhasil diupload')
+    fetchProject()
     setUploadOpen(false); setDocForm({ type: 'Laporan Harian', files: [] })
   }
 
-  const handleComplete = () => {
-    markComplete(id, completeNote)
-    addHist({ action: 'Proyek Selesai', detail: `Selesai${completeNote ? ' — ' + completeNote : ''}`, user: currentUser, type: 'selesai' })
+  const handleComplete = async () => {
+    await markComplete(id, completeNote)
+    addHist({ action: 'Proyek Selesai', detail: `Selesai${completeNote ? ' Ã¢â‚¬â€ ' + completeNote : ''}`, user: currentUser, type: 'selesai' })
     toast.success('Proyek ditandai selesai')
+    fetchProject()
     setCompleteOpen(false); setCompleteNote('')
   }
 
@@ -272,7 +292,7 @@ export default function ProjectDetailPage() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-gray-900 truncate">{project.name}</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{project.location} · PM: {project.pm}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{project.location} Ã‚Â· PM: {project.pm}</p>
           </div>
           {isCompleted
             ? <Badge variant="info">Selesai</Badge>
@@ -304,14 +324,14 @@ export default function ProjectDetailPage() {
               </button>
             )}
             <button onClick={() => setUploadOpen(true)}
-              className="flex items-center gap-1.5 text-xs bg-[#0f4c81] hover:bg-[#1a6bb5] text-white px-3 py-2 rounded-lg font-medium transition-colors">
+              className="flex items-center gap-1.5 text-xs bg-[#237043] hover:bg-[#5a9844] text-white px-3 py-2 rounded-lg font-medium transition-colors">
               <Upload size={13}/> Upload Dokumen
             </button>
             {(user?.role === 'site_manager') && (() => {
               const administrator = useUserStore.getState().users.find(u => u.role === 'administrator' || u.role === 'direktur')
               if (!administrator?.email) return null
               const daysLeft = Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))
-              const subject = encodeURIComponent(`[Laporan] ${project.name} — Progress ${progressVal}%`)
+              const subject = encodeURIComponent(`[Laporan] ${project.name} Ã¢â‚¬â€ Progress ${progressVal}%`)
               const body = encodeURIComponent(
                 `Yth. ${administrator.name},\n\nBerikut laporan terkini proyek:\n\n` +
                 `Proyek     : ${project.name}\n` +
@@ -321,7 +341,7 @@ export default function ProjectDetailPage() {
                 `Terealisasi: ${formatRupiah(project.realisasi || 0)}\n` +
                 `Sisa Waktu : ${daysLeft} hari (Deadline: ${new Date(project.deadline).toLocaleDateString('id-ID')})\n` +
                 `Status     : ${project.status === 'on_track' ? 'On Track' : project.status === 'at_risk' ? 'At Risk' : project.status === 'delayed' ? 'Delayed' : 'Selesai'}\n\n` +
-                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager — PT Amsar Prima Mandiri`
+                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager Ã¢â‚¬â€ PT Amsar Prima Mandiri`
               )
               return (
                 <button
@@ -380,7 +400,7 @@ export default function ProjectDetailPage() {
         <div className="card text-center">
           <p className="text-xs text-gray-500 mb-1">Sisa Waktu</p>
           <p className="text-xl font-bold text-gray-900">
-            {isCompleted ? '—' : `${Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))} Hari`}
+            {isCompleted ? 'Ã¢â‚¬â€' : `${Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))} Hari`}
           </p>
           <p className="text-xs text-gray-400 mt-0.5">Deadline: {new Date(project.deadline).toLocaleDateString('id-ID')}</p>
         </div>
@@ -390,22 +410,22 @@ export default function ProjectDetailPage() {
       <div className="card p-0">
         <div className="flex border-b border-gray-100">
           {[
-            { id: 'overview', label: 'Overview', icon: '📊' },
-            { id: 'engineers', label: 'Engineers', icon: '👥' },
-            { id: 'progress', label: 'Progress Reports', icon: '📈' },
-            { id: 'documents', label: 'Documents', icon: '📁' },
-            { id: 'rab', label: 'RAB', icon: '💰' }
+            { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'engineers', label: 'Engineers', icon: Users },
+            { id: 'progress', label: 'Progress Reports', icon: TrendingUp },
+            { id: 'documents', label: 'Documents', icon: FolderOpen },
+            { id: 'rab', label: 'RAB', icon: DollarSign }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-[#0f4c81] border-b-2 border-[#0f4c81] bg-blue-50'
+                  ? 'text-[#237043] border-b-2 border-[#237043] bg-blue-50'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <span>{tab.icon}</span>
+              <tab.icon size={16} />
               {tab.label}
             </button>
           ))}
@@ -464,7 +484,7 @@ export default function ProjectDetailPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-gray-700">Material Terpasang</h3>
-                  {!isCompleted && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Tambah Material</button>}
+                  {!isCompleted && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Tambah Material</button>}
                 </div>
                 <div className="space-y-3">
                   {materials.map(mat => {
@@ -480,7 +500,7 @@ export default function ProjectDetailPage() {
                             <span className={`text-xs font-semibold ${pct>=100?'text-green-600':'text-gray-600'}`}>{Math.min(pct,100)}%</span>
                             {!isCompleted && <>
                               <button onClick={() => { setSelMat(mat); setMatForm({ qty:'', catatan:'', files:[] }); setMatOpen(true) }}
-                                className="flex items-center gap-1 text-xs bg-[#0f4c81] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#1a6bb5]">
+                                className="flex items-center gap-1 text-xs bg-[#237043] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#5a9844]">
                                 <Plus size={12}/> Tambah
                               </button>
                               <button onClick={() => { deleteMaterial(id, mat.id); toast.success(`${mat.name} dihapus`) }}
@@ -494,7 +514,7 @@ export default function ProjectDetailPage() {
                       </div>
                     )
                   })}
-                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material — klik "+ Tambah Material"</p>}
+                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material Ã¢â‚¬â€ klik "+ Tambah Material"</p>}
                 </div>
               </div>
             </div>
@@ -505,15 +525,16 @@ export default function ProjectDetailPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-700">Assigned Engineers</h3>
                 {!isCompleted && can(user, 'edit_project') && (
-                  <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+                  <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline">
                     <Plus size={13}/> Assign Engineer
                   </button>
                 )}
               </div>
               {(() => {
+                const assignedIds = new Set((project?.assignedEngineers || []).map(value => String(value)))
                 const engineers = users.filter(u =>
                   u.role === 'engineer' &&
-                  (u.assignedProjects || []).includes(String(id))
+                  assignedIds.has(String(u.id))
                 )
                 return engineers.length === 0
                   ? <p className="text-sm text-gray-400 text-center py-8">Belum ada engineer di-assign ke proyek ini</p>
@@ -530,11 +551,7 @@ export default function ProjectDetailPage() {
                           <Badge variant="default">Engineer</Badge>
                           {!isCompleted && (
                             <button
-                              onClick={() => {
-                                const assigned = (eng.assignedProjects || []).filter(p => p !== String(id))
-                                updateUser(eng.id, { assignedProjects: assigned })
-                                toast.success(`${eng.name} dilepas dari proyek`)
-                              }}
+                              onClick={() => handleAssign(eng.id, true)}
                               className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
                             >
                               <X size={14}/>
@@ -552,7 +569,7 @@ export default function ProjectDetailPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-700">Progress Reports</h3>
                 {!isCompleted && (
-                  <button className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline">
+                  <button className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline">
                     <Plus size={13}/> Add Report
                   </button>
                 )}
@@ -572,13 +589,13 @@ export default function ProjectDetailPage() {
                   <div className="flex gap-1">
                     {['semua','foto','laporan'].map(tab => (
                       <button key={tab} onClick={() => setDocTab(tab)}
-                        className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${docTab===tab?'bg-[#0f4c81] text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                        className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${docTab===tab?'bg-[#237043] text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                         {tab==='semua'?'Semua':tab==='foto'?'Foto Progres':'Laporan'}
                       </button>
                     ))}
                   </div>
                 </div>
-                {!isCompleted && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#0f4c81] hover:underline"><Plus size={13}/> Upload Document</button>}
+                {!isCompleted && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Upload Document</button>}
               </div>
 
               {docTab === 'foto' && (() => {
@@ -609,7 +626,7 @@ export default function ProjectDetailPage() {
                       }
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
+                        <p className="text-xs text-gray-400">{doc.type} Ã‚Â· {doc.uploader} Ã‚Â· {doc.date}</p>
                       </div>
                       {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
                       {!isCompleted && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
@@ -663,7 +680,7 @@ export default function ProjectDetailPage() {
                     />
                   </div>
                   {(project.realisasi || 0) > project.rab && (
-                    <p className="text-xs text-red-600 mt-1">⚠️ Over budget by {formatRupiah((project.realisasi || 0) - project.rab)}</p>
+                    <p className="text-xs text-red-600 mt-1">Ã¢Å¡Â Ã¯Â¸Â Over budget by {formatRupiah((project.realisasi || 0) - project.rab)}</p>
                   )}
                 </div>
               </div>
@@ -753,7 +770,7 @@ export default function ProjectDetailPage() {
               const num = parseFloat(String(rabInput).replace(/\./g, ''))
               if (isNaN(num) || num <= 0) return null
               const isOver = num > project.rab
-              return <p className={`mt-1 text-xs font-medium ${isOver?'text-red-500':'text-blue-600'}`}>{formatRupiah(num)}{isOver?' ⚠️ Melebihi RAB!':''}</p>
+              return <p className={`mt-1 text-xs font-medium ${isOver?'text-red-500':'text-blue-600'}`}>{formatRupiah(num)}{isOver?' Ã¢Å¡Â Ã¯Â¸Â Melebihi RAB!':''}</p>
             })()}
           </div>
           <div className="flex gap-2 justify-end">
@@ -764,7 +781,7 @@ export default function ProjectDetailPage() {
       </Modal>
 
       {/* Modal: Tambah Material Terpasang */}
-      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang — ${selMat?.name}`} size="md">
+      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang Ã¢â‚¬â€ ${selMat?.name}`} size="md">
         <form onSubmit={handleMatSubmit} className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
             Sisa: {selMat ? selMat.qty_plan - selMat.qty_terpasang : 0} {selMat?.unit}
@@ -936,7 +953,7 @@ export default function ProjectDetailPage() {
                 </div>
               ) : (
             users.filter(u => u.role === 'engineer').map(eng => {
-              const isAssigned = (eng.assignedProjects || []).includes(String(id))
+              const isAssigned = (project?.assignedEngineers || []).map(value => String(value)).includes(String(eng.id))
               return (
                 <div key={eng.id}
                   onClick={() => handleAssign(eng.id, isAssigned)}
@@ -961,7 +978,7 @@ export default function ProjectDetailPage() {
             </>
           )}
 
-          {/* Buat akun engineer baru — sales manager & administrator */}
+          {/* Buat akun engineer baru Ã¢â‚¬â€ sales manager & administrator */}
           {!loadingUsers && can(user, 'edit_project') && (
             <NewEngineerInline onCreated={(eng) => {
               updateUser(eng.id, { assignedProjects: [String(id)] })
@@ -978,7 +995,7 @@ export default function ProjectDetailPage() {
   )
 }
 
-// ── Inline form buat engineer baru ────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Inline form buat engineer baru Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function NewEngineerInline({ onCreated }) {
   const { addUser } = useUserStore()
   const [open, setOpen] = useState(false)
@@ -992,7 +1009,8 @@ function NewEngineerInline({ onCreated }) {
     setLoading(true)
     try {
       // Create user via API
-      const token = localStorage.getItem('token')
+      const authData = localStorage.getItem('amsar-auth')
+      const token = authData ? JSON.parse(authData)?.state?.token : null
       const response = await fetch('http://127.0.0.1:8000/api/users', {
         method: 'POST',
         headers: {
@@ -1066,3 +1084,4 @@ function NewEngineerInline({ onCreated }) {
     </form>
   )
 }
+

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, UserCheck, X } from 'lucide-react'
+import { Plus, Trash2, UserCheck, X } from '@icons'
 import Modal from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 import toast from 'react-hot-toast'
@@ -194,14 +194,15 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
+      <div className="card overflow-hidden p-0">
         {loading ? (
           <div className="p-8 text-center text-gray-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-2"></div>
             Memuat data user...
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 {['Nama','Email','Role','Divisi','Proyek Assigned','Aksi'].map(h => (
@@ -251,7 +252,7 @@ export default function UsersPage() {
                                 })
                           })()}
                           <button onClick={() => { setSelUser(u); setAssignOpen(true) }}
-                            className="text-xs text-[#0f4c81] hover:underline flex items-center gap-1">
+                            className="text-xs text-[#237043] hover:underline flex items-center gap-1">
                             <UserCheck size={12}/> Assign
                           </button>
                         </div>
@@ -276,6 +277,7 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -329,7 +331,7 @@ export default function UsersPage() {
       </Modal>
 
       {/* Modal Assign Proyek */}
-      <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title={`Assign Proyek — ${selUser?.name}`} size="md">
+      <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title={`Assign Proyek â€” ${selUser?.name}`} size="md">
         <div className="space-y-3">
           <p className="text-xs text-gray-500">Pilih proyek yang bisa diakses oleh user ini:</p>
           {projects.filter(p => p.status !== 'completed').map(p => {
@@ -352,7 +354,7 @@ export default function UsersPage() {
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${assigned ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
                 <div>
                   <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                  <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                  <p className="text-xs text-gray-400">{p.location} Â· PM: {p.pm}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${assigned ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                   {assigned && <div className="w-2 h-2 bg-white rounded-full"/>}
@@ -371,3 +373,4 @@ export default function UsersPage() {
     </div>
   )
 }
+

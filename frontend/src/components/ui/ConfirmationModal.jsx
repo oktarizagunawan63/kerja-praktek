@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, UserCheck, UserX, Trash2, X } from 'lucide-react'
+import { AlertTriangle, UserCheck, UserX, Trash2, X } from '@icons'
 import Button from './Button'
 import Input from './Input'
 

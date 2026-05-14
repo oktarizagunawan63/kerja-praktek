@@ -82,21 +82,21 @@
 
 /* Toast Improvements */
 .toast-success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #5a9844 0%, #237043 100%);
   color: white;
   border: none;
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
 }
 
 .toast-error {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #de168c 0%, #d54496 100%);
   color: white;
   border: none;
   box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
 }
 
 .toast-info {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #237043 0%, #237043 100%);
   color: white;
   border: none;
   box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
@@ -109,8 +109,8 @@
 }
 
 .loading-spinner {
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #3b82f6;
+  border: 3px solid #b7cdc0;
+  border-top: 3px solid #237043;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -139,10 +139,10 @@
   border-radius: 50%;
   display: block;
   stroke-width: 2;
-  stroke: #10b981;
+  stroke: #5a9844;
   stroke-miterlimit: 10;
   margin: 10% auto;
-  box-shadow: inset 0px 0px 0px #10b981;
+  box-shadow: inset 0px 0px 0px #5a9844;
   animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
 }
 
@@ -151,7 +151,7 @@
   stroke-dashoffset: 166;
   stroke-width: 2;
   stroke-miterlimit: 10;
-  stroke: #10b981;
+  stroke: #5a9844;
   fill: none;
   animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
@@ -211,7 +211,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: #3b82f6;
+  background: #237043;
   animation: confetti-fall 3s linear infinite;
 }
 

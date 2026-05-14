@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, ChevronDown, Search } from 'lucide-react'
+import { MapPin, ChevronDown, Search } from '@icons'
 
 // Data provinsi dan kota/kabupaten Indonesia (sample data - bisa diperluas)
 const INDONESIA_LOCATIONS = {

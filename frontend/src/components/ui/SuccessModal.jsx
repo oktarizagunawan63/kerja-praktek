@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, X, UserCheck, UserX, Trash2, Bell } from 'lucide-react'
+import { CheckCircle, X, UserCheck, UserX, Trash2, Bell } from '@icons'
 import Button from './Button'
 
 export default function SuccessModal({ 
@@ -47,7 +47,7 @@ export default function SuccessModal({
           iconBg: 'bg-green-100',
           borderColor: 'border-green-200',
           bgGradient: 'from-green-50 to-emerald-50',
-          title: title || 'User Berhasil Disetujui! 🎉',
+          title: title || 'User Berhasil Disetujui! ðŸŽ‰',
           defaultMessage: user ? `${user.name} telah disetujui sebagai ${user.role}` : 'User berhasil disetujui'
         }
       case 'rejection':

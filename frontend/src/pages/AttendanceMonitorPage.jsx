@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, CheckCircle, XCircle, Users, Calendar, MapPin, RefreshCw, RotateCcw } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Users, Calendar, MapPin, RefreshCw, RotateCcw } from '@icons'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
@@ -387,10 +387,10 @@ export default function AttendanceMonitorPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {activity.user_name} • {activity.check_out_time ? 'Check Out' : 'Check In'}
+                      {activity.user_name} â€¢ {activity.check_out_time ? 'Check Out' : 'Check In'}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID')} • {new Date(activity.date).toLocaleDateString('id-ID')}
+                      {new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID')} â€¢ {new Date(activity.date).toLocaleDateString('id-ID')}
                     </p>
                   </div>
                 </div>

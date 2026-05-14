@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TrendingUp, DollarSign, Package, Clock, Users, CheckCircle, XCircle, Calendar } from 'lucide-react'
+import { TrendingUp, DollarSign, Package, Clock, Users, CheckCircle, XCircle, Calendar } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import ProgressBar from '../components/kpi/ProgressBar'
 import Badge from '../components/ui/Badge'
@@ -483,13 +483,13 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-900">
-                        {activity.user_name} • {activity.check_out_time ? 'Check Out' : 'Check In'}
+                        {activity.user_name} â€¢ {activity.check_out_time ? 'Check Out' : 'Check In'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {activity.check_out_time || activity.check_in_time ? 
                           new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID') : 
                           'N/A'
-                        } • {activity.date ? 
+                        } â€¢ {activity.date ? 
                           new Date(activity.date).toLocaleDateString('id-ID') : 
                           'N/A'
                         }
@@ -547,10 +547,11 @@ export default function DashboardPage() {
       ) : (
         <div className="card text-center py-12 text-gray-400">
           <p className="text-sm">Belum ada proyek aktif.{' '}
-            <span className="text-[#0f4c81] cursor-pointer hover:underline" onClick={() => navigate('/projects')}>Tambah proyek</span>
+            <span className="text-[#237043] cursor-pointer hover:underline" onClick={() => navigate('/projects')}>Tambah proyek</span>
           </p>
         </div>
       )}
     </div>
   )
 }
+

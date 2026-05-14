@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FolderKanban, TrendingUp, Clock, FileText, Plus, Eye } from 'lucide-react'
+import { FolderKanban, TrendingUp, Clock, FileText, Plus, Eye } from '@icons'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'

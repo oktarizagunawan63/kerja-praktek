@@ -1,5 +1,6 @@
+import { createElement } from 'react'
 import toast from 'react-hot-toast'
-import { CheckCircle, XCircle, AlertCircle, Info, UserCheck, UserX, Trash2 } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, Info, UserCheck, UserX, Trash2 } from '@icons'
 
 // Enhanced toast with custom styling and icons
 export const showToast = {
@@ -7,7 +8,7 @@ export const showToast = {
     return toast.success(message, {
       duration: 4000,
       className: 'toast-success',
-      icon: '✅',
+      icon: createElement(CheckCircle, { size: 18, className: 'text-[#5a9844]' }),
       ...options
     })
   },
@@ -16,7 +17,7 @@ export const showToast = {
     return toast.error(message, {
       duration: 5000,
       className: 'toast-error',
-      icon: '❌',
+      icon: createElement(XCircle, { size: 18, className: 'text-[#d54496]' }),
       ...options
     })
   },
@@ -25,7 +26,7 @@ export const showToast = {
     return toast(message, {
       duration: 4000,
       className: 'toast-info',
-      icon: 'ℹ️',
+      icon: createElement(Info, { size: 18, className: 'text-[#de168c]' }),
       ...options
     })
   },
@@ -37,7 +38,7 @@ export const showToast = {
       {
         duration: 5000,
         className: 'toast-success',
-        icon: '🎉',
+        icon: createElement(UserCheck, { size: 18, className: 'text-[#5a9844]' }),
       }
     )
   },
@@ -48,7 +49,7 @@ export const showToast = {
       {
         duration: 4000,
         className: 'toast-error',
-        icon: '❌',
+        icon: createElement(UserX, { size: 18, className: 'text-[#d54496]' }),
       }
     )
   },
@@ -59,7 +60,7 @@ export const showToast = {
       {
         duration: 4000,
         className: 'toast-info',
-        icon: '🗑️',
+        icon: createElement(Trash2, { size: 18, className: 'text-[#de168c]' }),
       }
     )
   }

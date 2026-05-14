@@ -15,8 +15,8 @@
 }
 
 .realisasi-table thead {
-  background-color: #f9fafb;
-  border-bottom: 2px solid #e5e7eb;
+  background-color: #f3faf1;
+  border-bottom: 2px solid #b7cdc0;
 }
 
 .realisasi-table th {
@@ -24,7 +24,7 @@
   text-align: left;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: #237043;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -32,12 +32,12 @@
 
 .realisasi-table td {
   padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #b7cdc0;
   vertical-align: top;
 }
 
 .realisasi-table tbody tr:hover {
-  background-color: #f9fafb;
+  background-color: #f3faf1;
 }
 
 .realisasi-table tbody tr:last-child td {
@@ -87,3 +87,4 @@
     font-size: 13px;
   }
 }
+

@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { AlertTriangle, Clock, CheckCircle, Info, Bell, Trash2, CheckCheck, MapPin, TrendingUp, XCircle, UserCheck } from 'lucide-react'
+import { AlertTriangle, Clock, CheckCircle, Info, Bell, Trash2, CheckCheck, MapPin, TrendingUp, XCircle, UserCheck } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
-// ─── Type config ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Type config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TYPE_CONFIG = {
   success:          { Icon: CheckCircle,  bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', border: 'border-emerald-100', dot: 'bg-emerald-500', label: 'Selesai' },
   over_budget:      { Icon: XCircle,      bg: 'bg-red-50',     iconBg: 'bg-red-100',     iconColor: 'text-red-600',     border: 'border-red-100',     dot: 'bg-red-500',     label: 'Peringatan' },
@@ -17,7 +17,7 @@ const TYPE_CONFIG = {
 
 const getConfig = (type) => TYPE_CONFIG[type] || TYPE_CONFIG.info
 
-// ─── Relative time ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Relative time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const relativeTime = (date) => {
   if (!date) return '-'
   const diff = Date.now() - new Date(date)
@@ -32,7 +32,7 @@ const relativeTime = (date) => {
   return new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-// ─── Group by date ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Group by date â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const groupByDate = (list) => {
   const groups = {}
   list.forEach(n => {
@@ -61,7 +61,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('all') // all | unread | read
 
-  // ── Fetch from backend ──────────────────────────────────────────────────────
+  // â”€â”€ Fetch from backend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchNotifs = useCallback(async () => {
     try {
       setLoading(true)
@@ -81,7 +81,7 @@ export default function NotificationsPage() {
     return () => clearInterval(t)
   }, [fetchNotifs])
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const markRead = async (id) => {
     try {
       await api.markNotificationRead(id)
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
     }
   }
 
-  // ── Navigate on click ────────────────────────────────────────────────────────
+  // â”€â”€ Navigate on click â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleClick = (n) => {
     markRead(n.id)
     const meta = n.metadata || {}
@@ -131,7 +131,7 @@ export default function NotificationsPage() {
     if (title.includes('funnel')) { navigate('/funnels'); return }
   }
 
-  // ── Filtered list ────────────────────────────────────────────────────────────
+  // â”€â”€ Filtered list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const filtered = notifs.filter(n =>
     filter === 'unread' ? !n.isRead :
     filter === 'read'   ? n.isRead : true
@@ -145,7 +145,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/20 p-6">
-      {/* ── Header ── */}
+      {/* â”€â”€ Header â”€â”€ */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -162,7 +162,7 @@ export default function NotificationsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Notifikasi</h1>
             <p className="text-sm text-gray-500">
               {unreadCount > 0 ? <span className="text-blue-600 font-medium">{unreadCount} belum dibaca</span> : 'Semua sudah dibaca'}
-              {' · '}{notifs.length} total
+              {' Â· '}{notifs.length} total
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* ── Filter tabs ── */}
+      {/* â”€â”€ Filter tabs â”€â”€ */}
       <div className="flex items-center gap-1 mb-6 bg-white p-1 rounded-xl border border-gray-100 shadow-sm w-fit">
         {[
           { key: 'all', label: 'Semua', count: notifs.length },
@@ -215,7 +215,7 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      {/* ── Content ── */}
+      {/* â”€â”€ Content â”€â”€ */}
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Mail, ArrowLeft, CheckCircle } from '@icons'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import Input from '../components/ui/Input'
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
 
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
-              © 2026 PT Amsar Prima Mandiri
+              Â© 2026 PT Amsar Prima Mandiri
             </p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            © 2026 PT Amsar Prima Mandiri
+            Â© 2026 PT Amsar Prima Mandiri
           </p>
         </div>
       </div>

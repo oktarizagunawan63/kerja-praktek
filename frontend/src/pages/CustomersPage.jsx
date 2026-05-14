@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search, MapPin, Phone, Mail, Edit, Trash2, Eye } from 'lucide-react'
+import { Plus, Search, MapPin, Phone, Mail, Edit, Trash2, Eye } from '@icons'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
@@ -182,7 +182,7 @@ export default function CustomersPage() {
     }
     
     try {
-      await api.rejectCustomer(customer.id, { rejection_reason: reason })
+      await api.rejectCustomer(customer.id, reason)
       toast.success('Customer ditolak')
       fetchCustomers()
     } catch (error) {
@@ -350,7 +350,7 @@ export default function CustomersPage() {
 
       {/* Error Display */}
       {error && (
-        <div className="card-compact" style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
+        <div className="card-compact" style={{ background: '#f399cc', borderLeft: '4px solid #de168c' }}>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs">!</span>
@@ -467,7 +467,7 @@ export default function CustomersPage() {
                 {/* Auto-show coordinates when available */}
                 {lokasiAmbil && formData.latitude && formData.longitude && (
                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-                    📍 {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                    ðŸ“ {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
                   </div>
                 )}
               </div>

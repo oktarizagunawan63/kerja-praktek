@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Camera, MapPin, Shield, AlertTriangle, CheckCircle, X } from 'lucide-react'
+import { Camera, MapPin, Shield, AlertTriangle, CheckCircle, X } from '@icons'
 import Button from './Button'
 import toast from 'react-hot-toast'
 
@@ -19,15 +19,15 @@ export default function CameraAttendance({ onCapture, onCancel, type = 'check-in
   // Calculate distance between two coordinates (Haversine formula)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3 // Earth's radius in meters
-    const φ1 = lat1 * Math.PI/180
-    const φ2 = lat2 * Math.PI/180
-    const Δφ = (lat2-lat1) * Math.PI/180
-    const Δλ = (lon2-lon1) * Math.PI/180
+    const phi1 = lat1 * Math.PI / 180
+    const phi2 = lat2 * Math.PI / 180
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return R * c // Distance in meters
   }

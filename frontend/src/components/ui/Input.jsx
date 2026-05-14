@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from '@icons'
 import clsx from 'clsx'
 
 /**
@@ -38,7 +38,7 @@ const Input = forwardRef(({
           ref={ref}
           className={clsx(
             'w-full px-3 py-2 text-sm border rounded-lg transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-[#0f4c81] focus:border-transparent',
+            'focus:outline-none focus:ring-2 focus:ring-[#237043] focus:border-transparent',
             'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
             leftIcon && 'pl-10',
             rightIcon && 'pr-10',

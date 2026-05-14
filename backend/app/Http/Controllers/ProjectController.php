@@ -7,6 +7,7 @@ use App\Models\ProjectNotification;
 use App\Services\ActivityLogger;
 use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -147,7 +148,7 @@ class ProjectController extends Controller
             \Log::error('Project store validation error: ' . json_encode($e->errors()));
             $response = response()->json([
                 'success' => false,
-                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors())),
+                'message' => 'Data tidak valid: ' . implode(', ', Arr::flatten($e->errors())),
                 'errors' => $e->errors()
             ], 422);
             
@@ -187,7 +188,7 @@ class ProjectController extends Controller
             return $response;
         }
         
-        $response = response()->json($this->format($project->load(['projectManager:id,name', 'materials', 'documents.uploader:id,name'])));
+        $response = response()->json($this->format($project->load(['projectManager:id,name', 'materials', 'documents.uploader:id,name', 'assignments'])));
         $response->header('Access-Control-Allow-Origin', '*');
         $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -585,8 +586,12 @@ class ProjectController extends Controller
             $project = \App\Models\Project::find($projectId);
             $projectName = $project ? $project->name : "Project #$projectId";
 
-            // If project exists in database, create assignment records
+            // If project exists in database, sync assignment records
             if ($project) {
+                \App\Models\ProjectAssignment::where('project_id', $project->id)
+                    ->whereNotIn('user_id', array_map(fn($e) => $e->id, $validEngineers))
+                    ->delete();
+
                 foreach ($validEngineers as $engineer) {
                     \App\Models\ProjectAssignment::updateOrCreate(
                         [
@@ -599,6 +604,11 @@ class ProjectController extends Controller
                         ]
                     );
                 }
+
+                $project->update([
+                    'assigned_engineers' => array_map(fn($e) => (string) $e->id, $validEngineers),
+                ]);
+
                 \Log::info("Created database assignments for project: {$project->name}");
             } else {
                 \Log::info("Project not in database, frontend will handle localStorage assignment");
@@ -624,7 +634,7 @@ class ProjectController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors())),
+                'message' => 'Data tidak valid: ' . implode(', ', Arr::flatten($e->errors())),
                 'errors' => $e->errors()
             ], 422);
             
@@ -740,10 +750,12 @@ class ProjectController extends Controller
         return [
             'id'          => $p->id,
             'name'        => $p->name ?? '',
+            'description' => $p->description ?? '',
             'location'    => $p->location ?? '',
             'pm'          => $p->pm_name ?? $p->name ?? 'Unknown',
             'phone'       => $p->pm_email ?? '',
             'deadline'    => $p->end_date ?? $p->deadline ?? null,
+            'end_date'    => $p->end_date ?? $p->deadline ?? null,
             'rab'         => (float)($p->budget ?? $p->rab ?? 0),
             'realisasi'   => (float)($p->budget_realisasi ?? $p->realisasi ?? 0),
             'progress'    => $p->progress ?? 0,
@@ -751,6 +763,35 @@ class ProjectController extends Controller
             'completedAt' => $p->completed_at ?? $p->completedAt ?? null,
             'deletedAt'   => $p->deleted_at ?? null,
             'assignedEngineers' => $p->assigned_engineers ?? [],
+            'materials'   => $p->relationLoaded('materials')
+                ? $p->materials->map(fn($m) => [
+                    'id' => $m->id,
+                    'projectId' => $m->project_id,
+                    'name' => $m->name,
+                    'unit' => $m->unit,
+                    'qty_plan' => (float) $m->qty_plan,
+                    'qty_terpasang' => (float) $m->qty_terpasang,
+                ])->values()
+                : [],
+            'documents'   => $p->relationLoaded('documents')
+                ? $p->documents->map(fn($d) => [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'type' => $d->type,
+                    'uploader' => $d->uploader?->name ?? '-',
+                    'date' => $d->created_at?->format('d/m/Y'),
+                    'previewUrl' => $d->file_url,
+                    'fileType' => str_starts_with($d->mime_type ?? '', 'image/') ? 'image' : ($d->mime_type === 'application/pdf' ? 'pdf' : 'other'),
+                    'projectId' => $d->project_id,
+                ])->values()
+                : [],
+            'assignments' => $p->relationLoaded('assignments')
+                ? $p->assignments->map(fn($assignment) => [
+                    'user_id' => $assignment->user_id,
+                    'assigned_by' => $assignment->assigned_by,
+                    'assigned_at' => $assignment->assigned_at,
+                ])->values()
+                : [],
             'createdAt'   => $p->created_at ?? null,
         ];
     }

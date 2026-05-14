@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, CheckCircle, Clock, User, Trash2, Filter } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, User, Trash2, Filter } from '@icons'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
@@ -220,49 +220,49 @@ export default function WarningsPage() {
 
       {/* Stats Cards */}
       <div className="grid-responsive sm-2 md-4 spacing-md">
-        <div className="stats-card" style={{ borderLeft: '4px solid #ef4444' }}>
+        <div className="stats-card" style={{ borderLeft: '4px solid #de168c' }}>
           <div className="stats-card-header">
             <div>
               <p className="stats-card-label">Total Warnings</p>
-              <p className="stats-card-value" style={{ color: '#ef4444' }}>{warningStats.total || 0}</p>
+              <p className="stats-card-value" style={{ color: '#de168c' }}>{warningStats.total || 0}</p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#ef4444' }}>
+            <div className="stats-card-icon" style={{ background: '#de168c' }}>
               <AlertTriangle className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="stats-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+        <div className="stats-card" style={{ borderLeft: '4px solid #8ac04a' }}>
           <div className="stats-card-header">
             <div>
               <p className="stats-card-label">Unread</p>
-              <p className="stats-card-value" style={{ color: '#f59e0b' }}>{warningStats.unread || 0}</p>
+              <p className="stats-card-value" style={{ color: '#8ac04a' }}>{warningStats.unread || 0}</p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#f59e0b' }}>
+            <div className="stats-card-icon" style={{ background: '#8ac04a' }}>
               <Clock className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="stats-card" style={{ borderLeft: '4px solid #10b981' }}>
+        <div className="stats-card" style={{ borderLeft: '4px solid #5a9844' }}>
           <div className="stats-card-header">
             <div>
               <p className="stats-card-label">Read</p>
-              <p className="stats-card-value" style={{ color: '#10b981' }}>{warningStats.read || 0}</p>
+              <p className="stats-card-value" style={{ color: '#5a9844' }}>{warningStats.read || 0}</p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#10b981' }}>
+            <div className="stats-card-icon" style={{ background: '#5a9844' }}>
               <CheckCircle className="text-white" size={20} />
             </div>
           </div>
         </div>
         
-        <div className="stats-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+        <div className="stats-card" style={{ borderLeft: '4px solid #237043' }}>
           <div className="stats-card-header">
             <div>
               <p className="stats-card-label">High Priority</p>
-              <p className="stats-card-value" style={{ color: '#3b82f6' }}>{warningStats.high_priority || 0}</p>
+              <p className="stats-card-value" style={{ color: '#237043' }}>{warningStats.high_priority || 0}</p>
             </div>
-            <div className="stats-card-icon" style={{ background: '#3b82f6' }}>
+            <div className="stats-card-icon" style={{ background: '#237043' }}>
               <AlertTriangle className="text-white" size={20} />
             </div>
           </div>

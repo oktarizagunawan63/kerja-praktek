@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Image, Download, Eye, Plus, Trash2, X, ChevronDown, ChevronUp, Loader2, FolderOpen, Upload } from 'lucide-react'
+import { FileText, Image, Download, Eye, Plus, Trash2, X, ChevronDown, ChevronUp, Loader2, FolderOpen, Upload, Info } from '@icons'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import FileUpload from '../components/ui/FileUpload'
@@ -103,7 +103,12 @@ export default function DocumentsPage() {
   }
 
   const handlePreview = (doc) => {
-    if (!doc.previewUrl) { toast('File tidak bisa dipreview', { icon: 'ℹ️' }); return }
+    if (!doc.previewUrl) {
+      toast('File tidak bisa dipreview', {
+        icon: <Info size={18} className='text-[#de168c]' />
+      })
+      return
+    }
     if (doc.fileType === 'pdf') {
       window.open(doc.previewUrl, '_blank')
     } else {
@@ -187,7 +192,7 @@ export default function DocumentsPage() {
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{p.name}</p>
                       <p className="text-xs text-gray-400">
-                        {p.location} · <span className="font-medium text-blue-500">{docs.length} dokumen</span>
+                        {p.location} Ã‚Â· <span className="font-medium text-blue-500">{docs.length} dokumen</span>
                       </p>
                     </div>
                   </div>
@@ -195,7 +200,7 @@ export default function DocumentsPage() {
                     <button
                       id={`upload-doc-${p.id}`}
                       onClick={(e) => handleOpenUpload(e, p.id)}
-                      className="flex items-center gap-1.5 text-xs bg-[#0f4c81] hover:bg-[#1a6bb5] text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+                      className="flex items-center gap-1.5 text-xs bg-[#237043] hover:bg-[#5a9844] text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
                     >
                       <Upload size={12} /> Unggah
                     </button>
@@ -240,7 +245,7 @@ export default function DocumentsPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                              <p className="text-xs text-gray-400">{doc.uploader} · {doc.date}</p>
+                              <p className="text-xs text-gray-400">{doc.uploader} Ã‚Â· {doc.date}</p>
                             </div>
 
                             <Badge variant={typeVariant[doc.type] || 'default'}>{doc.type}</Badge>
@@ -312,7 +317,7 @@ export default function DocumentsPage() {
       <Modal
         open={open}
         onClose={() => { if (!uploading) setOpen(false) }}
-        title={`Unggah Dokumen — ${selectedProject?.name || ''}`}
+        title={`Unggah Dokumen Ã¢â‚¬â€ ${selectedProject?.name || ''}`}
         size="md"
       >
         <div className="space-y-4">
@@ -327,8 +332,8 @@ export default function DocumentsPage() {
                   onClick={() => setForm(f => ({ ...f, type: t }))}
                   className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
                     form.type === t
-                      ? 'bg-[#0f4c81] text-white border-[#0f4c81]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#0f4c81] hover:text-[#0f4c81]'
+                      ? 'bg-[#237043] text-white border-[#237043]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#237043] hover:text-[#237043]'
                   }`}
                 >
                   {t}
@@ -387,3 +392,4 @@ export default function DocumentsPage() {
     </div>
   )
 }
+

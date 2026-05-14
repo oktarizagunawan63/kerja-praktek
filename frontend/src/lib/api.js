@@ -1,6 +1,19 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 const pendingGetRequests = new Map()
 
+const normalizeReasonPayload = (reason) => {
+  if (typeof reason === 'string') {
+    return reason.trim()
+  }
+
+  if (reason && typeof reason === 'object') {
+    const value = reason.rejection_reason ?? reason.reason ?? ''
+    return typeof value === 'string' ? value.trim() : ''
+  }
+
+  return ''
+}
+
 const getToken = () => {
   try {
     const authData = localStorage.getItem('amsar-auth')
@@ -87,6 +100,9 @@ const request = (endpoint, options = {}) => {
 
 // Simple API object - just the basics
 export const api = {
+  get: async (endpoint) => ({ data: await request(endpoint) }),
+  post: async (endpoint, data) => ({ data: await request(endpoint, { method: 'POST', body: JSON.stringify(data) }) }),
+
   // Projects
   getProjects: () => request('/projects'),
   createProject: (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) }),
@@ -118,7 +134,7 @@ export const api = {
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
   approveUser: (id) => request(`/users/${id}/approve`, { method: 'POST' }),
-  rejectUser: (id, reason) => request(`/users/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  rejectUser: (id, reason) => request(`/users/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason: normalizeReasonPayload(reason) }) }),
   assignProject: (id, projectId) => request(`/users/${id}/assign-projects`, { method: 'POST', body: JSON.stringify({ project_id: projectId }) }),
   
   // Customers
@@ -138,7 +154,7 @@ export const api = {
   updateCustomer: (id, data) => request(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCustomer: (id) => request(`/customers/${id}`, { method: 'DELETE' }),
   approveCustomer: (id) => request(`/customers/${id}/approve`, { method: 'POST' }),
-  rejectCustomer: (id, reason) => request(`/customers/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
+  rejectCustomer: (id, reason) => request(`/customers/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: normalizeReasonPayload(reason) }) }),
 
   
   // Plan Visits
@@ -152,7 +168,7 @@ export const api = {
   updatePlanVisit: (id, data) => request(`/plan-visits/${id}`, { method: 'PUT', body: JSON.stringify(data), dedupeKey: JSON.stringify(data) }),
   deletePlanVisit: (id) => request(`/plan-visits/${id}`, { method: 'DELETE' }),
   approvePlanVisit: (id) => request(`/plan-visits/${id}/approve`, { method: 'POST' }),
-  rejectPlanVisit: (id, reason) => request(`/plan-visits/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: reason }) }),
+  rejectPlanVisit: (id, reason) => request(`/plan-visits/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: normalizeReasonPayload(reason) }) }),
   completePlanVisit: (id, data) => request(`/plan-visits/${id}/complete`, { method: 'POST', body: JSON.stringify(data) }),
 
   
@@ -169,7 +185,7 @@ export const api = {
   getPendingUnplannedVisits: () => request('/realisasi-visits/pending-unplanned'),
   getMyUnplannedVisits: () => request('/realisasi-visits/my-unplanned'),
   approveUnplannedVisit: (id) => request(`/realisasi-visits/${id}/approve-unplanned`, { method: 'POST' }),
-  rejectUnplannedVisit: (id, data) => request(`/realisasi-visits/${id}/reject-unplanned`, { method: 'POST', body: JSON.stringify(data) }),
+  rejectUnplannedVisit: (id, reason) => request(`/realisasi-visits/${id}/reject-unplanned`, { method: 'POST', body: JSON.stringify({ rejection_reason: normalizeReasonPayload(reason) }) }),
   markVisitAsMissed: (planVisitId) => request(`/realisasi-visits/${planVisitId}/mark-missed`, { method: 'POST' }),
   
   // Attendance
@@ -274,6 +290,7 @@ export const api = {
   getEngineerProjects: () => request('/engineer/projects'),
   getEngineerProgressReports: () => request('/engineer/progress-reports'),
   createEngineerProgressReport: (data) => request('/engineer/progress-reports', { method: 'POST', body: JSON.stringify(data) }),
+  submitProgressReport: (data) => request('/engineer/progress-reports', { method: 'POST', body: JSON.stringify(data) }),
   
   // Dashboards
   getAdminDashboard: () => request('/dashboard/admin'),
@@ -313,7 +330,13 @@ export const api = {
   // Project specific
   getProjectKpiSummary: () => request('/projects/kpi-summary'),
   assignEngineer: (projectId, engineerId) => request(`/projects/${projectId}/assign-engineer`, { method: 'POST', body: JSON.stringify({ engineer_id: engineerId }) }),
-  assignEngineersToProject: (projectId, engineerIds) => request('/projects/assign-engineers', { method: 'POST', body: JSON.stringify({ project_id: projectId, engineer_ids: engineerIds }) }),
+  assignEngineersToProject: (projectOrPayload, engineerIds = []) => {
+    const payload = typeof projectOrPayload === 'object' && projectOrPayload !== null
+      ? projectOrPayload
+      : { project_id: projectOrPayload, engineer_ids: engineerIds }
+
+    return request('/projects/assign-engineers', { method: 'POST', body: JSON.stringify(payload) })
+  },
   getEngineers: () => request('/projects/engineers/list'),
   completeProject: (id, note) => request(`/projects/${id}/complete`, { method: 'POST', body: JSON.stringify({ note }) }),
   restoreProject: (id) => request(`/projects/${id}/restore`, { method: 'POST' }),

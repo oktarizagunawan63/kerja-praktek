@@ -1,3 +1,5 @@
+import { Clock, CircleX, FileText } from '@icons'
+
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -28,22 +30,22 @@ export const STATUS_CONFIG = {
   [PROJECT_STATUS.ON_TRACK]: { 
     label: 'On Track', 
     variant: 'success',
-    color: '#16a34a'
+    color: '#5a9844'
   },
   [PROJECT_STATUS.AT_RISK]: { 
     label: 'At Risk', 
     variant: 'warning',
-    color: '#ea580c'
+    color: '#8ac04a'
   },
   [PROJECT_STATUS.DELAYED]: { 
     label: 'Delayed', 
     variant: 'danger',
-    color: '#dc2626'
+    color: '#d54496'
   },
   [PROJECT_STATUS.COMPLETED]: { 
     label: 'Selesai', 
     variant: 'info',
-    color: '#0ea5e9'
+    color: '#237043'
   }
 }
 
@@ -68,17 +70,17 @@ export const VISIT_STATUS_CONFIG = {
   [VISIT_STATUS.PENDING]: {
     label: 'Pending',
     variant: 'warning',
-    color: '#ea580c'
+    color: '#8ac04a'
   },
   [VISIT_STATUS.DONE]: {
     label: 'Selesai',
     variant: 'success',
-    color: '#16a34a'
+    color: '#5a9844'
   },
   [VISIT_STATUS.MISSED]: {
     label: 'Terlewat',
     variant: 'danger',
-    color: '#dc2626'
+    color: '#d54496'
   }
 }
 
@@ -92,18 +94,18 @@ export const WARNING_TYPES = {
 export const WARNING_TYPE_CONFIG = {
   [WARNING_TYPES.MISSED_VISIT]: {
     label: 'Visit Terlewat',
-    icon: '📅',
-    color: '#dc2626'
+    icon: FileText,
+    color: '#d54496'
   },
   [WARNING_TYPES.LATE_ATTENDANCE]: {
     label: 'Terlambat Absen',
-    icon: '⏰',
-    color: '#ea580c'
+    icon: Clock,
+    color: '#8ac04a'
   },
   [WARNING_TYPES.NO_ATTENDANCE]: {
     label: 'Tidak Absen',
-    icon: '❌',
-    color: '#dc2626'
+    icon: CircleX,
+    color: '#d54496'
   }
 }
 
@@ -153,22 +155,22 @@ export const PAGINATION = {
 
 // Theme Colors
 export const THEME = {
-  PRIMARY: '#0f4c81',
-  PRIMARY_HOVER: '#1a6bb5',
-  SUCCESS: '#16a34a',
-  WARNING: '#ea580c',
-  ERROR: '#dc2626',
-  INFO: '#0ea5e9',
+  PRIMARY: '#237043',
+  PRIMARY_HOVER: '#5a9844',
+  SUCCESS: '#5a9844',
+  WARNING: '#8ac04a',
+  ERROR: '#d54496',
+  INFO: '#de168c',
   GRAY: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827'
+    50: '#f3faf1',
+    100: '#b7cdc0',
+    200: '#a4ca9a',
+    300: '#a4ca9a',
+    400: '#5a9844',
+    500: '#5a9844',
+    600: '#237043',
+    700: '#237043',
+    800: '#237043',
+    900: '#237043'
   }
 }

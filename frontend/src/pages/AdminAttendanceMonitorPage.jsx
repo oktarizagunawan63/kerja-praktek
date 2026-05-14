@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, UserCheck, UserX, Clock, Search, Calendar, MapPin, AlertTriangle, Eye } from 'lucide-react'
+import { Users, UserCheck, UserX, Clock, Search, Calendar, MapPin, AlertTriangle, Eye } from '@icons'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -368,7 +368,7 @@ export default function AdminAttendanceMonitorPage() {
               onClick={() => setSelectedPhoto(null)}
               className="absolute top-2 right-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-colors"
             >
-              ✕
+              âœ•
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from '@icons'
 
 /**
  * Reusable loading component
@@ -25,7 +25,7 @@ export default function Loading({
 
   const content = (
     <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
-      <Loader2 className={`${sizeClasses[size]} text-[#0f4c81] animate-spin`} />
+      <Loader2 className={`${sizeClasses[size]} text-[#237043] animate-spin`} />
       {text && (
         <p className={`${textSizeClasses[size]} text-gray-600 font-medium`}>
           {text}
