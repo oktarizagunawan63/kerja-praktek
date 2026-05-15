@@ -11,17 +11,18 @@ class Project extends Model
 
     protected $fillable = [
         'name', 'description', 'location', 'status',
-        'start_date', 'end_date', 'budget', 'budget_realisasi',
+        'start_date', 'end_date', 'rab', 'rab_realisasi',
         'progress', 'project_manager_id', 'pm_name', 'pm_email',
-        'completed_at', 'assigned_engineers',
+        'completed_at', 'assigned_engineers', 'created_by',
+        'site_manager_id', 'user_id',
     ];
 
     protected $casts = [
         'start_date'         => 'date:Y-m-d',
         'end_date'           => 'date:Y-m-d',
         'completed_at'       => 'datetime',
-        'budget'             => 'decimal:2',
-        'budget_realisasi'   => 'decimal:2',
+        'rab'                => 'decimal:2',
+        'rab_realisasi'      => 'decimal:2',
         'progress'           => 'integer',
         'assigned_engineers' => 'array',
     ];

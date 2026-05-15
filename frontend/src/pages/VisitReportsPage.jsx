@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
-import { exportVisitReportsPDF } from '../lib/exportPdf'
 import toast from 'react-hot-toast'
 
 export default function VisitReportsPage() {
@@ -20,9 +19,8 @@ export default function VisitReportsPage() {
   const [salesUsers, setSalesUsers] = useState([])
 
   useEffect(() => {
-    fetchData()
     if (can(user, 'view_sales_performance')) fetchSalesUsers()
-  }, [])
+  }, [user])
 
   useEffect(() => { fetchData() }, [filters])
 
@@ -68,12 +66,13 @@ export default function VisitReportsPage() {
 
   const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }))
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!detailedVisits || detailedVisits.length === 0) {
       toast.error('Tidak ada data untuk di-export')
       return
     }
     try {
+      const { exportVisitReportsPDF } = await import('../lib/exportPdf')
       const statistics = {
         totalVisits: reportData?.summary?.total_visits || detailedVisits.length,
         completed: reportData?.summary?.completed_visits || 0,

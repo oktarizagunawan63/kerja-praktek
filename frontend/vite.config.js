@@ -17,23 +17,14 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => {
-          console.log('🔄 Proxying:', path, '→', `http://127.0.0.1:8000${path}`)
-          return path
+        rewrite: (path) => path,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.error('Proxy error:', err.message)
+          })
         },
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.error('❌ Proxy error:', err.message)
-          })
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log(`📤 ${req.method} ${req.url} → http://127.0.0.1:8000${req.url}`)
-          })
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log(`📥 ${proxyRes.statusCode} ${req.url}`)
-          })
-        }
-      }
-    }
+      },
+    },
   },
   build: {
     rollupOptions: {
@@ -42,12 +33,12 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'chart-vendor': ['recharts'],
           'ui-vendor': ['react-icons', 'react-hot-toast'],
-        }
-      }
+        },
+      },
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
-  }
+    include: ['react', 'react-dom', 'react-router-dom'],
+  },
 })

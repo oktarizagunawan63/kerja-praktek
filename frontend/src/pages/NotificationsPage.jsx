@@ -3,6 +3,7 @@ import { AlertTriangle, Clock, CheckCircle, Info, Bell, Trash2, CheckCheck, MapP
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
+import useAppStore from '../store/appStore'
 import toast from 'react-hot-toast'
 
 // â”€â”€â”€ Type config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -56,6 +57,11 @@ const groupByDate = (list) => {
 
 export default function NotificationsPage() {
   const { user }    = useAuthStore()
+  const setNotifications = useAppStore(state => state.setNotifications)
+  const markNotificationReadInStore = useAppStore(state => state.markNotificationReadInStore)
+  const markAllNotificationsReadInStore = useAppStore(state => state.markAllNotificationsReadInStore)
+  const removeNotificationInStore = useAppStore(state => state.removeNotificationInStore)
+  const clearNotificationsInStore = useAppStore(state => state.clearNotificationsInStore)
   const navigate    = useNavigate()
   const [notifs, setNotifs]   = useState([])
   const [loading, setLoading] = useState(true)
@@ -66,7 +72,9 @@ export default function NotificationsPage() {
     try {
       setLoading(true)
       const res = await api.getNotifications()
-      setNotifs(Array.isArray(res) ? res : res?.data || [])
+      const data = Array.isArray(res) ? res : res?.data || []
+      setNotifs(data)
+      setNotifications(data)
     } catch {
       toast.error('Gagal memuat notifikasi')
     } finally {
@@ -86,6 +94,7 @@ export default function NotificationsPage() {
     try {
       await api.markNotificationRead(id)
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+      markNotificationReadInStore(id)
     } catch {}
   }
 
@@ -93,6 +102,7 @@ export default function NotificationsPage() {
     try {
       await api.markAllNotificationsRead()
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
+      markAllNotificationsReadInStore()
       toast.success('Semua notifikasi ditandai dibaca')
     } catch {
       toast.error('Gagal menandai semua dibaca')
@@ -104,6 +114,7 @@ export default function NotificationsPage() {
     try {
       await api.deleteNotification(id)
       setNotifs(prev => prev.filter(n => n.id !== id))
+      removeNotificationInStore(id)
     } catch {
       toast.error('Gagal menghapus notifikasi')
     }
@@ -114,6 +125,7 @@ export default function NotificationsPage() {
     try {
       await api.clearAllNotifications()
       setNotifs([])
+      clearNotificationsInStore()
       toast.success('Semua notifikasi dihapus')
     } catch {
       toast.error('Gagal menghapus semua notifikasi')
@@ -162,7 +174,7 @@ export default function NotificationsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Notifikasi</h1>
             <p className="text-sm text-gray-500">
               {unreadCount > 0 ? <span className="text-blue-600 font-medium">{unreadCount} belum dibaca</span> : 'Semua sudah dibaca'}
-              {' Â· '}{notifs.length} total
+              {' · '}{notifs.length} total
             </p>
           </div>
         </div>

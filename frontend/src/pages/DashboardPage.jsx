@@ -20,7 +20,7 @@ const statusMap = {
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { projects, checkNotifications } = useAppStore()
+  const projects = useAppStore(state => state.projects)
   const { user } = useAuthStore()
   const { users } = useUserStore()
   const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
@@ -29,7 +29,6 @@ export default function DashboardPage() {
   const [dashboardStats, setDashboardStats] = useState(null)
 
   useEffect(() => { 
-    checkNotifications()
     loadDashboardData()
     
     // Auto-refresh data every 60 seconds
@@ -366,14 +365,14 @@ export default function DashboardPage() {
 
       {/* Greeting Card */}
       <div className="greeting-card">
-        <h2>Selamat datang, {user?.name}!</h2>
-        <p>Dashboard monitoring proyek PT Amsar Prima Mandiri</p>
+        <h2 className="text-[#de168c]">Selamat datang, {user?.name}!</h2>
+        <p className="text-[#de168c]">Dashboard monitoring proyek PT Amsar Prima Mandiri</p>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Real-time project monitoring</p>
+          <h1 className="text-xl font-bold text-[#de168c]">Dashboard Overview</h1>
+          <p className="text-sm text-[#de168c] mt-0.5">Real-time project monitoring</p>
         </div>
         {(user?.role === 'administrator' || user?.role === 'direktur') && siteManagers.length > 0 && (
           <select value={filterSM} onChange={e => setFilterSM(e.target.value)}

@@ -33,7 +33,7 @@ const divisionLabel = {
 const EMPTY = { name: '', email: '', password: '', role: '', division: '', assignedProjects: [] }
 
 export default function UsersPage() {
-  const { projects } = useAppStore()
+  const projects = useAppStore(state => state.projects)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen]         = useState(false)
@@ -354,7 +354,7 @@ export default function UsersPage() {
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${assigned ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
                 <div>
                   <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                  <p className="text-xs text-gray-400">{p.location} Â· PM: {p.pm}</p>
+                  <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${assigned ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                   {assigned && <div className="w-2 h-2 bg-white rounded-full"/>}

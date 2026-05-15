@@ -69,11 +69,8 @@ const useUserStore = create(
         try {
           const token = getAuthToken();
           if (!token) {
-            console.warn('UserStore: No token found, cannot fetch users');
             return [];
           }
-
-          console.log('UserStore: Fetching users with token:', token.substring(0, 20) + '...');
 
           const response = await fetch('http://127.0.0.1:8000/api/users', {
             headers: {
@@ -86,8 +83,6 @@ const useUserStore = create(
           if (response.ok) {
             const data = await response.json();
             const users = data.data || data;
-            console.log('UserStore: Fetched users from API:', users);
-            console.log('UserStore: Setting users in store...');
             
             // Force update the store
             set({ users: Array.isArray(users) ? users : [] });
@@ -95,12 +90,9 @@ const useUserStore = create(
             // Also trigger a re-render by updating a timestamp
             set(state => ({ ...state, lastFetch: Date.now() }));
             
-            console.log('UserStore: Users set successfully, count:', users.length);
             return users;
           } else {
             console.error('UserStore: Failed to fetch users:', response.status, response.statusText);
-            const errorText = await response.text();
-            console.error('UserStore: Error response:', errorText);
           }
         } catch (error) {
           console.error('UserStore: Error fetching users:', error);

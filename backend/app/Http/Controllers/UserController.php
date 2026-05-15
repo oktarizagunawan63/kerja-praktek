@@ -8,6 +8,7 @@ use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UserController extends Controller
 {
@@ -235,20 +236,49 @@ class UserController extends Controller
                 ->where('visited_by', $user->id)
                 ->update(['visited_by' => null]);
 
-            // 4. Delete attendance records (safe to delete)
-            \DB::table('attendance')
-                ->where('user_id', $user->id)
-                ->delete();
+            // 4. Delete attendance records (safe to delete). Some older DBs used
+            // attendance, current tables use attendances.
+            foreach (['attendances', 'attendance'] as $attendanceTable) {
+                if (Schema::hasTable($attendanceTable) && Schema::hasColumn($attendanceTable, 'user_id')) {
+                    \DB::table($attendanceTable)
+                        ->where('user_id', $user->id)
+                        ->delete();
+                }
+            }
 
             // 5. Delete warnings for this user
             \DB::table('warnings')
                 ->where('user_id', $user->id)
                 ->delete();
 
-            // 6. Update users approved_by (self-referencing)
+            // 6. Update nullable/self-referencing user columns
             \DB::table('users')
                 ->where('approved_by', $user->id)
                 ->update(['approved_by' => null]);
+
+            if (Schema::hasTable('customers') && Schema::hasColumn('customers', 'approved_by')) {
+                \DB::table('customers')
+                    ->where('approved_by', $user->id)
+                    ->update(['approved_by' => null]);
+            }
+
+            if (Schema::hasTable('plan_visits') && Schema::hasColumn('plan_visits', 'approved_by')) {
+                \DB::table('plan_visits')
+                    ->where('approved_by', $user->id)
+                    ->update(['approved_by' => null]);
+            }
+
+            if (Schema::hasTable('realisasi_visits') && Schema::hasColumn('realisasi_visits', 'approved_by')) {
+                \DB::table('realisasi_visits')
+                    ->where('approved_by', $user->id)
+                    ->update(['approved_by' => null]);
+            }
+
+            if (Schema::hasTable('project_notifications') && Schema::hasColumn('project_notifications', 'user_id')) {
+                \DB::table('project_notifications')
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
 
             // 7. Handle projects - reassign to current user if they are project manager or creator
             \DB::table('projects')
@@ -258,6 +288,18 @@ class UserController extends Controller
             \DB::table('projects')
                 ->where('created_by', $user->id)
                 ->update(['created_by' => $currentUser->id]);
+
+            if (Schema::hasColumn('projects', 'site_manager_id')) {
+                \DB::table('projects')
+                    ->where('site_manager_id', $user->id)
+                    ->update(['site_manager_id' => $currentUser->id]);
+            }
+
+            if (Schema::hasColumn('projects', 'user_id')) {
+                \DB::table('projects')
+                    ->where('user_id', $user->id)
+                    ->update(['user_id' => $currentUser->id]);
+            }
 
             // 8. Activity logs, progress reports, and documents will cascade delete automatically
 

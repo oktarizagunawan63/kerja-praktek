@@ -278,8 +278,6 @@ export default function RealisasiVisitsPage() {
         visited_at: new Date().toISOString()
       }
       
-      console.log('Submitting visit data:', submitData)
-      
       await api.createRealisasiVisit(submitData)
       toast.success('Realisasi visit berhasil disimpan')
       

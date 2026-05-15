@@ -27,6 +27,7 @@ const useAppStore = create((set, get) => ({
 
   // Notifications state (default empty to prevent undefined errors)
   notifications: [],
+  notificationUnreadCount: 0,
 
   // Documents state
   documents: [],
@@ -348,27 +349,68 @@ const useAppStore = create((set, get) => ({
     }
   },
 
-  // Check notifications (placeholder - implement when notification system is ready)
+  // Notifications
+  setNotifications: (notifications) => {
+    const list = Array.isArray(notifications) ? notifications : []
+    set({
+      notifications: list,
+      notificationUnreadCount: list.filter(notification => !notification.isRead).length,
+    })
+  },
+
+  markNotificationReadInStore: (id) => {
+    set(state => ({
+      notifications: state.notifications.map(notification =>
+        notification.id === id ? { ...notification, isRead: true } : notification
+      ),
+      notificationUnreadCount: Math.max(0, state.notificationUnreadCount - 1),
+    }))
+  },
+
+  markAllNotificationsReadInStore: () => {
+    set(state => ({
+      notifications: state.notifications.map(notification => ({ ...notification, isRead: true })),
+      notificationUnreadCount: 0,
+    }))
+  },
+
+  removeNotificationInStore: (id) => {
+    set(state => ({
+      notifications: state.notifications.filter(notification => notification.id !== id),
+      notificationUnreadCount: Math.max(
+        0,
+        state.notificationUnreadCount - (state.notifications.find(notification => notification.id === id && !notification.isRead) ? 1 : 0)
+      ),
+    }))
+  },
+
+  clearNotificationsInStore: () => {
+    set({ notifications: [], notificationUnreadCount: 0 })
+  },
+
   checkNotifications: async () => {
     try {
-      set({ notifications: [] })
+      const token = getAuthToken()
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const response = await fetch(`${API_BASE}/notifications/unread-count`, { headers })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const data = await response.json()
+      set({ notificationUnreadCount: Number(data.count || 0) })
     } catch (error) {
       console.error('Failed to check notifications:', error)
-      set({ notifications: [] })
     }
   },
 
-  // Add project (placeholder - implement when backend ready)
+  fetchNotifications: async () => get().checkNotifications(),
+
+  // Backward-compatible alias used by older pages
   addProject: async (projectData) => {
     try {
-      // For now just add to local state
-      const newProject = {
-        id: Date.now(),
-        ...projectData,
-        createdAt: new Date().toISOString()
-      }
-      set(state => ({ projects: [...state.projects, newProject] }))
-      return newProject.id
+      const response = await get().createProject(projectData)
+      return response?.data?.id || response?.id || null
     } catch (error) {
       console.error('Failed to add project:', error)
       return null

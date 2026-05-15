@@ -17,6 +17,7 @@ class NotificationController extends Controller
                       ->orWhereNull('user_id');
             })
             ->orderByDesc('created_at')
+            ->limit(100)
             ->get();
 
         return response()->json($notifs->map(fn($n) => [
@@ -56,6 +57,11 @@ class NotificationController extends Controller
 
     public function markRead(ProjectNotification $notification)
     {
+        $user = request()->user();
+        if ($notification->user_id !== null && (int) $notification->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Tidak memiliki akses ke notifikasi ini'], 403);
+        }
+
         $notification->update(['is_read' => true]);
         return response()->json(['message' => 'OK']);
     }
@@ -76,6 +82,11 @@ class NotificationController extends Controller
 
     public function destroy(ProjectNotification $notification)
     {
+        $user = request()->user();
+        if ($notification->user_id !== null && (int) $notification->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Tidak memiliki akses ke notifikasi ini'], 403);
+        }
+
         $notification->delete();
         return response()->json(['message' => 'Dihapus']);
     }

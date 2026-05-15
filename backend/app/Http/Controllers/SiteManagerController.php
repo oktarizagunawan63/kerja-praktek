@@ -11,6 +11,20 @@ use Illuminate\Support\Facades\DB;
 
 class SiteManagerController extends Controller
 {
+    private function normalizeIdList($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_map('strval', $value));
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? array_values(array_map('strval', $decoded)) : [];
+        }
+
+        return [];
+    }
+
     /**
      * Get site manager dashboard (alias for getDashboardStats)
      */
@@ -27,8 +41,18 @@ class SiteManagerController extends Controller
         try {
             $user = $request->user();
             
-            // Site Manager sees ALL projects (including auto-created from Funnel WON)
-            $projects = Project::all();
+            $projects = Project::where(function ($query) use ($user) {
+                    $query->where('project_manager_id', $user->id);
+
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('projects', 'site_manager_id')) {
+                        $query->orWhere('site_manager_id', $user->id);
+                    }
+
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('projects', 'created_by')) {
+                        $query->orWhere('created_by', $user->id);
+                    }
+                })
+                ->get();
 
             // Project statistics
             $totalProjects = $projects->count();
@@ -38,8 +62,8 @@ class SiteManagerController extends Controller
             $atRiskProjects = $projects->where('status', 'at_risk')->count();
 
             // RAB statistics
-            $totalRab = $projects->sum('budget') ?? 0;
-            $totalRealisasi = $projects->sum('budget_realisasi') ?? 0;
+            $totalRab = $projects->sum('rab') ?? 0;
+            $totalRealisasi = $projects->sum('rab_realisasi') ?? 0;
             $rabPercentage = $totalRab > 0 ? round(($totalRealisasi / $totalRab) * 100, 2) : 0;
 
             // Progress statistics
@@ -60,8 +84,8 @@ class SiteManagerController extends Controller
                         'name'          => $project->name,
                         'status'        => $project->status,
                         'progress'      => $project->progress ?? 0,
-                        'budget'        => $project->budget ?? 0,
-                        'budget_realisasi' => $project->budget_realisasi ?? 0,
+                        'budget'        => $project->rab ?? 0,
+                        'budget_realisasi' => $project->rab_realisasi ?? 0,
                         'deadline'      => $project->end_date,
                         'location'      => $project->location,
                         'pm_name'       => $project->pm_name,
@@ -88,8 +112,8 @@ class SiteManagerController extends Controller
                 ->where('is_active', true)
                 ->get()
                 ->map(function($engineer) use ($projectIds) {
-                    $assignedProjectIds = json_decode($engineer->assigned_projects ?? '[]', true);
-                    $relevantProjects = array_intersect($assignedProjectIds, $projectIds);
+                    $assignedProjectIds = $this->normalizeIdList($engineer->assigned_projects ?? []);
+                    $relevantProjects = array_intersect($assignedProjectIds, array_map('strval', $projectIds));
                     
                     return [
                         'id' => $engineer->id,
@@ -176,7 +200,7 @@ class SiteManagerController extends Controller
                         'end_date' => $project->end_date,
                         'pm_name' => $project->pm_name,
                         'pm_email' => $project->pm_email,
-                        'assigned_engineers' => json_decode($project->assigned_engineers ?? '[]', true),
+                        'assigned_engineers' => $this->normalizeIdList($project->assigned_engineers ?? []),
                         'created_at' => $project->created_at->format('Y-m-d H:i'),
                         'days_remaining' => now()->diffInDays($project->end_date, false)
                     ];

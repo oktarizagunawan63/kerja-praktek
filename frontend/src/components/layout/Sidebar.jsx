@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, FileText,
   BarChart3, Bell, Activity, Users,
   MapPin, Calendar, CheckSquare, Clock, AlertTriangle, Settings, TrendingUp, ClipboardCheck
-} from '@icons'
+} from '../../lib/icons.jsx'
 import useAuthStore from '../../store/authStore'
 import useAppStore from '../../store/appStore'
 import { getRoleDisplayName, normalizeRole } from '../../utils/roleUtils'
@@ -37,6 +37,7 @@ const NAV_SECTIONS = {
         { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
+        { to: '/reports', icon: ClipboardCheck, label: 'Laporan Proyek', tourId: 'reports' },
         { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
       ]
     },
@@ -153,18 +154,17 @@ function AmsarLogo({ size = 40 }) {
 
 export default function Sidebar({ mobileOpen = false, onClose, onNavigate }) {
   const { user } = useAuthStore()
-  const { notifications } = useAppStore()
+  const notificationUnreadCount = useAppStore(state => state.notificationUnreadCount)
   
   // Memoize expensive calculations
   const { sections, unreadCount } = useMemo(() => {
     const role = normalizeRole(user?.role)
-    const unread = (notifications || []).filter(n => !n.isRead).length
     
     return {
       sections: NAV_SECTIONS[role] || NAV_SECTIONS.engineer,
-      unreadCount: unread
+      unreadCount: notificationUnreadCount
     }
-  }, [user?.role, notifications])
+  }, [user?.role, notificationUnreadCount])
 
   return (
     <>

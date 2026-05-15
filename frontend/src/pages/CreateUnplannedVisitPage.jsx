@@ -152,11 +152,7 @@ export default function CreateUnplannedVisitPage() {
         photos: [photoData.photo]
       }
       
-      console.log('Submitting unplanned visit:', submitData)
-      
       const response = await api.createUnplannedVisit(submitData)
-      
-      console.log('Response:', response)
       
       const message = user.role === 'sales' 
         ? 'Unplanned visit berhasil dibuat dan menunggu approval Sales Manager' 

@@ -13,6 +13,7 @@ const typeVariant = {
   'Laporan Harian': 'info',
   'Laporan Mingguan': 'success',
   'Foto': 'warning',
+  'Foto Progress': 'warning',
   'Dokumen Teknis': 'default',
   'Berita Acara': 'info',
   'Surat Perintah Kerja': 'default',
@@ -30,7 +31,14 @@ const DOC_TYPES = [
 ]
 
 export default function DocumentsPage() {
-  const { documents, documentsLoading, addDoc, deleteDoc, fetchDocuments, projects, projectsLoading, fetchProjects } = useAppStore()
+  const documents = useAppStore(state => state.documents)
+  const documentsLoading = useAppStore(state => state.documentsLoading)
+  const addDoc = useAppStore(state => state.addDoc)
+  const deleteDoc = useAppStore(state => state.deleteDoc)
+  const fetchDocuments = useAppStore(state => state.fetchDocuments)
+  const projects = useAppStore(state => state.projects)
+  const projectsLoading = useAppStore(state => state.projectsLoading)
+  const fetchProjects = useAppStore(state => state.fetchProjects)
   const { user } = useAuthStore()
   const { users } = useUserStore()
 
@@ -192,7 +200,7 @@ export default function DocumentsPage() {
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{p.name}</p>
                       <p className="text-xs text-gray-400">
-                        {p.location} Ã‚Â· <span className="font-medium text-blue-500">{docs.length} dokumen</span>
+                        {p.location} · <span className="font-medium text-blue-500">{docs.length} dokumen</span>
                       </p>
                     </div>
                   </div>
@@ -245,7 +253,7 @@ export default function DocumentsPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                              <p className="text-xs text-gray-400">{doc.uploader} Ã‚Â· {doc.date}</p>
+                              <p className="text-xs text-gray-400">{doc.uploader} · {doc.date}</p>
                             </div>
 
                             <Badge variant={typeVariant[doc.type] || 'default'}>{doc.type}</Badge>
@@ -392,4 +400,3 @@ export default function DocumentsPage() {
     </div>
   )
 }
-

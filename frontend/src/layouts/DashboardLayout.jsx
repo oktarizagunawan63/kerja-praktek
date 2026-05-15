@@ -1,10 +1,15 @@
 import { Outlet } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import Sidebar from '../components/layout/Sidebar'
 import Topbar from '../components/layout/Topbar'
+import useAppStore from '../store/appStore'
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const checkNotifications = useAppStore(state => state.checkNotifications)
+  const unreadCount = useAppStore(state => state.notificationUnreadCount)
+  const previousUnreadCountRef = useRef(0)
 
   useEffect(() => {
     const handleResize = () => {
@@ -26,6 +31,23 @@ export default function DashboardLayout() {
       document.body.style.overflow = ''
     }
   }, [sidebarOpen])
+
+  useEffect(() => {
+    checkNotifications()
+    const interval = window.setInterval(checkNotifications, 30000)
+    return () => window.clearInterval(interval)
+  }, [checkNotifications])
+
+  useEffect(() => {
+    const previousUnreadCount = previousUnreadCountRef.current
+    if (unreadCount > previousUnreadCount && previousUnreadCount > 0) {
+      toast('Ada notifikasi baru', {
+        icon: '!',
+        duration: 5000,
+      })
+    }
+    previousUnreadCountRef.current = unreadCount
+  }, [unreadCount])
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#f3faf1]">

@@ -69,14 +69,14 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
         Route::post('/', [ProjectController::class, 'store']);
         Route::get('/trash', [ProjectController::class, 'trash']);
         Route::get('/kpi-summary', [ProjectController::class, 'kpiSummary']);
-        Route::get('/{id}', [ProjectController::class, 'show']);
-        Route::put('/{id}', [ProjectController::class, 'update']);
+        Route::get('/engineers/list', [ProjectController::class, 'getEngineers']);
+        Route::post('/assign-engineers', [ProjectController::class, 'assignEngineersToProject']);
+        Route::get('/{project}', [ProjectController::class, 'show']);
+        Route::put('/{project}', [ProjectController::class, 'update']);
         Route::delete('/{id}', [ProjectController::class, 'destroy']);
         Route::post('/{id}/restore', [ProjectController::class, 'restore']);
-        Route::post('/{id}/complete', [ProjectController::class, 'markComplete']);
-        Route::post('/{id}/assign-engineer', [ProjectController::class, 'assignEngineer']);
-        Route::post('/assign-engineers', [ProjectController::class, 'assignEngineersToProject']);
-        Route::get('/engineers/list', [ProjectController::class, 'getEngineers']);
+        Route::post('/{project}/complete', [ProjectController::class, 'markComplete']);
+        Route::post('/{project}/assign-engineer', [ProjectController::class, 'assignEngineer']);
     });
 
     Route::prefix('customers')->group(function () {
@@ -160,9 +160,9 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index']);
         Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('/{id}/mark-read', [NotificationController::class, 'markRead']);
+        Route::post('/{notification}/mark-read', [NotificationController::class, 'markRead']);
         Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
-        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::delete('/{notification}', [NotificationController::class, 'destroy']);
         Route::delete('/', [NotificationController::class, 'clearAll']);
     });
 

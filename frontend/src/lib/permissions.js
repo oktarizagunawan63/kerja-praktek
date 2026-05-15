@@ -23,6 +23,20 @@ const normalizeRole = (role) => {
   return roleMap[role] || role.toLowerCase()
 }
 
+const normalizeAssignedEngineers = (value) => {
+  if (Array.isArray(value)) return value.map(String)
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed.map(String) : []
+    } catch {
+      return value.trim() ? [String(value.trim())] : []
+    }
+  }
+  if (value && typeof value === 'object') return Object.values(value).map(String)
+  return []
+}
+
 export const can = (user, action) => {
   if (!user) return false
   
@@ -36,11 +50,15 @@ export const can = (user, action) => {
   const rules = {
     // Project Management - Site Manager handles construction projects, Engineer can view assigned
     create_project:   ['administrator', 'site_manager'],
-    edit_project:     ['administrator', 'site_manager', 'engineer'], // Engineer can update assigned projects
+    edit_project:     ['administrator', 'site_manager'],
     delete_project:   ['administrator', 'site_manager'],
     mark_complete:    ['administrator', 'site_manager'],
+    add_material:     ['administrator', 'site_manager', 'engineer'], // Engineer can add materials to assigned projects
     view_all_projects: ['administrator', 'site_manager', 'engineer'], // Engineer can view assigned projects
     assign_project:   ['administrator', 'site_manager'], // Site manager assigns to engineers
+    upload_project_documents: ['administrator', 'site_manager', 'engineer'],
+    submit_project_progress: ['administrator', 'site_manager', 'engineer'],
+    edit_rab: ['administrator', 'site_manager', 'engineer'],
     
     // Visit Management - Sales Manager handles visits and sales
     access_visit_management: ['administrator', 'sales_manager', 'sales'],
@@ -76,6 +94,7 @@ export const can = (user, action) => {
     // Reports
     view_visit_reports: ['administrator', 'sales_manager', 'sales'],
     view_sales_performance: ['administrator', 'sales_manager'],
+    view_project_reports: ['administrator', 'site_manager', 'sales_manager'],
     export_reports: ['administrator', 'sales_manager'],
     
     // User Management
@@ -103,16 +122,21 @@ export const filterProjectsByRole = (projects, user, allUsers = []) => {
     return projects
   }
 
-  // Site Manager lihat semua proyek (mereka yang manage construction projects)
+  // Site Manager hanya lihat proyek yang dia manage/buat
   if (role === 'site_manager') {
-    return projects
+    return projects.filter(p => {
+      const userId = String(user.id)
+      return String(p.projectManagerId ?? p.project_manager_id ?? '') === userId ||
+        String(p.siteManagerId ?? p.site_manager_id ?? '') === userId ||
+        String(p.createdBy ?? p.created_by ?? '') === userId
+    })
   }
 
   // Engineer hanya lihat proyek yang di-assign ke mereka
   if (role === 'engineer') {
     // Check projects where this engineer is assigned in assigned_engineers field
     return projects.filter(p => {
-      const assignedEngineers = p.assignedEngineers || []
+      const assignedEngineers = normalizeAssignedEngineers(p.assignedEngineers)
       return assignedEngineers.includes(String(user.id))
     })
   }
@@ -150,3 +174,5 @@ export const canManageProjects = (user) => {
   const role = normalizeRole(user.role)
   return ['administrator', 'site_manager', 'engineer'].includes(role)
 }
+
+export const canAccessProjectReports = (user) => can(user, 'view_project_reports')

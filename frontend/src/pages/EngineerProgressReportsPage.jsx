@@ -16,7 +16,7 @@ export default function EngineerProgressReportsPage() {
   const fetchReports = async () => {
     try {
       setLoading(true)
-      const response = await api.getProgressReports()
+      const response = await api.getEngineerProgressReports()
       if (response.success) {
         setReports(response.data)
       }
@@ -109,14 +109,14 @@ export default function EngineerProgressReportsPage() {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Laporan Progress</h1>
-        <p className="text-gray-600">Riwayat laporan progress yang telah Anda buat</p>
+        <h1 className="text-2xl font-bold text-[#de168c]">Laporan Progress</h1>
+        <p className="text-[#de168c]">Riwayat laporan progress yang telah Anda buat</p>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Riwayat Laporan</h2>
+            <h2 className="text-lg font-semibold text-[#de168c]">Riwayat Laporan</h2>
             <div className="text-sm text-gray-500">
               Total: {reports.length} laporan
             </div>

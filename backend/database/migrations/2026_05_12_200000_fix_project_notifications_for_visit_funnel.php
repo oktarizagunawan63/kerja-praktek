@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -24,6 +25,19 @@ return new class extends Migration
                 $table->text('metadata')->nullable()->after('is_read');
             }
         });
+
+        DB::table('project_notifications')
+            ->whereNotIn('type', [
+                'over_budget',
+                'deadline_warning',
+                'success',
+                'info',
+                'visit',
+                'funnel',
+                'warning',
+                'milestone',
+            ])
+            ->update(['type' => 'info']);
 
         // Update the type enum to support more notification types
         // Use raw SQL since Laravel doesn't support enum modification cleanly

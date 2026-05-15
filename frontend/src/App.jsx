@@ -7,18 +7,18 @@ import './styles/animations.css'
 import './styles/responsive-global.css'
 import useAuthStore from './store/authStore'
 import { isAdministrator, isSiteManager, isSalesManager, isSales } from './utils/roleUtils'
-import { canAccessVisitManagement, canAccessVisitRelations, canManageProjects } from './lib/permissions'
+import { canAccessProjectReports, canAccessVisitManagement, canAccessVisitRelations, canManageProjects } from './lib/permissions'
 import { clearErrorNotifications } from './utils/clearErrorNotifications'
 
 // Eager load critical components
 import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import FunnelsPage from './pages/FunnelsPage'
-import FunnelFormPage from './pages/FunnelFormPage'
-import FunnelDetailPage from './pages/FunnelDetailPage'
 
 // Lazy load all other pages
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const FunnelsPage = lazy(() => import('./pages/FunnelsPage'))
+const FunnelFormPage = lazy(() => import('./pages/FunnelFormPage'))
+const FunnelDetailPage = lazy(() => import('./pages/FunnelDetailPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const SalesManagerDashboard = lazy(() => import('./pages/SalesManagerDashboard'))
@@ -67,6 +67,12 @@ function AdministratorOnly({ children }) {
 function ProjectManagementOnly({ children }) {
   const { user } = useAuthStore()
   if (!canManageProjects(user)) return <Navigate to="/dashboard" replace />
+  return children
+}
+
+function ProjectReportsOnly({ children }) {
+  const { user } = useAuthStore()
+  if (!canAccessProjectReports(user)) return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -197,13 +203,14 @@ export default function App() {
             
             {/* Engineer Routes */}
             <Route path="engineer/projects" element={<EngineerOnly><EngineerProjectsPage /></EngineerOnly>} />
+            <Route path="engineer/projects/:id" element={<EngineerOnly><ProjectDetailPage /></EngineerOnly>} />
             <Route path="engineer/progress-reports" element={<EngineerOnly><EngineerProgressReportsPage /></EngineerOnly>} />
             
             {/* Project Management Routes - Site Manager + Administrator */}
             <Route path="projects"         element={<ProjectManagementOnly><ProjectsPage /></ProjectManagementOnly>} />
             <Route path="projects/:id"     element={<ProjectManagementOnly><ProjectDetailPage /></ProjectManagementOnly>} />
             <Route path="documents"        element={<ProjectManagementOnly><DocumentsPage /></ProjectManagementOnly>} />
-            <Route path="reports"          element={<ProjectManagementOnly><ReportsPage /></ProjectManagementOnly>} />
+            <Route path="reports"          element={<ProjectReportsOnly><ReportsPage /></ProjectReportsOnly>} />
             
             {/* General Routes */}
             <Route path="notifications"    element={<NotificationsPage />} />

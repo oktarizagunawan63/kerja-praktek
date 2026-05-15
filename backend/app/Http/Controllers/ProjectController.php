@@ -32,15 +32,34 @@ class ProjectController extends Controller
             $user = $request->user();
 
             // Query all projects with all fields needed by frontend
-            $query = Project::with('assignments')
-                ->orderByDesc('created_at');
+            $query = Project::query()->orderByDesc('created_at');
 
-            // Role-based filtering: site_manager & administrator see ALL projects
-            // Engineer sees only assigned projects
-            if ($user && $user->role === 'engineer') {
-                $query->whereHas('assignments', fn($q) => $q->where('user_id', $user->id));
+            // Role-based filtering:
+            // - Administrator and Sales Manager reports can read all projects.
+            // - Site manager sees only projects they manage/create.
+            // - Engineer sees only assigned projects.
+            if ($user && !in_array($user->role, ['administrator', 'admin', 'sales_manager'], true)) {
+                if ($user->role === 'site_manager') {
+                    $query->where(function ($q) use ($user) {
+                        $q->where('project_manager_id', $user->id);
+
+                        if (Schema::hasColumn('projects', 'site_manager_id')) {
+                            $q->orWhere('site_manager_id', $user->id);
+                        }
+
+                        if (Schema::hasColumn('projects', 'created_by')) {
+                            $q->orWhere('created_by', $user->id);
+                        }
+                    });
+                } elseif ($user->role === 'engineer') {
+                    $query->where(function ($q) use ($user) {
+                        $q->whereHas('assignments', fn($assignmentQuery) => $assignmentQuery->where('user_id', $user->id))
+                            ->orWhereJsonContains('assigned_engineers', (string) $user->id);
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
             }
-            // site_manager, administrator see all
 
             $projects = $query->get()->map(fn($p) => $this->format($p));
 
@@ -107,12 +126,15 @@ class ProjectController extends Controller
                 'pm_email'           => $data['phone'] ?? $user->email,
                 'end_date'           => $data['deadline'],
                 'start_date'         => now()->toDateString(),
-                'budget'             => $data['rab'], // Use budget column (original name)
-                'budget_realisasi'   => 0, // Use budget_realisasi column (original name)
+                'rab'                => $data['rab'],
+                'rab_realisasi'      => 0,
                 'progress'           => 0,
                 'status'             => $status,
                 'project_manager_id' => $user->id,
-                'assigned_engineers' => json_encode([]),
+                'created_by'         => $user->id,
+                'site_manager_id'    => $user->role === 'site_manager' ? $user->id : null,
+                'user_id'            => $user->id,
+                'assigned_engineers' => [],
             ]);
 
             // Notify admin only
@@ -123,7 +145,7 @@ class ProjectController extends Controller
                     'user_id' => $admin->id,
                     'title' => 'Proyek Baru Dibuat',
                     'message' => "Proyek '{$project->name}' telah ditambahkan ke sistem oleh {$user->name}",
-                    'type' => 'project_created',
+                    'type' => 'info',
                     'is_read' => false,
                 ]);
             }
@@ -199,9 +221,15 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $user = $request->user();
+        $allowedFields = ['name', 'location', 'pm', 'phone', 'deadline', 'rab', 'realisasi', 'progress'];
+        $requestedFields = collect($request->only($allowedFields))
+            ->filter(fn($value) => $value !== null)
+            ->keys()
+            ->values();
+        $isRabOnlyUpdate = $requestedFields->count() === 1 && $requestedFields->first() === 'realisasi';
         
         // RBAC: Check if user can update this project
-        if (!$this->canUpdateProject($user, $project)) {
+        if (!$this->canUpdateProject($user, $project) && !($isRabOnlyUpdate && $this->canUpdateRabRealization($user, $project))) {
             $response = response()->json(['message' => 'Tidak memiliki izin untuk mengupdate proyek ini'], 403);
             $response->header('Access-Control-Allow-Origin', '*');
             $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -226,8 +254,8 @@ class ProjectController extends Controller
         if (isset($data['pm']))        $mapped['pm_name']          = $data['pm'];
         if (isset($data['phone']))     $mapped['pm_email']         = $data['phone'];
         if (isset($data['deadline']))  $mapped['end_date']         = $data['deadline'];
-        if (isset($data['rab']))       $mapped['budget']           = $data['rab']; // Use budget column
-        if (isset($data['realisasi'])) $mapped['budget_realisasi'] = $data['realisasi']; // Use budget_realisasi column
+        if (isset($data['rab']))       $mapped['rab']             = $data['rab'];
+        if (isset($data['realisasi'])) $mapped['rab_realisasi']   = $data['realisasi'];
         if (isset($data['progress']))  $mapped['progress']         = $data['progress'];
 
         // Auto status dari deadline
@@ -240,7 +268,7 @@ class ProjectController extends Controller
         $project->update($mapped);
 
         // Check over budget and send notification
-        if ($project->budget_realisasi > $project->budget) {
+        if ($project->rab_realisasi > $project->rab) {
             NotificationHelper::projectOverBudget($project);
         }
 
@@ -357,23 +385,16 @@ class ProjectController extends Controller
                 return $this->errorResponse($authCheck['message'], 403);
             }
 
-            // 7. CHECK FOREIGN KEY CONSTRAINTS
-            $constraintCheck = $this->checkForeignKeyConstraints($project);
-            if (!$constraintCheck['can_delete']) {
-                Log::warning('DELETE project: Foreign key constraints', [
-                    'project_id' => $id,
-                    'constraints' => $constraintCheck['constraints']
-                ]);
-                
-                return $this->errorResponse($constraintCheck['message'], 409);
-            }
+            // 7. CLEAN RELATED RECORDS
+            $deletedRelations = $this->deleteRelatedProjectRecords($project);
 
             // 8. PERFORM DELETE
             $projectName = $project->name;
             $projectData = [
                 'id' => $project->id,
                 'name' => $project->name,
-                'location' => $project->location ?? 'Unknown'
+                'location' => $project->location ?? 'Unknown',
+                'deleted_relations' => $deletedRelations,
             ];
 
             // Soft delete if available
@@ -384,6 +405,7 @@ class ProjectController extends Controller
                 'project_id' => $id,
                 'project_name' => $projectName,
                 'user_id' => $user->id,
+                'deleted_relations' => $deletedRelations,
                 'deleted_at' => now()->toISOString()
             ]);
 
@@ -499,7 +521,7 @@ class ProjectController extends Controller
                 'user_id' => $data['engineer_id'],
                 'title' => 'Ditugaskan ke Proyek',
                 'message' => "Anda telah ditugaskan ke proyek '{$project->name}' oleh {$user->name}",
-                'type' => 'project_assignment',
+                'type' => 'info',
                 'is_read' => false,
             ]);
         }
@@ -737,8 +759,8 @@ class ProjectController extends Controller
             'total'      => $query->clone()->count(),
             'active'     => $query->clone()->whereNotIn('status', ['completed'])->count(),
             'completed'  => $query->clone()->where('status', 'completed')->count(),
-            'total_rab'  => $query->clone()->sum('budget'),
-            'total_real' => $query->clone()->sum('budget_realisasi'),
+            'total_rab'  => $query->clone()->sum('rab'),
+            'total_real' => $query->clone()->sum('rab_realisasi'),
             'avg_progress' => round($query->clone()->whereNotIn('status', ['completed'])->avg('progress') ?? 0, 1),
             'delayed'    => $query->clone()->where('status', 'delayed')->count(),
         ]);
@@ -747,6 +769,14 @@ class ProjectController extends Controller
     // Map DB fields -> frontend fields
     private function format(Project $p): array
     {
+        $assignedEngineers = $p->assigned_engineers;
+        if (is_string($assignedEngineers)) {
+            $decodedAssignedEngineers = json_decode($assignedEngineers, true);
+            $assignedEngineers = is_array($decodedAssignedEngineers) ? $decodedAssignedEngineers : [];
+        } elseif (!is_array($assignedEngineers)) {
+            $assignedEngineers = [];
+        }
+
         return [
             'id'          => $p->id,
             'name'        => $p->name ?? '',
@@ -756,13 +786,16 @@ class ProjectController extends Controller
             'phone'       => $p->pm_email ?? '',
             'deadline'    => $p->end_date ?? $p->deadline ?? null,
             'end_date'    => $p->end_date ?? $p->deadline ?? null,
-            'rab'         => (float)($p->budget ?? $p->rab ?? 0),
-            'realisasi'   => (float)($p->budget_realisasi ?? $p->realisasi ?? 0),
+            'rab'         => (float)($p->rab ?? $p->budget ?? 0),
+            'realisasi'   => (float)($p->rab_realisasi ?? $p->budget_realisasi ?? 0),
             'progress'    => $p->progress ?? 0,
             'status'      => $p->status ?? 'on_track',
+            'projectManagerId' => $p->project_manager_id ?? null,
+            'siteManagerId' => $p->site_manager_id ?? null,
+            'createdBy' => $p->created_by ?? null,
             'completedAt' => $p->completed_at ?? $p->completedAt ?? null,
             'deletedAt'   => $p->deleted_at ?? null,
-            'assignedEngineers' => $p->assigned_engineers ?? [],
+            'assignedEngineers' => array_values(array_map('strval', $assignedEngineers)),
             'materials'   => $p->relationLoaded('materials')
                 ? $p->materials->map(fn($m) => [
                     'id' => $m->id,
@@ -832,6 +865,39 @@ class ProjectController extends Controller
             'reason' => 'insufficient_permissions',
             'message' => 'Anda tidak memiliki izin untuk menghapus proyek ini'
         ];
+    }
+
+    /**
+     * Delete records that still point to a project before soft deleting it.
+     */
+    private function deleteRelatedProjectRecords($project): array
+    {
+        $projectId = $project->id;
+        $deleted = [];
+
+        $tablesToDelete = [
+            'materials',
+            'documents',
+            'progress_reports',
+            'engineer_progress_reports',
+            'project_assignments',
+            'manpower',
+            'project_notifications',
+        ];
+
+        foreach ($tablesToDelete as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'project_id')) {
+                $deleted[$table] = DB::table($table)->where('project_id', $projectId)->delete();
+            }
+        }
+
+        if (Schema::hasTable('activity_logs') && Schema::hasColumn('activity_logs', 'project_id')) {
+            $deleted['activity_logs_detached'] = DB::table('activity_logs')
+                ->where('project_id', $projectId)
+                ->update(['project_id' => null]);
+        }
+
+        return array_filter($deleted, fn($count) => $count > 0);
     }
 
     /**
@@ -948,10 +1014,29 @@ class ProjectController extends Controller
             return true;
         }
 
+        if ($user->role === 'site_manager') {
+            if (isset($project->site_manager_id) && $project->site_manager_id == $user->id) {
+                return true;
+            }
+
+            if (isset($project->created_by) && $project->created_by == $user->id) {
+                return true;
+            }
+        }
+
         // Engineers can access assigned projects
         if ($user->role === 'engineer') {
             $assignedEngineers = $project->assigned_engineers ?? [];
-            if (in_array((string)$user->id, $assignedEngineers)) {
+            if (is_string($assignedEngineers)) {
+                $decoded = json_decode($assignedEngineers, true);
+                $assignedEngineers = is_array($decoded) ? $decoded : [];
+            }
+
+            if (in_array((string)$user->id, array_map('strval', (array) $assignedEngineers), true)) {
+                return true;
+            }
+
+            if ($project->assignments()->where('user_id', $user->id)->exists()) {
                 return true;
             }
         }
@@ -974,6 +1059,40 @@ class ProjectController extends Controller
             if (isset($project->project_manager_id) && $project->project_manager_id == $user->id) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private function canUpdateRabRealization($user, $project)
+    {
+        if (in_array($user->role, ['administrator', 'admin'])) {
+            return true;
+        }
+
+        if (isset($project->project_manager_id) && $project->project_manager_id == $user->id) {
+            return true;
+        }
+
+        if ($user->role === 'site_manager') {
+            if (isset($project->site_manager_id) && $project->site_manager_id == $user->id) {
+                return true;
+            }
+
+            if (isset($project->created_by) && $project->created_by == $user->id) {
+                return true;
+            }
+        }
+
+        if ($user->role === 'engineer') {
+            $assignedEngineers = $project->assigned_engineers ?? [];
+            if (is_string($assignedEngineers)) {
+                $decoded = json_decode($assignedEngineers, true);
+                $assignedEngineers = is_array($decoded) ? $decoded : [];
+            }
+
+            return in_array((string) $user->id, array_map('strval', (array) $assignedEngineers), true)
+                || $project->assignments()->where('user_id', $user->id)->exists();
         }
 
         return false;

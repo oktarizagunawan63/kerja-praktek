@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import ProgressBar from '../components/kpi/ProgressBar'
+import ProjectProgressUpdateModal from '../components/project/ProjectProgressUpdateModal'
 import toast from 'react-hot-toast'
 
 export default function EngineerDashboard() {
@@ -12,11 +13,6 @@ export default function EngineerDashboard() {
   const [loading, setLoading] = useState(true)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
-  const [progressForm, setProgressForm] = useState({
-    progress_percentage: 0,
-    notes: '',
-    photo: null
-  })
 
   useEffect(() => {
     fetchDashboardData()
@@ -39,41 +35,7 @@ export default function EngineerDashboard() {
 
   const handleUpdateProgress = (project) => {
     setSelectedProject(project)
-    const latestReport = project.engineer_progress_reports?.[0]
-    setProgressForm({
-      progress_percentage: latestReport?.progress_percentage || project.progress || 0,
-      notes: '',
-      photo: null
-    })
     setShowProgressModal(true)
-  }
-
-  const handleSubmitProgress = async () => {
-    try {
-      const response = await api.submitProgressReport({
-        project_id: selectedProject.id,
-        ...progressForm
-      })
-      
-      if (response.success) {
-        toast.success('Progress berhasil diupdate')
-        setShowProgressModal(false)
-        fetchDashboardData()
-      }
-    } catch (error) {
-      toast.error('Gagal mengupdate progress')
-    }
-  }
-
-  const handlePhotoCapture = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setProgressForm(prev => ({ ...prev, photo: e.target.result }))
-      }
-      reader.readAsDataURL(file)
-    }
   }
 
   if (loading) {
@@ -94,8 +56,8 @@ export default function EngineerDashboard() {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Engineer</h1>
-        <p className="text-gray-600">Selamat datang, {user?.name}</p>
+        <h1 className="text-2xl font-bold text-[#de168c]">Dashboard Engineer</h1>
+        <p className="text-[#de168c]">Selamat datang, {user?.name}</p>
       </div>
 
       {/* Stats Cards */}
@@ -106,7 +68,7 @@ export default function EngineerDashboard() {
               <FolderKanban className="text-blue-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Proyek</p>
+              <p className="text-sm text-[#de168c]">Total Proyek</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total_projects || 0}</p>
             </div>
           </div>
@@ -118,7 +80,7 @@ export default function EngineerDashboard() {
               <TrendingUp className="text-green-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Proyek Selesai</p>
+              <p className="text-sm text-[#de168c]">Proyek Selesai</p>
               <p className="text-2xl font-bold text-gray-900">{stats.completed_projects || 0}</p>
             </div>
           </div>
@@ -130,7 +92,7 @@ export default function EngineerDashboard() {
               <Clock className="text-orange-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Sedang Berjalan</p>
+              <p className="text-sm text-[#de168c]">Sedang Berjalan</p>
               <p className="text-2xl font-bold text-gray-900">{stats.in_progress_projects || 0}</p>
             </div>
           </div>
@@ -142,7 +104,7 @@ export default function EngineerDashboard() {
               <FileText className="text-purple-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Laporan</p>
+              <p className="text-sm text-[#de168c]">Total Laporan</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total_reports || 0}</p>
             </div>
           </div>
@@ -153,7 +115,7 @@ export default function EngineerDashboard() {
         {/* Assigned Projects */}
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Proyek yang Ditugaskan</h2>
+            <h2 className="text-lg font-semibold text-[#de168c]">Proyek yang Ditugaskan</h2>
           </div>
           <div className="p-6">
             {assignedProjects.length === 0 ? (
@@ -211,7 +173,7 @@ export default function EngineerDashboard() {
         {/* Recent Progress Reports */}
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Laporan Progress Terbaru</h2>
+            <h2 className="text-lg font-semibold text-[#de168c]">Laporan Progress Terbaru</h2>
           </div>
           <div className="p-6">
             {recentReports.length === 0 ? (
@@ -251,81 +213,16 @@ export default function EngineerDashboard() {
         </div>
       </div>
 
-      {/* Progress Update Modal */}
-      {showProgressModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Update Progress</h3>
-              <p className="text-sm text-gray-600">{selectedProject?.name}</p>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Progress Percentage
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={progressForm.progress_percentage}
-                  onChange={(e) => setProgressForm(prev => ({ 
-                    ...prev, 
-                    progress_percentage: parseInt(e.target.value) 
-                  }))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-gray-500 mt-1">
-                  <span>0%</span>
-                  <span className="font-medium">{progressForm.progress_percentage}%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catatan
-                </label>
-                <textarea
-                  value={progressForm.notes}
-                  onChange={(e) => setProgressForm(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Tambahkan catatan progress..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foto (Opsional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoCapture}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              <Button
-                onClick={() => setShowProgressModal(false)}
-                className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                Batal
-              </Button>
-              <Button
-                onClick={handleSubmitProgress}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                Simpan Progress
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProjectProgressUpdateModal
+        open={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        project={selectedProject}
+        initialProgress={selectedProject?.engineer_progress_reports?.[0]?.progress_percentage || selectedProject?.progress || 0}
+        onSaved={() => {
+          setShowProgressModal(false)
+          fetchDashboardData()
+        }}
+      />
     </div>
   )
 }

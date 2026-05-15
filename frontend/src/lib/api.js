@@ -267,6 +267,7 @@ export const api = {
     return request(`/materials${queryString ? '?' + queryString : ''}`)
   },
   createMaterial: (data) => request('/materials', { method: 'POST', body: JSON.stringify(data) }),
+  addMaterial: (data) => request('/materials', { method: 'POST', body: JSON.stringify(data) }),
   updateMaterial: (id, data) => request(`/materials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMaterial: (id) => request(`/materials/${id}`, { method: 'DELETE' }),
   
@@ -337,7 +338,7 @@ export const api = {
 
     return request('/projects/assign-engineers', { method: 'POST', body: JSON.stringify(payload) })
   },
-  getEngineers: () => request('/projects/engineers/list'),
+  getProjectEngineers: () => request('/projects/engineers/list'),
   completeProject: (id, note) => request(`/projects/${id}/complete`, { method: 'POST', body: JSON.stringify({ note }) }),
   restoreProject: (id) => request(`/projects/${id}/restore`, { method: 'POST' }),
 

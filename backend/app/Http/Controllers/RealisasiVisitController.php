@@ -714,9 +714,7 @@ class RealisasiVisitController extends Controller
             ], 500);
         }
     }
-}
 
-    
     public function destroy($id)
     {
         try {

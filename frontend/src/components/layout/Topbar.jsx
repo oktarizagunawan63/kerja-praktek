@@ -1,4 +1,4 @@
-import { Bell, LogOut, Menu, Search, X } from '@icons'
+import { Bell, LogOut, Menu, Search, X } from '../../lib/icons.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useAuthStore from '../../store/authStore'
@@ -22,8 +22,7 @@ function debounce(func, wait) {
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
-  const { notifications, projects, documents } = useAppStore()
-  const unread = (notifications || []).filter(n => !n.isRead).length
+  const unread = useAppStore(state => state.notificationUnreadCount)
 
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
@@ -192,7 +191,7 @@ export default function Topbar({ onMenuClick }) {
                       <button key={u.id} onClick={() => handleSelect(u.url)}
                         className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors">
                         <p className="text-sm font-medium text-gray-800">{u.name}</p>
-                        <p className="text-xs text-gray-400">{u.subtitle} Â· {u.role}</p>
+                        <p className="text-xs text-gray-400">{u.subtitle} · {u.role}</p>
                       </button>
                     ))}
                   </div>

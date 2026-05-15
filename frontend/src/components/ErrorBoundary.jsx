@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertTriangle, RefreshCw } from '@icons'
+import { AlertTriangle, RefreshCw } from '../lib/icons.jsx'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

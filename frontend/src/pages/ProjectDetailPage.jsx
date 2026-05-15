@@ -8,6 +8,7 @@ import {
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import FileUpload from '../components/ui/FileUpload'
+import ProjectProgressUpdateModal from '../components/project/ProjectProgressUpdateModal'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useAppStore from '../store/appStore'
@@ -15,7 +16,6 @@ import useUserStore from '../store/userStore'
 import { downloadFile } from '../lib/fileUtils'
 import { formatRupiah } from '../lib/formatRupiah'
 import { can } from '../lib/permissions'
-import { exportProyekPDF } from '../lib/exportPdf'
 import { api } from '../lib/api'
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ constants Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -33,7 +33,18 @@ export default function ProjectDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { projects, getMaterials, addMaterial, updateMaterialQty, deleteMaterial, markComplete, addActivity, updateProject, getDocs, addDoc, deleteDoc, fetchDocuments, fetchMaterials } = useAppStore()
+  const getMaterials = useAppStore(state => state.getMaterials)
+  const addMaterial = useAppStore(state => state.addMaterial)
+  const updateMaterialQty = useAppStore(state => state.updateMaterialQty)
+  const deleteMaterial = useAppStore(state => state.deleteMaterial)
+  const markComplete = useAppStore(state => state.markComplete)
+  const addActivity = useAppStore(state => state.addActivity)
+  const updateProject = useAppStore(state => state.updateProject)
+  const getDocs = useAppStore(state => state.getDocs)
+  const addDoc = useAppStore(state => state.addDoc)
+  const deleteDoc = useAppStore(state => state.deleteDoc)
+  const fetchDocuments = useAppStore(state => state.fetchDocuments)
+  const fetchMaterials = useAppStore(state => state.fetchMaterials)
   const { users, updateUser, fetchUsers } = useUserStore()
   
   const [project, setProject] = useState(null)
@@ -57,11 +68,13 @@ export default function ProjectDetailPage() {
   const [completeNote, setCompleteNote] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
   const [rabInput, setRabInput] = useState('')
+  const [rabMode, setRabMode] = useState('add')
   const [matForm, setMatForm] = useState({ qty: '', catatan: '', files: [] })
   const [docForm, setDocForm] = useState({ type: 'Laporan Harian', files: [] })
   const [newMat, setNewMat] = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
   const [teamOpen, setTeamOpen] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ Effects Ã¢â€â‚¬Ã¢â€â‚¬
   useEffect(() => {
@@ -99,11 +112,32 @@ export default function ProjectDetailPage() {
     }
   }
 
+  const normalizeAssignedEngineerIds = (value) => {
+    if (Array.isArray(value)) {
+      return value.map(entry => String(entry))
+    }
+
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed.map(entry => String(entry)) : []
+      } catch {
+        return value.trim() ? [String(value.trim())] : []
+      }
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.values(value).map(entry => String(entry))
+    }
+
+    return []
+  }
+
   const handleAssign = async (engineerId, isCurrentlyAssigned) => {
     try {
-      const currentAssignedIds = Array.isArray(project?.assignedEngineers)
-        ? project.assignedEngineers.map(value => parseInt(value, 10)).filter(Number.isFinite)
-        : []
+      const currentAssignedIds = normalizeAssignedEngineerIds(project?.assignedEngineers)
+        .map(value => parseInt(value, 10))
+        .filter(Number.isFinite)
       const nextAssignedIds = isCurrentlyAssigned
         ? currentAssignedIds.filter(value => value !== engineerId)
         : [...new Set([...currentAssignedIds, engineerId])]
@@ -163,10 +197,42 @@ export default function ProjectDetailPage() {
   const materials = getMaterials(id).length ? getMaterials(id) : (project?.materials || [])
   const docs      = getDocs(id).length ? getDocs(id) : (project?.documents || [])
   const isCompleted = project?.status === 'completed'
+  const canManageProject = can(user, 'edit_project')
+  const canAddMaterial = can(user, 'add_material')
+  const canUploadProjectDocuments = can(user, 'upload_project_documents')
+  const canSubmitProjectProgress = can(user, 'submit_project_progress')
+  const canEditRab = can(user, 'edit_rab')
+  const isEngineer = user?.role === 'engineer'
 
   const progressVal = materials.length
     ? Math.round(materials.reduce((s, m) => s + Math.min((m.qty_terpasang / m.qty_plan) * 100, 100), 0) / materials.length)
     : project?.progress || 0
+  const rabTotal = Number(project?.rab || 0)
+  const rabUsed = Number(project?.realisasi || 0)
+  const rabRemaining = rabTotal - rabUsed
+  const rabPercent = rabTotal > 0 ? Math.round((rabUsed / rabTotal) * 100) : 0
+  const rabProgressWidth = Math.min(Math.max(rabPercent, 0), 100)
+  const isRabOver = rabUsed > rabTotal
+  const deadlineDate = project?.deadline ? new Date(project.deadline) : null
+  const deadlineText = deadlineDate && !Number.isNaN(deadlineDate.getTime())
+    ? deadlineDate.toLocaleDateString('id-ID')
+    : '-'
+  const completedText = project?.completedAt
+    ? new Date(project.completedAt).toLocaleDateString('id-ID')
+    : '-'
+  const daysLeft = deadlineDate && !Number.isNaN(deadlineDate.getTime())
+    ? Math.ceil((deadlineDate - new Date()) / 86400000)
+    : null
+  const remainingTimeValue = isCompleted
+    ? 'Selesai'
+    : daysLeft === null
+      ? '-'
+      : daysLeft < 0
+        ? `Lewat ${Math.abs(daysLeft)} Hari`
+        : `${daysLeft} Hari`
+  const remainingTimeNote = isCompleted
+    ? `Selesai pada ${completedText}`
+    : `Deadline: ${deadlineText}`
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ early return after all hooks Ã¢â€â‚¬Ã¢â€â‚¬
   if (!project) {
@@ -195,7 +261,7 @@ export default function ProjectDetailPage() {
       formData.append('file', file)
       await addDoc(formData)
     }))
-    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' Ã¢â‚¬â€ ' + matForm.catatan : ''}`
+    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' - ' + matForm.catatan : ''}`
     addHist({ action: 'Update Material Terpasang', detail, user: currentUser, type: 'material' })
     toast.success('Material berhasil diupdate')
     fetchProject()
@@ -265,20 +331,35 @@ export default function ProjectDetailPage() {
 
   const handleComplete = async () => {
     await markComplete(id, completeNote)
-    addHist({ action: 'Proyek Selesai', detail: `Selesai${completeNote ? ' Ã¢â‚¬â€ ' + completeNote : ''}`, user: currentUser, type: 'selesai' })
+    addHist({ action: 'Proyek Selesai', detail: `Selesai${completeNote ? ' - ' + completeNote : ''}`, user: currentUser, type: 'selesai' })
     toast.success('Proyek ditandai selesai')
     fetchProject()
     setCompleteOpen(false); setCompleteNote('')
   }
 
-  const handleSaveRab = () => {
-    const num = parseFloat(String(rabInput).replace(/\./g, ''))
-    if (isNaN(num) || num < 0) { toast.error('Masukkan angka yang valid'); return }
-    updateProject(id, { realisasi: num })
-    addActivity({ action: 'Update RAB Terealisasi', detail: `RAB terealisasi: ${formatRupiah(num)}`, projectId: id })
-    addHist({ action: 'Update RAB Terealisasi', detail: `RAB terealisasi: ${formatRupiah(num)}`, user: currentUser, type: 'system' })
-    toast.success('RAB Terealisasi diupdate')
-    setEditRabOpen(false)
+  const handleSaveRab = async () => {
+    const inputAmount = parseFloat(String(rabInput).replace(/\./g, ''))
+    if (isNaN(inputAmount) || inputAmount < 0) { toast.error('Masukkan angka yang valid'); return }
+    if (rabMode === 'add' && inputAmount <= 0) { toast.error('Nominal pengeluaran harus lebih dari 0'); return }
+
+    const currentRealisasi = Number(project?.realisasi || 0)
+    const num = rabMode === 'add' ? currentRealisasi + inputAmount : inputAmount
+
+    try {
+      await updateProject(id, { realisasi: num })
+      const detail = rabMode === 'add'
+        ? `Tambah pengeluaran ${formatRupiah(inputAmount)}. Total realisasi: ${formatRupiah(num)}`
+        : `Set total RAB terealisasi: ${formatRupiah(num)}`
+      addActivity({ action: 'Update RAB Terealisasi', detail, projectId: id })
+      addHist({ action: 'Update RAB Terealisasi', detail, user: currentUser, type: 'system' })
+      toast.success('RAB Terealisasi diupdate')
+      await fetchProject()
+      setEditRabOpen(false)
+      setRabInput('')
+      setRabMode('add')
+    } catch (error) {
+      toast.error(error?.message || 'Gagal update RAB terealisasi')
+    }
   }
 
   return (
@@ -292,7 +373,7 @@ export default function ProjectDetailPage() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-gray-900 truncate">{project.name}</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{project.location} Ã‚Â· PM: {project.pm}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{project.location} · PM: {project.pm}</p>
           </div>
           {isCompleted
             ? <Badge variant="info">Selesai</Badge>
@@ -305,11 +386,13 @@ export default function ProjectDetailPage() {
         {/* Baris 2: tombol aksi */}
         {!isCompleted && (
           <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
+            {can(user, 'mark_complete') && (
             <button onClick={() => setCompleteOpen(true)}
               className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
               <CheckCircle size={13}/> Tandai Selesai
             </button>
-            {can(user, 'edit_project') && (
+            )}
+            {canManageProject && (
               <button onClick={() => {
                 setEditForm({ name: project.name, location: project.location, pm: project.pm, phone: project.phone || '', deadline: project.deadline, rab: Number(project.rab).toLocaleString('id-ID'), status: project.status })
                 setEditOpen(true)
@@ -318,20 +401,24 @@ export default function ProjectDetailPage() {
               </button>
             )}
             {can(user, 'export_pdf') && (
-              <button onClick={() => exportProyekPDF(project, materials, docs)}
+              <button onClick={async () => {
+                const { exportProyekPDF } = await import('../lib/exportPdf')
+                exportProyekPDF(project, materials, docs)
+              }}
                 className="flex items-center gap-1.5 text-xs border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors">
                 <Download size={13}/> Export PDF
               </button>
             )}
+            {canUploadProjectDocuments && (
             <button onClick={() => setUploadOpen(true)}
               className="flex items-center gap-1.5 text-xs bg-[#237043] hover:bg-[#5a9844] text-white px-3 py-2 rounded-lg font-medium transition-colors">
               <Upload size={13}/> Upload Dokumen
             </button>
+            )}
             {(user?.role === 'site_manager') && (() => {
               const administrator = useUserStore.getState().users.find(u => u.role === 'administrator' || u.role === 'direktur')
               if (!administrator?.email) return null
-              const daysLeft = Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))
-              const subject = encodeURIComponent(`[Laporan] ${project.name} Ã¢â‚¬â€ Progress ${progressVal}%`)
+              const subject = encodeURIComponent(`[Laporan] ${project.name} - Progress ${progressVal}%`)
               const body = encodeURIComponent(
                 `Yth. ${administrator.name},\n\nBerikut laporan terkini proyek:\n\n` +
                 `Proyek     : ${project.name}\n` +
@@ -339,9 +426,9 @@ export default function ProjectDetailPage() {
                 `Progress   : ${progressVal}%\n` +
                 `RAB        : ${formatRupiah(project.rab)}\n` +
                 `Terealisasi: ${formatRupiah(project.realisasi || 0)}\n` +
-                `Sisa Waktu : ${daysLeft} hari (Deadline: ${new Date(project.deadline).toLocaleDateString('id-ID')})\n` +
+                `Sisa Waktu : ${remainingTimeValue} (${remainingTimeNote})\n` +
                 `Status     : ${project.status === 'on_track' ? 'On Track' : project.status === 'at_risk' ? 'At Risk' : project.status === 'delayed' ? 'Delayed' : 'Selesai'}\n\n` +
-                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager Ã¢â‚¬â€ PT Amsar Prima Mandiri`
+                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager - PT Amsar Prima Mandiri`
               )
               return (
                 <button
@@ -368,29 +455,32 @@ export default function ProjectDetailPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card text-center">
-          <p className="text-xs text-gray-500 mb-1">Progress</p>
-          <p className="text-xl font-bold text-gray-900">{isCompleted ? '100%' : `${progressVal}%`}</p>
+          <p className="text-xs text-[#de168c] mb-1">Progress</p>
+          <p className="text-xl font-bold text-gray-900 mb-2">
+            {isCompleted ? '100%' : `${progressVal}%`}</p>
           <p className="text-xs text-gray-400 mt-0.5">{materials.length} material</p>
         </div>
 
         <div className="card text-center">
-          <p className="text-xs text-gray-500 mb-1">RAB Terealisasi</p>
-          <p className="text-xl font-bold text-gray-900">{formatRupiah(project.realisasi || 0)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">RAB: {formatRupiah(project.rab)}</p>
-          {!isCompleted && can(user, 'edit_rab') && (
+          <p className="text-xs text-[#de168c] mb-1">RAB Terealisasi</p>
+          <p className={`text-xl font-bold ${isRabOver ? 'text-red-600' : 'text-gray-900'}`}>{formatRupiah(rabUsed)}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {isRabOver ? `Over ${formatRupiah(Math.abs(rabRemaining))}` : `Sisa ${formatRupiah(rabRemaining)}`}
+          </p>
+          {!isCompleted && canEditRab && (
             <button onClick={() => { 
-                const val = project.realisasi || 0
-                setRabInput(val ? Number(val).toLocaleString('id-ID') : '')
+                setRabMode('add')
+                setRabInput('')
                 setEditRabOpen(true) 
               }}
               className="mt-1.5 text-xs text-blue-500 hover:text-blue-700 hover:underline">
-              Edit Realisasi
+              Catat Pengeluaran
             </button>
           )}
         </div>
 
         <div className="card text-center">
-          <p className="text-xs text-gray-500 mb-1">Teknisi yang Bekerja</p>
+          <p className="text-xs text-[#de168c] mb-1">Teknisi yang Bekerja</p>
           <p className="text-xl font-bold text-gray-900">
             {users.filter(u => u.role === 'engineer' && u.is_active !== false).length} Orang
           </p>
@@ -398,11 +488,11 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className="card text-center">
-          <p className="text-xs text-gray-500 mb-1">Sisa Waktu</p>
-          <p className="text-xl font-bold text-gray-900">
-            {isCompleted ? 'Ã¢â‚¬â€' : `${Math.max(0, Math.ceil((new Date(project.deadline) - new Date()) / 86400000))} Hari`}
+          <p className="text-xs text-[#de168c] mb-1">Sisa Waktu</p>
+          <p className="text-xl font-bold text-gray-900 mb-2">
+            {remainingTimeValue}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">Deadline: {new Date(project.deadline).toLocaleDateString('id-ID')}</p>
+          <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">{remainingTimeNote}</div>
         </div>
       </div>
 
@@ -437,7 +527,7 @@ export default function ProjectDetailPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Project Information</h3>
+                  <h3 className="text-sm font-semibold text-[#de168c] mb-3">Project Information</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Description:</span>
@@ -458,7 +548,7 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Stats</h3>
+                  <h3 className="text-sm font-semibold text-[#de168c] mb-3">Quick Stats</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Progress:</span>
@@ -483,8 +573,8 @@ export default function ProjectDetailPage() {
               {/* Material Terpasang in Overview */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-700">Material Terpasang</h3>
-                  {!isCompleted && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Tambah Material</button>}
+                  <h3 className="text-sm font-semibold text-[#de168c]">Material Terpasang</h3>
+                  {!isCompleted && canAddMaterial && <button onClick={() => setAddMatOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Tambah Material</button>}
                 </div>
                 <div className="space-y-3">
                   {materials.map(mat => {
@@ -498,13 +588,13 @@ export default function ProjectDetailPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-xs font-semibold ${pct>=100?'text-green-600':'text-gray-600'}`}>{Math.min(pct,100)}%</span>
-                            {!isCompleted && <>
+                            {!isCompleted && canAddMaterial && <>
                               <button onClick={() => { setSelMat(mat); setMatForm({ qty:'', catatan:'', files:[] }); setMatOpen(true) }}
                                 className="flex items-center gap-1 text-xs bg-[#237043] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#5a9844]">
                                 <Plus size={12}/> Tambah
                               </button>
-                              <button onClick={() => { deleteMaterial(id, mat.id); toast.success(`${mat.name} dihapus`) }}
-                                className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={13}/></button>
+                              {canManageProject && <button onClick={() => { deleteMaterial(id, mat.id); toast.success(`${mat.name} dihapus`) }}
+                                className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={13}/></button>}
                             </>}
                           </div>
                         </div>
@@ -514,7 +604,7 @@ export default function ProjectDetailPage() {
                       </div>
                     )
                   })}
-                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material Ã¢â‚¬â€ klik "+ Tambah Material"</p>}
+                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material - klik "+ Tambah Material"</p>}
                 </div>
               </div>
             </div>
@@ -523,15 +613,15 @@ export default function ProjectDetailPage() {
           {activeTab === 'engineers' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700">Assigned Engineers</h3>
-                {!isCompleted && can(user, 'edit_project') && (
+                <h3 className="text-sm font-semibold text-[#de168c]">Assigned Engineers</h3>
+                {!isCompleted && canManageProject && (
                   <button onClick={handleOpenTeamModal} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline">
                     <Plus size={13}/> Assign Engineer
                   </button>
                 )}
               </div>
               {(() => {
-                const assignedIds = new Set((project?.assignedEngineers || []).map(value => String(value)))
+                const assignedIds = new Set(normalizeAssignedEngineerIds(project?.assignedEngineers))
                 const engineers = users.filter(u =>
                   u.role === 'engineer' &&
                   assignedIds.has(String(u.id))
@@ -549,7 +639,7 @@ export default function ProjectDetailPage() {
                             <p className="text-xs text-gray-400">{eng.email}</p>
                           </div>
                           <Badge variant="default">Engineer</Badge>
-                          {!isCompleted && (
+                          {!isCompleted && canManageProject && (
                             <button
                               onClick={() => handleAssign(eng.id, true)}
                               className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
@@ -566,14 +656,14 @@ export default function ProjectDetailPage() {
 
           {activeTab === 'progress' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700">Progress Reports</h3>
-                {!isCompleted && (
-                  <button className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline">
-                    <Plus size={13}/> Add Report
-                  </button>
-                )}
-              </div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#de168c]">Progress Reports</h3>
+                  {!isCompleted && canSubmitProjectProgress && (
+                    <button onClick={() => setShowProgressModal(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline">
+                      <Plus size={13}/> Add Report
+                    </button>
+                  )}
+                </div>
               <div className="text-center py-8 text-gray-400">
                 <p className="text-sm">Progress reports will be implemented here</p>
                 <p className="text-xs mt-1">Engineers can submit progress with photos</p>
@@ -585,7 +675,7 @@ export default function ProjectDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-semibold text-gray-700">Project Documents</h3>
+                  <h3 className="text-sm font-semibold text-[#de168c]">Project Documents</h3>
                   <div className="flex gap-1">
                     {['semua','foto','laporan'].map(tab => (
                       <button key={tab} onClick={() => setDocTab(tab)}
@@ -595,7 +685,7 @@ export default function ProjectDetailPage() {
                     ))}
                   </div>
                 </div>
-                {!isCompleted && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Upload Document</button>}
+                {!isCompleted && canUploadProjectDocuments && <button onClick={() => setUploadOpen(true)} className="flex items-center gap-1.5 text-xs text-[#237043] hover:underline"><Plus size={13}/> Upload Document</button>}
               </div>
 
               {docTab === 'foto' && (() => {
@@ -609,7 +699,7 @@ export default function ProjectDetailPage() {
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
                             <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100"/>
                           </div>
-                          {!isCompleted && <button onClick={e => { e.stopPropagation(); deleteDoc(doc.id); toast.success('Foto dihapus') }}
+                          {!isCompleted && canManageProject && <button onClick={e => { e.stopPropagation(); deleteDoc(doc.id); toast.success('Foto dihapus') }}
                             className="absolute top-1.5 right-1.5 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100"><Trash2 size={11}/></button>}
                         </div>
                       ))}
@@ -626,10 +716,10 @@ export default function ProjectDetailPage() {
                       }
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-400">{doc.type} Ã‚Â· {doc.uploader} Ã‚Â· {doc.date}</p>
+                        <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
                       </div>
                       {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
-                      {!isCompleted && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
+                      {!isCompleted && canManageProject && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
                         className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>}
                     </div>
                   ))}
@@ -640,6 +730,69 @@ export default function ProjectDetailPage() {
           )}
 
           {activeTab === 'rab' && (
+            <div className="space-y-5">
+              <div className={`rounded-xl border p-4 ${isRabOver ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${isRabOver ? 'text-red-600' : 'text-green-700'}`}>
+                      {isRabOver ? 'Melebihi Anggaran' : 'Anggaran Terkendali'}
+                    </p>
+                    <h4 className={`mt-1 text-lg font-bold ${isRabOver ? 'text-red-800' : 'text-green-900'}`}>
+                      {isRabOver ? `Over ${formatRupiah(Math.abs(rabRemaining))}` : `Sisa ${formatRupiah(rabRemaining)}`}
+                    </h4>
+                    <p className={`mt-1 text-xs ${isRabOver ? 'text-red-600' : 'text-green-700'}`}>
+                      Total terpakai {formatRupiah(rabUsed)} dari RAB {formatRupiah(rabTotal)}
+                    </p>
+                  </div>
+                  {!isCompleted && canEditRab && (
+                    <button onClick={() => {
+                        setRabMode('add')
+                        setRabInput('')
+                        setEditRabOpen(true)
+                      }}
+                      className="btn-primary shrink-0">
+                      Catat Pengeluaran
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-xs text-gray-600">
+                    <span>Pemakaian RAB</span>
+                    <span className={isRabOver ? 'font-semibold text-red-600' : 'font-semibold text-green-700'}>{rabPercent}%</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-white/80">
+                    <div
+                      className={`h-full rounded-full ${isRabOver ? 'bg-red-500' : 'bg-green-500'}`}
+                      style={{ width: `${rabProgressWidth}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-lg border border-gray-100 bg-white p-4">
+                  <p className="text-xs text-gray-500">RAB Proyek</p>
+                  <p className="mt-1 text-xl font-bold text-gray-900">{formatRupiah(rabTotal)}</p>
+                  <p className="mt-1 text-xs text-gray-400">Batas anggaran proyek</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-white p-4">
+                  <p className="text-xs text-gray-500">Sudah Terpakai</p>
+                  <p className={`mt-1 text-xl font-bold ${isRabOver ? 'text-red-600' : 'text-gray-900'}`}>{formatRupiah(rabUsed)}</p>
+                  <p className="mt-1 text-xs text-gray-400">Akumulasi pengeluaran</p>
+                </div>
+                <div className="rounded-lg border border-gray-100 bg-white p-4">
+                  <p className="text-xs text-gray-500">{isRabOver ? 'Kelebihan' : 'Sisa RAB'}</p>
+                  <p className={`mt-1 text-xl font-bold ${isRabOver ? 'text-red-600' : 'text-green-700'}`}>
+                    {formatRupiah(Math.abs(rabRemaining))}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">{isRabOver ? 'Butuh evaluasi biaya' : 'Masih bisa digunakan'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {false && activeTab === 'rab' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-blue-50 rounded-lg p-4">
@@ -655,12 +808,12 @@ export default function ProjectDetailPage() {
                   </p>
                   {!isCompleted && can(user, 'edit_rab') && (
                     <button onClick={() => { 
-                        const val = project.realisasi || 0
-                        setRabInput(val ? Number(val).toLocaleString('id-ID') : '')
+                        setRabMode('add')
+                        setRabInput('')
                         setEditRabOpen(true) 
                       }}
                       className="mt-2 text-xs text-green-700 hover:text-green-900 hover:underline">
-                      Edit Realisasi
+                      Tambah Pengeluaran
                     </button>
                   )}
                 </div>
@@ -752,14 +905,135 @@ export default function ProjectDetailPage() {
         </div>
       </Modal>
 
-      {/* Modal: Edit RAB Terealisasi */}
-      <Modal open={editRabOpen} onClose={() => setEditRabOpen(false)} title="Update RAB Terealisasi" size="sm">
+      {/* Modal: Catat Pengeluaran RAB */}
+      <Modal open={editRabOpen} onClose={() => setEditRabOpen(false)} title="Catat Pengeluaran RAB" size="sm">
         <div className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
-            RAB Proyek: <span className="font-semibold text-gray-800">{formatRupiah(project.rab)}</span>
+          <div className={`rounded-lg border p-3 ${isRabOver ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs text-gray-500">Sisa RAB sekarang</p>
+                <p className={`mt-1 text-lg font-bold ${isRabOver ? 'text-red-700' : 'text-green-800'}`}>
+                  {isRabOver ? `Over ${formatRupiah(Math.abs(rabRemaining))}` : formatRupiah(rabRemaining)}
+                </p>
+              </div>
+              <div className="text-right text-xs text-gray-500">
+                <p>RAB {formatRupiah(rabTotal)}</p>
+                <p>Terpakai {formatRupiah(rabUsed)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => { setRabMode('add'); setRabInput('') }}
+              className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'add' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
+            >
+              Catat Pengeluaran
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRabMode('set')
+                setRabInput(rabUsed ? Number(rabUsed).toLocaleString('id-ID') : '')
+              }}
+              className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'set' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
+            >
+              Koreksi Total
+            </button>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">
+              {rabMode === 'add' ? 'Nominal pengeluaran yang baru dipakai' : 'Total terpakai yang benar'}
+            </label>
+            <div className="flex items-center rounded-lg border border-gray-200 focus-within:ring-2 focus-within:ring-primary-500">
+              <span className="border-r border-gray-200 px-3 text-sm font-semibold text-gray-500">Rp</span>
+              <input
+                type="text"
+                value={rabInput}
+                onChange={e => {
+                  const raw = e.target.value.replace(/\D/g, '')
+                  setRabInput(raw ? Number(raw).toLocaleString('id-ID') : '')
+                }}
+                className="w-full rounded-r-lg px-3 py-2 text-sm focus:outline-none"
+                placeholder={rabMode === 'add' ? 'Contoh: 500.000' : 'Contoh: 2.500.000'}
+                autoFocus
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              {rabMode === 'add'
+                ? 'Nominal ini akan ditambahkan ke total terpakai.'
+                : 'Pakai ini hanya kalau total sebelumnya salah input.'}
+            </p>
+          </div>
+
+          {rabInput && (() => {
+            const inputAmount = parseFloat(String(rabInput).replace(/\./g, ''))
+            if (isNaN(inputAmount) || inputAmount < 0) return null
+            const totalAfter = rabMode === 'add' ? rabUsed + inputAmount : inputAmount
+            const remainingAfter = rabTotal - totalAfter
+            const isOverAfter = totalAfter > rabTotal
+            return (
+              <div className={`rounded-lg p-3 text-xs ${isOverAfter ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                <div className="flex justify-between gap-3">
+                  <span>Total terpakai setelah disimpan</span>
+                  <span className="font-semibold">{formatRupiah(totalAfter)}</span>
+                </div>
+                <div className="mt-1 flex justify-between gap-3">
+                  <span>{isOverAfter ? 'Kelebihan anggaran' : 'Sisa RAB'}</span>
+                  <span className="font-semibold">{formatRupiah(Math.abs(remainingAfter))}</span>
+                </div>
+              </div>
+            )
+          })()}
+
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setEditRabOpen(false)} className="btn-secondary">Batal</button>
+            <button onClick={handleSaveRab} className="btn-primary">
+              {rabMode === 'add' ? 'Simpan Pengeluaran' : 'Simpan Koreksi'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal lama: dinonaktifkan setelah alur RAB disederhanakan */}
+      <Modal open={false && editRabOpen} onClose={() => setEditRabOpen(false)} title="Update RAB Terealisasi" size="sm">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+              <p>RAB Proyek</p>
+              <p className="mt-1 font-semibold text-gray-800">{formatRupiah(project.rab)}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
+              <p>Sudah Terpakai</p>
+              <p className="mt-1 font-semibold text-gray-800">{formatRupiah(project.realisasi || 0)}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => { setRabMode('add'); setRabInput('') }}
+              className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'add' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
+            >
+              Tambah Pengeluaran
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRabMode('set')
+                const val = project.realisasi || 0
+                setRabInput(val ? Number(val).toLocaleString('id-ID') : '')
+              }}
+              className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'set' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
+            >
+              Set Total
+            </button>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">Realisasi (Rp)</label>
+            <label className="text-xs font-medium text-gray-600 block mb-1">
+              {rabMode === 'add' ? 'Nominal Pengeluaran Baru (Rp)' : 'Total Realisasi Baru (Rp)'}
+            </label>
             <input type="text" value={rabInput} onChange={e => {
                 const raw = e.target.value.replace(/\D/g, '')
                 setRabInput(raw ? Number(raw).toLocaleString('id-ID') : '')
@@ -767,9 +1041,19 @@ export default function ProjectDetailPage() {
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Contoh: 5.000.000" autoFocus/>
             {rabInput && (() => {
-              const num = parseFloat(String(rabInput).replace(/\./g, ''))
-              if (isNaN(num) || num <= 0) return null
-              const isOver = num > project.rab
+              const inputAmount = parseFloat(String(rabInput).replace(/\./g, ''))
+              if (isNaN(inputAmount) || inputAmount < 0) return null
+              const totalAfter = rabMode === 'add' ? Number(project.realisasi || 0) + inputAmount : inputAmount
+              const remainingAfter = Number(project.rab || 0) - totalAfter
+              const isOver = totalAfter > project.rab
+              return (
+                <div className={`mt-2 rounded-lg p-3 text-xs ${isOver ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                  <p className="font-semibold">Total setelah update: {formatRupiah(totalAfter)}</p>
+                  <p className="mt-1">
+                    {isOver ? `Melebihi RAB sebesar ${formatRupiah(Math.abs(remainingAfter))}` : `Sisa RAB ${formatRupiah(remainingAfter)}`}
+                  </p>
+                </div>
+              )
               return <p className={`mt-1 text-xs font-medium ${isOver?'text-red-500':'text-blue-600'}`}>{formatRupiah(num)}{isOver?' Ã¢Å¡Â Ã¯Â¸Â Melebihi RAB!':''}</p>
             })()}
           </div>
@@ -781,7 +1065,7 @@ export default function ProjectDetailPage() {
       </Modal>
 
       {/* Modal: Tambah Material Terpasang */}
-      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang Ã¢â‚¬â€ ${selMat?.name}`} size="md">
+      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang - ${selMat?.name}`} size="md">
         <form onSubmit={handleMatSubmit} className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
             Sisa: {selMat ? selMat.qty_plan - selMat.qty_terpasang : 0} {selMat?.unit}
@@ -953,7 +1237,7 @@ export default function ProjectDetailPage() {
                 </div>
               ) : (
             users.filter(u => u.role === 'engineer').map(eng => {
-              const isAssigned = (project?.assignedEngineers || []).map(value => String(value)).includes(String(eng.id))
+              const isAssigned = normalizeAssignedEngineerIds(project?.assignedEngineers).includes(String(eng.id))
               return (
                 <div key={eng.id}
                   onClick={() => handleAssign(eng.id, isAssigned)}
@@ -978,7 +1262,7 @@ export default function ProjectDetailPage() {
             </>
           )}
 
-          {/* Buat akun engineer baru Ã¢â‚¬â€ sales manager & administrator */}
+          {/* Buat akun engineer baru - sales manager & administrator */}
           {!loadingUsers && can(user, 'edit_project') && (
             <NewEngineerInline onCreated={(eng) => {
               updateUser(eng.id, { assignedProjects: [String(id)] })
@@ -991,6 +1275,19 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </Modal>
+
+      <ProjectProgressUpdateModal
+        open={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        project={project}
+        initialProgress={project?.progress || 0}
+        onSaved={() => {
+          setShowProgressModal(false)
+          fetchProject()
+          fetchMaterials({ project_id: id })
+          fetchDocuments({ project_id: id })
+        }}
+      />
     </div>
   )
 }

@@ -38,9 +38,24 @@ const EMPTY_FORM = {
 }
 
 export default function ProjectsPage() {
-  const { projects, addProject, deleteProject, markComplete, restoreFromTrash, deletePermanent, emptyTrash, trash, fetchProjects } = useAppStore()
+  const projects = useAppStore(state => state.projects)
+  const trash = useAppStore(state => state.trash)
+  const addProject = useAppStore(state => state.addProject)
+  const markComplete = useAppStore(state => state.markComplete)
+  const restoreFromTrash = useAppStore(state => state.restoreFromTrash)
+  const deletePermanent = useAppStore(state => state.deletePermanent)
+  const emptyTrash = useAppStore(state => state.emptyTrash)
+  const fetchProjects = useAppStore(state => state.fetchProjects)
   const { user } = useAuthStore()
   const { users, updateUser, fetchUsers } = useUserStore()
+  const isSiteManager = user?.role === 'site_manager'
+
+  const getBaseForm = () => ({
+    ...EMPTY_FORM,
+    location: { ...EMPTY_FORM.location },
+    pm: isSiteManager ? (user?.name || '') : '',
+    phone: isSiteManager ? (user?.email || '') : '',
+  })
   
 
   
@@ -52,7 +67,7 @@ export default function ProjectsPage() {
   const [filterTahun, setFilterTahun]   = useState('')
   const [showFilter, setShowFilter]     = useState(false)
   const [open, setOpen]                 = useState(false)
-  const [form, setForm]                 = useState(EMPTY_FORM)
+  const [form, setForm]                 = useState(getBaseForm)
   const [confirmId, setConfirmId]       = useState(null)
   const [deletePasswordModal, setDeletePasswordModal] = useState(null)
   const [showHistory, setShowHistory]   = useState(true)
@@ -67,6 +82,27 @@ export default function ProjectsPage() {
   const [availableEngineers, setAvailableEngineers] = useState([])
   const [loadingEngineers, setLoadingEngineers] = useState(false)
   const navigate = useNavigate()
+  const normalizeId = (value) => String(value)
+  const normalizeAssignedEngineerIds = (value) => {
+    if (Array.isArray(value)) {
+      return value.map(normalizeId)
+    }
+
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed.map(normalizeId) : []
+      } catch {
+        return value.trim() ? [normalizeId(value.trim())] : []
+      }
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.values(value).map(normalizeId)
+    }
+
+    return []
+  }
 
   // Fetch projects and users when component mounts
   useEffect(() => {
@@ -74,51 +110,68 @@ export default function ProjectsPage() {
     fetchUsers()
   }, [fetchProjects, fetchUsers])
 
+  useEffect(() => {
+    if (!editProject) {
+      setForm(getBaseForm())
+    }
+  }, [editProject, user?.id, user?.role, user?.name, user?.email])
+
+  const resetProjectForm = () => {
+    setOpen(false)
+    setEditProject(null)
+    setForm(getBaseForm())
+  }
+
+  const openCreateProjectModal = () => {
+    setEditProject(null)
+    setForm(getBaseForm())
+    setOpen(true)
+  }
+
   // Fetch engineers when assign modal opens
   const fetchEngineersForAssignment = async () => {
     if (!assignModal) return
     
     setLoadingEngineers(true)
     try {
-      // Try multiple possible endpoints
+      const authData = localStorage.getItem('amsar-auth')
+      const token = authData ? JSON.parse(authData)?.state?.token : null
+
+      const extractEngineerList = (response) => {
+        if (Array.isArray(response)) return response
+        if (Array.isArray(response?.data)) return response.data
+        if (Array.isArray(response?.engineers)) return response.engineers
+        if (response?.success && Array.isArray(response?.data)) return response.data
+        return []
+      }
+
       let response
+      let engineerList = []
+
       try {
-        response = await api.getEngineers()
+        response = await api.getProjectEngineers()
+        engineerList = extractEngineerList(response)
       } catch (e) {
-        response = await fetch('/api/site/engineers', {
+        console.warn('Primary engineer endpoint failed, trying fallback:', e)
+      }
+
+      if (engineerList.length === 0) {
+        response = await fetch('http://127.0.0.1:8000/api/users/engineers', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             'Accept': 'application/json'
           }
         }).then(res => res.json())
-      }
-      
-      // Handle all possible response formats
-      let engineerList = []
-      
-      if (Array.isArray(response)) {
-        // Direct array response
-        engineerList = response
-      } else if (Array.isArray(response?.data)) {
-        // Wrapped in data property
-        engineerList = response.data
-      } else if (Array.isArray(response?.engineers)) {
-        // Wrapped in engineers property
-        engineerList = response.engineers
-      } else if (response?.success && Array.isArray(response?.data)) {
-        // Success wrapper with data
-        engineerList = response.data
+
+        engineerList = extractEngineerList(response)
       }
       
       if (engineerList.length > 0) {
         setAvailableEngineers(engineerList)
         
         // Get currently assigned engineers for this project
-        const assignedEngineers = users.filter(u => 
-          u.role === 'engineer' && 
-          u.assignedProjects && 
-          u.assignedProjects.includes(String(assignModal.projectId))
-        ).map(u => u.id)
+        const project = projects.find(item => String(item.id) === String(assignModal.projectId))
+        const assignedEngineers = normalizeAssignedEngineerIds(project?.assignedEngineers)
         setSelectedEngineers(assignedEngineers)
       } else {
         console.warn('No engineers found in response')
@@ -218,13 +271,15 @@ export default function ProjectsPage() {
       // Calculate auto status
       const days = Math.ceil((new Date(form.deadline) - new Date()) / 86400000)
       const autoStatus = days < 0 ? 'delayed' : days <= 30 ? 'at_risk' : 'on_track'
+      const resolvedPm = isSiteManager ? (user?.name || form.pm) : form.pm
+      const resolvedPmEmail = isSiteManager ? (user?.email || form.phone) : form.phone
       
       if (editProject) {
         useAppStore.getState().updateProject(editProject.id, {
           name: form.name.trim(), 
           location: locationString, 
-          pm: form.pm.trim(),
-          phone: form.phone?.trim() || '', 
+          pm: resolvedPm?.trim(),
+          phone: resolvedPmEmail?.trim() || '', 
           deadline: form.deadline, 
           rab: rabNum, 
           status: autoStatus,
@@ -234,8 +289,8 @@ export default function ProjectsPage() {
         const newProject = { 
           name: form.name.trim(), 
           location: locationString, 
-          pm: form.pm.trim(), 
-          phone: form.phone?.trim() || '', 
+          pm: resolvedPm?.trim(), 
+          phone: resolvedPmEmail?.trim() || '', 
           deadline: form.deadline, 
           rab: rabNum, 
           status: autoStatus 
@@ -275,9 +330,7 @@ export default function ProjectsPage() {
       }
       
       // Close modal and reset form
-      setOpen(false)
-      setForm(EMPTY_FORM)
-      setEditProject(null)
+      resetProjectForm()
       
     } catch (error) {
       toast.error('Terjadi kesalahan saat menyimpan proyek')
@@ -301,8 +354,7 @@ export default function ProjectsPage() {
       const response = await api.deleteProject(deletePasswordModal.id, { password: deletePassword })
       
       if (response.success) {
-        // Remove from local state
-        deleteProject(deletePasswordModal.id)
+        await fetchProjects()
         
         toast.custom((t) => (
           <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
@@ -344,17 +396,17 @@ export default function ProjectsPage() {
       // Send bulk assignment request with correct payload
       const response = await api.assignEngineersToProject({
         project_id: parseInt(projectId), // Ensure it's an integer
-        engineer_ids: selectedEngineers.map(id => parseInt(id)) // Ensure all IDs are integers
+        engineer_ids: selectedEngineers.map(id => parseInt(id, 10)).filter(Number.isFinite) // Ensure all IDs are integers
       })
       
       if (response.success) {
         // Update local state for each assigned engineer
         selectedEngineers.forEach(engineerId => {
-          const engineer = availableEngineers.find(u => u.id === engineerId)
+          const engineer = availableEngineers.find(u => normalizeId(u.id) === normalizeId(engineerId))
           if (engineer) {
             const currentAssigned = engineer.assignedProjects || []
             if (!currentAssigned.includes(String(projectId))) {
-              updateUser(engineerId, { 
+              updateUser(engineer.id, { 
                 assignedProjects: [...currentAssigned, String(projectId)] 
               })
             }
@@ -362,7 +414,7 @@ export default function ProjectsPage() {
         })
         
         // Add activity log
-        const assignedEngineers = availableEngineers.filter(u => selectedEngineers.includes(u.id))
+        const assignedEngineers = availableEngineers.filter(u => selectedEngineers.includes(normalizeId(u.id)))
         const engineerNames = assignedEngineers.map(u => u.name).join(', ')
         
         useAppStore.getState().addActivity({
@@ -373,6 +425,7 @@ export default function ProjectsPage() {
         })
         
         toast.success(`${selectedEngineers.length} engineer berhasil di-assign ke proyek "${projectName}"`)
+        await fetchProjects()
         setAssignModal(null)
         setSelectedEngineers([])
       } else {
@@ -399,9 +452,9 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="header-responsive">
         <div>
-          <h1 className="header-title">Daftar Proyek</h1>
-          <p className="header-subtitle">
-            {active.length} proyek aktif Â· {completed.length} selesai
+          <h1 className="header-title text-[#de168c]">Daftar Proyek</h1>
+          <p className="header-subtitle text-[#de168c]">
+            {active.length} proyek aktif · {completed.length} selesai
             <span className="ml-2 text-xs text-gray-400">
               (Total: {projects.length} proyek)
             </span>
@@ -409,7 +462,7 @@ export default function ProjectsPage() {
         </div>
         <div className="flex items-center gap-2">
           {can(user, 'create_project') && (
-            <button onClick={() => setOpen(true)} className="btn-responsive primary">
+            <button onClick={openCreateProjectModal} className="btn-responsive primary">
               <Plus size={16} />
               <span className="mobile-hidden">Tambah Proyek</span>
               <span className="desktop-hidden tablet-hidden">Tambah</span>
@@ -636,33 +689,20 @@ export default function ProjectsPage() {
                   )}
                   {can(user, 'assign_project') && (
                     (() => {
-                      const isAssigned = (p.assignments_count > 0) || (p.assignedEngineers && p.assignedEngineers.length > 0)
-                      return isAssigned ? (
-                        <button 
-                          disabled
-                          className="project-card-btn project-card-btn-secondary"
-                          title="Proyek sudah di-assign"
-                        >
-                          <Users size={13} /> 
-                          <span className="mobile-hidden">âœ“ Assigned</span>
-                        </button>
-                      ) : (
+                      const assignedEngineerIds = normalizeAssignedEngineerIds(p.assignedEngineers)
+                      const isAssigned = (p.assignments_count > 0) || (assignedEngineerIds.length > 0)
+                      return (
                         <button 
                           onClick={(e) => { 
                             e.stopPropagation(); 
                             setAssignModal({ projectId: p.id, projectName: p.name })
-                            // Get currently assigned engineers
-                            const assignedEngineers = users.filter(u => 
-                              u.role === 'engineer' && 
-                              u.assignedProjects && 
-                              u.assignedProjects.includes(String(p.id))
-                            ).map(u => u.id)
-                            setSelectedEngineers(assignedEngineers)
+                            setSelectedEngineers(assignedEngineerIds)
                           }}
                           className="project-card-btn project-card-btn-secondary"
+                          title={isAssigned ? 'Kelola engineer proyek' : 'Assign engineer ke proyek'}
                         >
                           <Users size={13} /> 
-                          <span className="mobile-hidden">Assign</span>
+                          <span className="mobile-hidden">{isAssigned ? 'Kelola Engineer' : 'Assign'}</span>
                         </button>
                       )
                     })()
@@ -721,7 +761,7 @@ export default function ProjectsPage() {
                   </div>
                   <div className="project-history-content">
                     <p className="project-history-title">{p.name}</p>
-                    <p className="project-history-meta">{p.location} Â· PM: {p.pm}</p>
+                    <p className="project-history-meta">{p.location} · PM: {p.pm}</p>
                   </div>
                   <div className="project-history-progress">
                     <p className="project-history-progress-value">100%</p>
@@ -767,7 +807,7 @@ export default function ProjectsPage() {
                 <div key={p.id} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-red-100 opacity-70">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-700 line-through">{p.name}</p>
-                    <p className="text-xs text-gray-400">{p.location} Â· PM: {p.pm}</p>
+                    <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
                     <p className="text-xs text-red-400 mt-0.5">
                       Dihapus {p.deletedAt ? new Date(p.deletedAt).toLocaleDateString('id-ID') : '-'}
                     </p>
@@ -803,7 +843,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Modal Tambah Proyek */}
-      <Modal open={open} onClose={() => { setOpen(false); setEditProject(null); setForm(EMPTY_FORM) }} title={editProject ? 'Edit Proyek' : 'Tambah Proyek Baru'} size="md">
+      <Modal open={open} onClose={resetProjectForm} title={editProject ? 'Edit Proyek' : 'Tambah Proyek Baru'} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Nama Proyek</label>
@@ -820,14 +860,17 @@ export default function ProjectsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Site Manager</label>
+              <label className="text-xs font-medium text-[#de168c] block mb-1">Site Manager</label>
               <input type="text" required value={form.pm} onChange={e => setForm({...form, pm: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nama Site Manager..." />
+                readOnly={isSiteManager}
+                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${isSiteManager ? 'bg-[#f3faf1] text-[#de168c] cursor-not-allowed' : ''}`} placeholder="Nama Site Manager..." />
+              {isSiteManager && <p className="mt-1 text-xs text-[#de168c]">Otomatis diambil dari akun site manager yang sedang login.</p>}
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Email Site Manager</label>
+              <label className="text-xs font-medium text-[#de168c] block mb-1">Email Site Manager</label>
               <input type="email" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="sitemanager@ptamsar.co.id" />
+                readOnly={isSiteManager}
+                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${isSiteManager ? 'bg-[#f3faf1] text-[#de168c] cursor-not-allowed' : ''}`} placeholder="sitemanager@ptamsar.co.id" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -866,7 +909,7 @@ export default function ProjectsPage() {
             </div>
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <button type="button" onClick={() => { setOpen(false); setEditProject(null); setForm(EMPTY_FORM) }} className="btn-secondary">Batal</button>
+            <button type="button" onClick={resetProjectForm} className="btn-secondary">Batal</button>
             <button type="submit" className="btn-primary">{editProject ? 'Simpan Perubahan' : 'Simpan Proyek'}</button>
           </div>
         </form>
@@ -966,15 +1009,15 @@ export default function ProjectsPage() {
           <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
             <Users size={16} className="text-purple-600 shrink-0 mt-0.5"/>
             <div>
-              <p className="text-sm font-semibold text-purple-800">Assign Engineer</p>
-              <p className="text-xs text-purple-600 mt-0.5">
+              <p className="text-sm font-semibold text-[#de168c]">Assign Engineer</p>
+              <p className="text-xs text-[#de168c] mt-0.5">
                 Pilih engineer yang akan di-assign ke proyek "{assignModal?.projectName}"
               </p>
             </div>
           </div>
           
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-2">Pilih Engineer:</label>
+            <label className="text-xs font-medium text-[#de168c] block mb-2">Pilih Engineer:</label>
             
             {loadingEngineers ? (
               <div className="flex items-center justify-center py-8">
@@ -989,41 +1032,42 @@ export default function ProjectsPage() {
                   <div 
                     key={engineer.id} 
                     onClick={() => {
-                      if (selectedEngineers.includes(engineer.id)) {
-                        setSelectedEngineers(selectedEngineers.filter(id => id !== engineer.id))
+                      const engineerId = normalizeId(engineer.id)
+                      if (selectedEngineers.includes(engineerId)) {
+                        setSelectedEngineers(selectedEngineers.filter(id => id !== engineerId))
                       } else {
-                        setSelectedEngineers([...selectedEngineers, engineer.id])
+                        setSelectedEngineers([...selectedEngineers, engineerId])
                       }
                     }}
                     className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedEngineers.includes(engineer.id)
+                      selectedEngineers.includes(normalizeId(engineer.id))
                         ? 'border-purple-500 bg-purple-50 shadow-md'
                         : 'border-gray-200 hover:border-purple-300 hover:bg-purple-25'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                      selectedEngineers.includes(engineer.id) ? 'bg-purple-600' : 'bg-purple-400'
+                      selectedEngineers.includes(normalizeId(engineer.id)) ? 'bg-purple-600' : 'bg-purple-400'
                     }`}>
                       {engineer.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <p className={`font-medium text-sm ${
-                        selectedEngineers.includes(engineer.id) ? 'text-purple-900' : 'text-gray-800'
+                        selectedEngineers.includes(normalizeId(engineer.id)) ? 'text-[#de168c]' : 'text-gray-800'
                       }`}>
                         {engineer.name}
                       </p>
                       <p className={`text-xs ${
-                        selectedEngineers.includes(engineer.id) ? 'text-purple-600' : 'text-gray-500'
+                        selectedEngineers.includes(normalizeId(engineer.id)) ? 'text-[#de168c]' : 'text-gray-500'
                       }`}>
                         {engineer.email}
                       </p>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedEngineers.includes(engineer.id)
+                      selectedEngineers.includes(normalizeId(engineer.id))
                         ? 'bg-purple-600 border-purple-600'
                         : 'border-gray-300'
                     }`}>
-                      {selectedEngineers.includes(engineer.id) && (
+                      {selectedEngineers.includes(normalizeId(engineer.id)) && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                       )}
                     </div>

@@ -21,10 +21,9 @@ class NotificationHelper
                 ProjectNotification::create([
                     'project_id' => $project->id,
                     'user_id' => $user->id,
-                    'type' => 'project',
+                    'type' => 'info',
                     'title' => 'Proyek Baru Dibuat',
                     'message' => "Proyek baru '{$project->name}' telah dibuat oleh {$createdBy->name}",
-                    'link' => "/projects/{$project->id}",
                     'is_read' => false,
                 ]);
             }
@@ -39,10 +38,9 @@ class NotificationHelper
         ProjectNotification::create([
             'project_id' => $project->id,
             'user_id' => $engineer->id,
-            'type' => 'project',
+            'type' => 'info',
             'title' => 'Ditugaskan ke Proyek',
             'message' => "Anda telah ditugaskan ke proyek {$project->name} oleh {$assignedBy->name}",
-            'link' => "/projects/{$project->id}",
             'is_read' => false,
         ]);
     }
@@ -58,10 +56,9 @@ class NotificationHelper
             ProjectNotification::create([
                 'project_id' => $project->id,
                 'user_id' => $manager->id,
-                'type' => 'progress',
+                'type' => 'milestone',
                 'title' => 'Progress Diupdate',
                 'message' => "{$engineer->name} mengupdate progress {$project->name} menjadi {$progress}%",
-                'link' => "/projects/{$project->id}",
                 'is_read' => false,
             ]);
         }
@@ -80,10 +77,9 @@ class NotificationHelper
             ProjectNotification::create([
                 'project_id' => $project->id,
                 'user_id' => $user->id,
-                'type' => 'deadline',
+                'type' => 'deadline_warning',
                 'title' => 'Deadline Mendekat',
                 'message' => "Proyek {$project->name} deadline dalam {$daysLeft} hari lagi",
-                'link' => "/projects/{$project->id}",
                 'is_read' => false,
             ]);
         }
@@ -101,10 +97,9 @@ class NotificationHelper
             if ($user->id !== $createdBy->id) { // Don't notify the creator
                 ProjectNotification::create([
                     'user_id' => $user->id,
-                    'type' => 'customer',
+                    'type' => 'info',
                     'title' => 'Customer Baru Ditambahkan',
                     'message' => "Customer baru '{$customer->name}' telah ditambahkan oleh {$createdBy->name}",
-                    'link' => '/customers',
                     'is_read' => false,
                 ]);
             }
@@ -122,7 +117,6 @@ class NotificationHelper
             'type' => 'visit',
             'title' => 'Visit Baru Ditugaskan',
             'message' => "Anda telah ditugaskan untuk mengunjungi {$visit->customer->name} pada " . date('d/m/Y', strtotime($visit->tanggal_visit)),
-            'link' => '/plan-visits',
             'is_read' => false,
         ]);
     }
@@ -138,10 +132,9 @@ class NotificationHelper
         foreach ($usersToNotify as $manager) {
             ProjectNotification::create([
                 'user_id' => $manager->id,
-                'type' => 'attendance',
+                'type' => 'warning',
                 'title' => 'Peringatan Kehadiran',
                 'message' => "Peringatan kehadiran untuk {$user->name}: {$message}",
-                'link' => '/attendance',
                 'is_read' => false,
             ]);
         }
@@ -155,10 +148,9 @@ class NotificationHelper
         // FIX 6: Send welcome to new user + notify admin only
         ProjectNotification::create([
             'user_id' => $user->id,
-            'type' => 'welcome',
+            'type' => 'success',
             'title' => 'Selamat Datang!',
             'message' => 'Akun Anda telah berhasil dibuat. Selamat datang di sistem PT Amsar Prima Mandiri.',
-            'link' => '/dashboard',
             'is_read' => false,
         ]);
         
@@ -167,10 +159,9 @@ class NotificationHelper
         foreach ($admins as $admin) {
             ProjectNotification::create([
                 'user_id' => $admin->id,
-                'type' => 'user',
+                'type' => 'info',
                 'title' => 'User Baru Terdaftar',
                 'message' => "User baru '{$user->name}' dengan role {$user->role} telah terdaftar",
-                'link' => '/users',
                 'is_read' => false,
             ]);
         }
@@ -194,7 +185,7 @@ class NotificationHelper
         foreach ($admins as $admin) {
             ProjectNotification::create([
                 'user_id' => $admin->id,
-                'type' => 'security',
+                'type' => 'warning',
                 'title' => $titles[$stage] ?? 'Aktivitas Password',
                 'message' => $messages[$stage] ?? "Ada aktivitas password dari {$user->name} ({$user->email}).",
                 'is_read' => false,
@@ -223,7 +214,6 @@ class NotificationHelper
                 'type' => 'visit',
                 'title' => 'Kunjungan Selesai',
                 'message' => "Kunjungan ke {$customer->name} telah diselesaikan",
-                'link' => '/visit-reports',
                 'is_read' => false,
             ]);
         }
@@ -234,18 +224,17 @@ class NotificationHelper
      */
     public static function projectOverBudget($project)
     {
-        $managers = User::whereIn('role', ['site_manager', 'admin'])->get();
+        $managers = User::whereIn('role', ['site_manager', 'sales_manager', 'administrator', 'admin'])->get();
         
-        $overAmount = $project->budget_realisasi - $project->budget;
+        $overAmount = ($project->rab_realisasi ?? 0) - ($project->rab ?? 0);
         
         foreach ($managers as $manager) {
             ProjectNotification::create([
                 'project_id' => $project->id,
                 'user_id' => $manager->id,
-                'type' => 'budget',
+                'type' => 'over_budget',
                 'title' => 'Proyek Over Budget',
                 'message' => "Proyek {$project->name} melebihi budget sebesar Rp " . number_format($overAmount, 0, ',', '.'),
-                'link' => "/projects/{$project->id}",
                 'is_read' => false,
             ]);
         }
@@ -256,7 +245,7 @@ class NotificationHelper
      */
     public static function projectCompleted($project, $completedBy)
     {
-        $usersToNotify = User::whereIn('role', ['site_manager', 'admin'])->get();
+        $usersToNotify = User::whereIn('role', ['site_manager', 'administrator', 'admin'])->get();
         
         foreach ($usersToNotify as $user) {
             if ($user->id !== $completedBy->id) { // Don't notify the person who completed it
@@ -266,7 +255,6 @@ class NotificationHelper
                     'type' => 'success',
                     'title' => 'Proyek Selesai',
                     'message' => "Proyek {$project->name} telah diselesaikan oleh {$completedBy->name}",
-                    'link' => "/projects/{$project->id}",
                     'is_read' => false,
                 ]);
             }

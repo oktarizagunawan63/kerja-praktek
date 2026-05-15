@@ -47,8 +47,8 @@ export default function LoginPage() {
             className="mb-3"
             style={{ width: 60, height: 60, objectFit: 'contain' }}
           />
-          <h1 className="text-xl font-bold text-[#237043]">PT Amsar</h1>
-          <p className="text-sm text-[#de168c]">Medical Services Dashboard</p>
+          <h1 className="text-xl font-bold text-[#237043]">PT AMSAR PRIMA MANDIRI</h1>
+          <p className="text-sm text-[#de168c]">Dashboard Monitoring Proyek</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -12,12 +12,16 @@ class EngineerProgressReport extends Model
         'progress_percentage',
         'notes',
         'photo',
+        'material_updates',
+        'plan_updates',
         'reported_at',
     ];
 
     protected $casts = [
         'reported_at' => 'datetime',
         'progress_percentage' => 'integer',
+        'material_updates' => 'array',
+        'plan_updates' => 'array',
     ];
 
     public function project()
