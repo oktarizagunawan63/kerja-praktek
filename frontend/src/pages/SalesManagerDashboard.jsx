@@ -311,9 +311,6 @@ export default function SalesManagerDashboard() {
                             <div><span className="font-semibold">Sales:</span> {visit.visited_by}</div>
                             <div><span className="font-semibold">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}</div>
                             <div><span className="font-semibold">Outcome:</span> {visit.visit_outcome}</div>
-                            {visit.deal_amount && (
-                              <div><span className="font-semibold">Deal:</span> Rp {Number(visit.deal_amount).toLocaleString('id-ID')}</div>
-                            )}
                           </div>
                         </div>
                       </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock, Users } from '@icons'
+import { Plus, Search, CheckCircle, Clock, ChevronDown, ChevronUp, SlidersHorizontal, X, Trash2, Lock, Users, Edit } from '@icons'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import EnhancedLocationSelect from '../components/ui/EnhancedLocationSelect'
@@ -454,7 +454,7 @@ export default function ProjectsPage() {
         <div>
           <h1 className="header-title text-[#de168c]">Daftar Proyek</h1>
           <p className="header-subtitle text-[#de168c]">
-            {active.length} proyek aktif · {completed.length} selesai
+            {active.length} proyek aktif - {completed.length} selesai
             <span className="ml-2 text-xs text-gray-400">
               (Total: {projects.length} proyek)
             </span>
@@ -684,7 +684,7 @@ export default function ProjectsPage() {
                       className="project-card-btn project-card-btn-secondary"
                     >
                       <span className="mobile-hidden">Edit</span>
-                      <span className="desktop-hidden tablet-hidden">âœï¸</span>
+                      <Edit size={13} className="desktop-hidden tablet-hidden" />
                     </button>
                   )}
                   {can(user, 'assign_project') && (
@@ -722,7 +722,6 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="empty-state-responsive">
-          <div className="icon opacity-50">ðŸ“‹</div>
           <h3 className="title">
             {projects.length === 0 
               ? 'Belum ada proyek' 
@@ -761,7 +760,7 @@ export default function ProjectsPage() {
                   </div>
                   <div className="project-history-content">
                     <p className="project-history-title">{p.name}</p>
-                    <p className="project-history-meta">{p.location} · PM: {p.pm}</p>
+                    <p className="project-history-meta">{p.location} - PM: {p.pm}</p>
                   </div>
                   <div className="project-history-progress">
                     <p className="project-history-progress-value">100%</p>
@@ -786,7 +785,7 @@ export default function ProjectsPage() {
         <div className="card border-dashed border-red-200 bg-red-50/30">
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-base">ðŸ—‘ï¸</span>
+              <Trash2 size={16} className="text-red-500" />
               <h3 className="text-sm font-semibold text-gray-700">Sampah</h3>
               <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{trash.length}</span>
             </div>
@@ -807,7 +806,7 @@ export default function ProjectsPage() {
                 <div key={p.id} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-red-100 opacity-70">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-700 line-through">{p.name}</p>
-                    <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                    <p className="text-xs text-gray-400">{p.location} - PM: {p.pm}</p>
                     <p className="text-xs text-red-400 mt-0.5">
                       Dihapus {p.deletedAt ? new Date(p.deletedAt).toLocaleDateString('id-ID') : '-'}
                     </p>

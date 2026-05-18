@@ -24,7 +24,7 @@ class WorkLocationSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        echo "✅ Default work location created: Kantor PT Amsar Prima Mandiri\n";
+        echo "OK Default work location created: Kantor PT Amsar Prima Mandiri\n";
         echo "   Coordinates: -6.322155, 106.675579\n";
         echo "   Radius: 200 meters\n";
     }

@@ -466,7 +466,7 @@ const useAppStore = create((set, get) => ({
     set({ trash: [] })
   },
 
-  // Activity log (no-op stub — kept for backwards compat with ProjectsPage)
+  // Activity log (no-op stub - kept for backwards compat with ProjectsPage)
   addActivity: (_activity) => {
     // Activities are logged server-side via ActivityLogger; no local state needed.
   },

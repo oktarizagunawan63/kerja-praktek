@@ -15,7 +15,7 @@ const STEPS = {
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const emailFromUrl = searchParams.get('email') || ''
+  const emailFromUrl = (searchParams.get('email') || '').trim().toLowerCase()
   
   const [step, setStep] = useState(STEPS.TOKEN)
   const [email, setEmail] = useState(emailFromUrl)
@@ -62,10 +62,13 @@ export default function ResetPasswordPage() {
     return true
   }
 
+  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedToken = token.trim()
+
   const handleVerifyToken = async (e) => {
     e.preventDefault()
     
-    if (!token || token.length !== 6) {
+    if (!normalizedToken || normalizedToken.length !== 6) {
       toast.error('Kode harus 6 digit')
       return
     }
@@ -77,7 +80,7 @@ export default function ResetPasswordPage() {
 
     setLoading(true)
     try {
-      const response = await api.verifyResetToken(email, token)
+      const response = await api.verifyResetToken(normalizedEmail, normalizedToken)
       
       if (response.success) {
         toast.success('Kode valid! Silakan buat password baru.')
@@ -103,8 +106,8 @@ export default function ResetPasswordPage() {
     setLoading(true)
     try {
       const response = await api.resetPassword({
-        email,
-        token,
+        email: normalizedEmail,
+        token: normalizedToken,
         password,
         password_confirmation: passwordConfirmation
       })
@@ -131,7 +134,7 @@ export default function ResetPasswordPage() {
   const handleResendToken = async () => {
     setLoading(true)
     try {
-      const response = await api.sendResetToken(email)
+      const response = await api.sendResetToken(normalizedEmail)
       
       if (response.success) {
         toast.success('Kode baru telah dikirim ke email Anda')
@@ -304,7 +307,7 @@ export default function ResetPasswordPage() {
           <p className={`text-xs mt-1 ${
             password === passwordConfirmation ? 'text-green-600' : 'text-red-600'
           }`}>
-            {password === passwordConfirmation ? 'âœ“ Password cocok' : 'âœ— Password tidak cocok'}
+            {password === passwordConfirmation ? 'Password cocok' : 'Password tidak cocok'}
           </p>
         )}
       </div>
@@ -336,9 +339,9 @@ export default function ResetPasswordPage() {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <p className="text-sm text-green-700">
           <strong>Keamanan Akun:</strong><br />
-          â€¢ Semua sesi login sebelumnya telah dihapus<br />
-          â€¢ Gunakan password baru untuk login<br />
-          â€¢ Jaga kerahasiaan password Anda
+          - Semua sesi login sebelumnya telah dihapus<br />
+          - Gunakan password baru untuk login<br />
+          - Jaga kerahasiaan password Anda
         </p>
       </div>
 
@@ -377,7 +380,7 @@ export default function ResetPasswordPage() {
                       [STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? 'bg-green-600 text-white' :
                       'bg-gray-200 text-gray-600'
                     }`}>
-                      {[STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? 'âœ“' : index + 1}
+                      {[STEPS.TOKEN, STEPS.PASSWORD].indexOf(step) > index ? 'OK' : index + 1}
                     </div>
                     {index < 1 && (
                       <div className={`w-8 h-0.5 ${
@@ -399,7 +402,7 @@ export default function ResetPasswordPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            Â© 2026 PT Amsar Prima Mandiri
+            Copyright 2026 PT Amsar Prima Mandiri
           </p>
         </div>
       </div>

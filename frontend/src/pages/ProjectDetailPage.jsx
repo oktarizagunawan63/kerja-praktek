@@ -18,7 +18,7 @@ import { formatRupiah } from '../lib/formatRupiah'
 import { can } from '../lib/permissions'
 import { api } from '../lib/api'
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ constants Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// constants
 
 const HIcon = {
   material: <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center"><Plus size={13} className="text-blue-600"/></div>,
@@ -27,9 +27,9 @@ const HIcon = {
   system:   <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center"><Clock size={13} className="text-gray-500"/></div>,
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ component Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// component
 export default function ProjectDetailPage() {
-  // Ã¢â€â‚¬Ã¢â€â‚¬ All hooks at the very top Ã¢â€â‚¬Ã¢â€â‚¬
+  // All hooks at the very top
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -69,6 +69,7 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [rabInput, setRabInput] = useState('')
   const [rabMode, setRabMode] = useState('add')
+  const [rabNote, setRabNote] = useState('')
   const [matForm, setMatForm] = useState({ qty: '', catatan: '', files: [] })
   const [docForm, setDocForm] = useState({ type: 'Laporan Harian', files: [] })
   const [newMat, setNewMat] = useState({ name: '', unit: '', qty_plan: '', qty_terpasang: '' })
@@ -76,7 +77,7 @@ export default function ProjectDetailPage() {
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Effects Ã¢â€â‚¬Ã¢â€â‚¬
+  // Effects
   useEffect(() => {
     fetchProject()
     fetchEngineers()
@@ -88,7 +89,7 @@ export default function ProjectDetailPage() {
     // Future: Load progress reports and RAB realisasi here
   }, [project, user])
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Helper functions Ã¢â€â‚¬Ã¢â€â‚¬
+  // Helper functions
   const currentUser = user?.name || 'Unknown'
   
   const fetchProject = async () => {
@@ -180,7 +181,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Early returns Ã¢â€â‚¬Ã¢â€â‚¬
+  // Early returns
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-gray-500">Memuat proyek...</div>
@@ -193,7 +194,7 @@ export default function ProjectDetailPage() {
     </div>
   )
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Derived data Ã¢â€â‚¬Ã¢â€â‚¬
+  // Derived data
   const materials = getMaterials(id).length ? getMaterials(id) : (project?.materials || [])
   const docs      = getDocs(id).length ? getDocs(id) : (project?.documents || [])
   const isCompleted = project?.status === 'completed'
@@ -213,6 +214,7 @@ export default function ProjectDetailPage() {
   const rabPercent = rabTotal > 0 ? Math.round((rabUsed / rabTotal) * 100) : 0
   const rabProgressWidth = Math.min(Math.max(rabPercent, 0), 100)
   const isRabOver = rabUsed > rabTotal
+  const rabExpenses = Array.isArray(project?.rabExpenses) ? project.rabExpenses : []
   const deadlineDate = project?.deadline ? new Date(project.deadline) : null
   const deadlineText = deadlineDate && !Number.isNaN(deadlineDate.getTime())
     ? deadlineDate.toLocaleDateString('id-ID')
@@ -234,7 +236,7 @@ export default function ProjectDetailPage() {
     ? `Selesai pada ${completedText}`
     : `Deadline: ${deadlineText}`
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ early return after all hooks Ã¢â€â‚¬Ã¢â€â‚¬
+  // Early return after all hooks
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400">
@@ -244,10 +246,10 @@ export default function ProjectDetailPage() {
     )
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ helpers Ã¢â€â‚¬Ã¢â€â‚¬
+  // helpers
   const addHist = (e) => setHistory(p => [{ id: Date.now(), ...e, time: new Date().toLocaleString('id-ID') }, ...p])
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ handlers Ã¢â€â‚¬Ã¢â€â‚¬
+  // handlers
   const handleMatSubmit = async (e) => {
     e.preventDefault()
     if (!matForm.qty || matForm.files.length === 0) { toast.error('Isi qty dan upload dokumen perintah'); return }
@@ -261,7 +263,7 @@ export default function ProjectDetailPage() {
       formData.append('file', file)
       await addDoc(formData)
     }))
-    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' - ' + matForm.catatan : ''}`
+    const detail = `Tambah ${qty} ${selMat.unit} ${selMat.name}${matForm.catatan ? ' - ' + matForm.catatan : ''}`
     addHist({ action: 'Update Material Terpasang', detail, user: currentUser, type: 'material' })
     toast.success('Material berhasil diupdate')
     fetchProject()
@@ -341,21 +343,28 @@ export default function ProjectDetailPage() {
     const inputAmount = parseFloat(String(rabInput).replace(/\./g, ''))
     if (isNaN(inputAmount) || inputAmount < 0) { toast.error('Masukkan angka yang valid'); return }
     if (rabMode === 'add' && inputAmount <= 0) { toast.error('Nominal pengeluaran harus lebih dari 0'); return }
+    if (rabMode === 'add' && !rabNote.trim()) { toast.error('Catatan keperluan wajib diisi'); return }
 
     const currentRealisasi = Number(project?.realisasi || 0)
     const num = rabMode === 'add' ? currentRealisasi + inputAmount : inputAmount
 
     try {
-      await updateProject(id, { realisasi: num })
+      await updateProject(id, {
+        realisasi: num,
+        rab_amount: inputAmount,
+        rab_mode: rabMode,
+        rab_note: rabNote.trim(),
+      })
       const detail = rabMode === 'add'
-        ? `Tambah pengeluaran ${formatRupiah(inputAmount)}. Total realisasi: ${formatRupiah(num)}`
-        : `Set total RAB terealisasi: ${formatRupiah(num)}`
+        ? `Tambah pengeluaran ${formatRupiah(inputAmount)} untuk ${rabNote.trim()}. Total realisasi: ${formatRupiah(num)}`
+        : `Set total RAB terealisasi: ${formatRupiah(num)}${rabNote.trim() ? ' - ' + rabNote.trim() : ''}`
       addActivity({ action: 'Update RAB Terealisasi', detail, projectId: id })
       addHist({ action: 'Update RAB Terealisasi', detail, user: currentUser, type: 'system' })
       toast.success('RAB Terealisasi diupdate')
       await fetchProject()
       setEditRabOpen(false)
       setRabInput('')
+      setRabNote('')
       setRabMode('add')
     } catch (error) {
       toast.error(error?.message || 'Gagal update RAB terealisasi')
@@ -373,7 +382,7 @@ export default function ProjectDetailPage() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-gray-900 truncate">{project.name}</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{project.location} · PM: {project.pm}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{project.location} - PM: {project.pm}</p>
           </div>
           {isCompleted
             ? <Badge variant="info">Selesai</Badge>
@@ -428,7 +437,7 @@ export default function ProjectDetailPage() {
                 `Terealisasi: ${formatRupiah(project.realisasi || 0)}\n` +
                 `Sisa Waktu : ${remainingTimeValue} (${remainingTimeNote})\n` +
                 `Status     : ${project.status === 'on_track' ? 'On Track' : project.status === 'at_risk' ? 'At Risk' : project.status === 'delayed' ? 'Delayed' : 'Selesai'}\n\n` +
-                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSales Manager - PT Amsar Prima Mandiri`
+                `Demikian laporan ini kami sampaikan.\n\nHormat kami,\n${user.name}\nSite Manager - PT Amsar Prima Mandiri`
               )
               return (
                 <button
@@ -468,9 +477,10 @@ export default function ProjectDetailPage() {
             {isRabOver ? `Over ${formatRupiah(Math.abs(rabRemaining))}` : `Sisa ${formatRupiah(rabRemaining)}`}
           </p>
           {!isCompleted && canEditRab && (
-            <button onClick={() => { 
+                    <button onClick={() => { 
                 setRabMode('add')
                 setRabInput('')
+                setRabNote('')
                 setEditRabOpen(true) 
               }}
               className="mt-1.5 text-xs text-blue-500 hover:text-blue-700 hover:underline">
@@ -604,7 +614,7 @@ export default function ProjectDetailPage() {
                       </div>
                     )
                   })}
-                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material - klik "+ Tambah Material"</p>}
+                  {materials.length === 0 && <p className="text-sm text-gray-400 text-center py-6">Belum ada material - klik "+ Tambah Material"</p>}
                 </div>
               </div>
             </div>
@@ -716,7 +726,7 @@ export default function ProjectDetailPage() {
                       }
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-400">{doc.type} · {doc.uploader} · {doc.date}</p>
+                        <p className="text-xs text-gray-400">{doc.type} - {doc.uploader} - {doc.date}</p>
                       </div>
                       {doc.previewUrl && <button onClick={() => downloadFile(doc.previewUrl, doc.name)} className="p-1.5 hover:bg-green-50 rounded text-gray-400 hover:text-green-600"><Download size={14}/></button>}
                       {!isCompleted && canManageProject && <button onClick={() => { deleteDoc(doc.id); toast.success('Dokumen dihapus') }}
@@ -748,6 +758,7 @@ export default function ProjectDetailPage() {
                     <button onClick={() => {
                         setRabMode('add')
                         setRabInput('')
+                        setRabNote('')
                         setEditRabOpen(true)
                       }}
                       className="btn-primary shrink-0">
@@ -788,6 +799,61 @@ export default function ProjectDetailPage() {
                   </p>
                   <p className="mt-1 text-xs text-gray-400">{isRabOver ? 'Butuh evaluasi biaya' : 'Masih bisa digunakan'}</p>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-white">
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800">Catatan Pengeluaran RAB</h4>
+                    <p className="text-xs text-gray-400">Riwayat uang keluar dan keperluannya</p>
+                  </div>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    {rabExpenses.length}
+                  </span>
+                </div>
+
+                {rabExpenses.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-gray-400">
+                    Belum ada catatan pengeluaran RAB
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {[...rabExpenses].reverse().map((expense, index) => {
+                      const isCorrection = expense.mode === 'set'
+                      const dateText = expense.created_at
+                        ? new Date(expense.created_at).toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '-'
+
+                      return (
+                        <div key={expense.id || index} className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${isCorrection ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-700'}`}>
+                                {isCorrection ? 'Koreksi' : 'Pengeluaran'}
+                              </span>
+                              <span className="text-xs text-gray-400">{dateText}</span>
+                            </div>
+                            <p className="mt-1 text-sm font-medium text-gray-800">
+                              {expense.note || (isCorrection ? 'Koreksi total RAB terealisasi' : 'Tanpa catatan')}
+                            </p>
+                            <p className="mt-0.5 text-xs text-gray-400">
+                              Oleh {expense.user_name || '-'} - Total setelah input {formatRupiah(expense.total_after || 0)}
+                            </p>
+                          </div>
+                          <p className={`text-sm font-bold ${isCorrection ? 'text-blue-600' : 'text-green-700'}`}>
+                            {isCorrection ? formatRupiah(expense.total_after || 0) : formatRupiah(expense.amount || 0)}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -833,7 +899,7 @@ export default function ProjectDetailPage() {
                     />
                   </div>
                   {(project.realisasi || 0) > project.rab && (
-                    <p className="text-xs text-red-600 mt-1">Ã¢Å¡Â Ã¯Â¸Â Over budget by {formatRupiah((project.realisasi || 0) - project.rab)}</p>
+                    <p className="text-xs text-red-600 mt-1">Over budget by {formatRupiah((project.realisasi || 0) - project.rab)}</p>
                   )}
                 </div>
               </div>
@@ -926,7 +992,7 @@ export default function ProjectDetailPage() {
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
             <button
               type="button"
-              onClick={() => { setRabMode('add'); setRabInput('') }}
+              onClick={() => { setRabMode('add'); setRabInput(''); setRabNote('') }}
               className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'add' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
             >
               Catat Pengeluaran
@@ -936,6 +1002,7 @@ export default function ProjectDetailPage() {
               onClick={() => {
                 setRabMode('set')
                 setRabInput(rabUsed ? Number(rabUsed).toLocaleString('id-ID') : '')
+                setRabNote('')
               }}
               className={`rounded-md px-3 py-2 text-xs font-semibold ${rabMode === 'set' ? 'bg-white text-[#237043] shadow-sm' : 'text-gray-500'}`}
             >
@@ -968,6 +1035,24 @@ export default function ProjectDetailPage() {
             </p>
           </div>
 
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">
+              {rabMode === 'add' ? 'Keperluan pengeluaran' : 'Alasan koreksi'}
+            </label>
+            <textarea
+              rows={3}
+              value={rabNote}
+              onChange={e => setRabNote(e.target.value)}
+              className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder={rabMode === 'add' ? 'Contoh: pembelian kabel FO 200 meter' : 'Contoh: koreksi input dobel'}
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              {rabMode === 'add'
+                ? 'Catatan ini akan tampil di riwayat RAB.'
+                : 'Isi kalau perlu menjelaskan koreksi total.'}
+            </p>
+          </div>
+
           {rabInput && (() => {
             const inputAmount = parseFloat(String(rabInput).replace(/\./g, ''))
             if (isNaN(inputAmount) || inputAmount < 0) return null
@@ -990,7 +1075,11 @@ export default function ProjectDetailPage() {
 
           <div className="flex gap-2 justify-end">
             <button onClick={() => setEditRabOpen(false)} className="btn-secondary">Batal</button>
-            <button onClick={handleSaveRab} className="btn-primary">
+            <button
+              onClick={handleSaveRab}
+              disabled={!rabInput || (rabMode === 'add' && !rabNote.trim())}
+              className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
               {rabMode === 'add' ? 'Simpan Pengeluaran' : 'Simpan Koreksi'}
             </button>
           </div>
@@ -1054,7 +1143,7 @@ export default function ProjectDetailPage() {
                   </p>
                 </div>
               )
-              return <p className={`mt-1 text-xs font-medium ${isOver?'text-red-500':'text-blue-600'}`}>{formatRupiah(num)}{isOver?' Ã¢Å¡Â Ã¯Â¸Â Melebihi RAB!':''}</p>
+              return <p className={`mt-1 text-xs font-medium ${isOver?'text-red-500':'text-blue-600'}`}>{formatRupiah(num)}{isOver?' Melebihi RAB!':''}</p>
             })()}
           </div>
           <div className="flex gap-2 justify-end">
@@ -1065,7 +1154,7 @@ export default function ProjectDetailPage() {
       </Modal>
 
       {/* Modal: Tambah Material Terpasang */}
-      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang - ${selMat?.name}`} size="md">
+      <Modal open={matOpen} onClose={() => setMatOpen(false)} title={`Tambah Terpasang - ${selMat?.name}`} size="md">
         <form onSubmit={handleMatSubmit} className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
             Sisa: {selMat ? selMat.qty_plan - selMat.qty_terpasang : 0} {selMat?.unit}
@@ -1262,7 +1351,7 @@ export default function ProjectDetailPage() {
             </>
           )}
 
-          {/* Buat akun engineer baru - sales manager & administrator */}
+          {/* Buat akun engineer baru - sales manager & administrator */}
           {!loadingUsers && can(user, 'edit_project') && (
             <NewEngineerInline onCreated={(eng) => {
               updateUser(eng.id, { assignedProjects: [String(id)] })
@@ -1292,7 +1381,7 @@ export default function ProjectDetailPage() {
   )
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Inline form buat engineer baru Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Inline form buat engineer baru
 function NewEngineerInline({ onCreated }) {
   const { addUser } = useUserStore()
   const [open, setOpen] = useState(false)

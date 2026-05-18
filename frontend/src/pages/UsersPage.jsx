@@ -331,7 +331,7 @@ export default function UsersPage() {
       </Modal>
 
       {/* Modal Assign Proyek */}
-      <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title={`Assign Proyek â€” ${selUser?.name}`} size="md">
+      <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title={`Assign Proyek - ${selUser?.name}`} size="md">
         <div className="space-y-3">
           <p className="text-xs text-gray-500">Pilih proyek yang bisa diakses oleh user ini:</p>
           {projects.filter(p => p.status !== 'completed').map(p => {
@@ -354,7 +354,7 @@ export default function UsersPage() {
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${assigned ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
                 <div>
                   <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                  <p className="text-xs text-gray-400">{p.location} · PM: {p.pm}</p>
+                  <p className="text-xs text-gray-400">{p.location} - PM: {p.pm}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${assigned ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                   {assigned && <div className="w-2 h-2 bg-white rounded-full"/>}

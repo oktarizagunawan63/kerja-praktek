@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
-import { FileText, Image, Download, Eye, Plus, Trash2, X, ChevronDown, ChevronUp, Loader2, FolderOpen, Upload, Info } from '@icons'
+import { FileText, Image, Download, Eye, Trash2, X, ChevronDown, ChevronUp, Loader2, FolderOpen, Info, FileDown } from '@icons'
 import Badge from '../components/ui/Badge'
-import Modal from '../components/ui/Modal'
-import FileUpload from '../components/ui/FileUpload'
 import toast from 'react-hot-toast'
 import useAppStore from '../store/appStore'
 import useAuthStore from '../store/authStore'
 import useUserStore from '../store/userStore'
 import { filterProjectsByRole } from '../lib/permissions'
+import { api } from '../lib/api'
 
 const typeVariant = {
   'Laporan Harian': 'info',
@@ -20,20 +19,9 @@ const typeVariant = {
   'As Built Drawing': 'success',
 }
 
-const DOC_TYPES = [
-  'Laporan Harian',
-  'Laporan Mingguan',
-  'Foto',
-  'Dokumen Teknis',
-  'Berita Acara',
-  'Surat Perintah Kerja',
-  'As Built Drawing',
-]
-
 export default function DocumentsPage() {
   const documents = useAppStore(state => state.documents)
   const documentsLoading = useAppStore(state => state.documentsLoading)
-  const addDoc = useAppStore(state => state.addDoc)
   const deleteDoc = useAppStore(state => state.deleteDoc)
   const fetchDocuments = useAppStore(state => state.fetchDocuments)
   const projects = useAppStore(state => state.projects)
@@ -44,13 +32,10 @@ export default function DocumentsPage() {
 
   const visibleProjects = filterProjectsByRole(projects, user, users)
 
-  const [open, setOpen] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState(null)
-  const [form, setForm] = useState({ type: 'Laporan Harian', files: [] })
-  const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(null)
   const [expanded, setExpanded] = useState({})
   const [deletingId, setDeletingId] = useState(null)
+  const [exportingProjectId, setExportingProjectId] = useState(null)
 
   // Fetch on mount
   useEffect(() => {
@@ -60,42 +45,6 @@ export default function DocumentsPage() {
 
   const getDocs = (projectId) =>
     documents.filter(d => String(d.projectId) === String(projectId))
-
-  const handleOpenUpload = (e, projectId) => {
-    e.stopPropagation()
-    setSelectedProjectId(projectId)
-    setForm({ type: 'Laporan Harian', files: [] })
-    setOpen(true)
-  }
-
-  const handleSubmit = async () => {
-    if (form.files.length === 0) { toast.error('Pilih file terlebih dahulu'); return }
-    if (!selectedProjectId) { toast.error('Proyek tidak valid'); return }
-
-    const file = form.files[0]
-    const isImage = file.type.startsWith('image/')
-    const resolvedType = isImage ? 'Foto' : (form.type || 'Laporan Harian')
-
-    const formData = new FormData()
-    formData.append('project_id', selectedProjectId)
-    formData.append('type', resolvedType)
-    formData.append('file', file)
-
-    try {
-      setUploading(true)
-      await addDoc(formData)
-      toast.success('Dokumen berhasil diunggah!')
-      setOpen(false)
-      setForm({ type: 'Laporan Harian', files: [] })
-    } catch (err) {
-      const errMsg = err?.errors
-        ? Object.values(err.errors).flat().join(', ')
-        : err?.message || 'Gagal mengunggah dokumen'
-      toast.error(errMsg)
-    } finally {
-      setUploading(false)
-    }
-  }
 
   const handleDelete = async (docId) => {
     if (!window.confirm('Yakin hapus dokumen ini?')) return
@@ -133,9 +82,29 @@ export default function DocumentsPage() {
     a.click()
   }
 
-  const totalDocs = visibleProjects.reduce((s, p) => s + getDocs(p.id).length, 0)
-  const selectedProject = visibleProjects.find(p => String(p.id) === String(selectedProjectId))
+  const handleExportProjectPDF = async (e, project) => {
+    e.stopPropagation()
 
+    try {
+      setExportingProjectId(project.id)
+      const projectDocs = getDocs(project.id)
+      const materials = await api.getMaterials({ project_id: project.id })
+      const reportsResponse = await api.getEngineerProgressReports().catch(() => ({ data: [] }))
+      const progressReports = (Array.isArray(reportsResponse?.data) ? reportsResponse.data : [])
+        .filter(report => String(report.project_id || report.project?.id) === String(project.id))
+      const { exportProyekPDF } = await import('../lib/exportPdf')
+
+      exportProyekPDF(project, Array.isArray(materials) ? materials : [], projectDocs, progressReports)
+      toast.success(`PDF ${project.name} berhasil diunduh`)
+    } catch (error) {
+      console.error('Project PDF export error:', error)
+      toast.error('Gagal export PDF proyek')
+    } finally {
+      setExportingProjectId(null)
+    }
+  }
+
+  const totalDocs = visibleProjects.reduce((s, p) => s + getDocs(p.id).length, 0)
   const isLoading = projectsLoading || documentsLoading
 
   return (
@@ -200,17 +169,22 @@ export default function DocumentsPage() {
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{p.name}</p>
                       <p className="text-xs text-gray-400">
-                        {p.location} · <span className="font-medium text-blue-500">{docs.length} dokumen</span>
+                        {p.location} - <span className="font-medium text-blue-500">{docs.length} dokumen</span>
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      id={`upload-doc-${p.id}`}
-                      onClick={(e) => handleOpenUpload(e, p.id)}
+                      id={`export-doc-${p.id}`}
+                      onClick={(e) => handleExportProjectPDF(e, p)}
+                      disabled={exportingProjectId === p.id}
                       className="flex items-center gap-1.5 text-xs bg-[#237043] hover:bg-[#5a9844] text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
                     >
-                      <Upload size={12} /> Unggah
+                      {exportingProjectId === p.id
+                        ? <Loader2 size={12} className="animate-spin" />
+                        : <FileDown size={12} />
+                      }
+                      Export PDF
                     </button>
                     {isOpen
                       ? <ChevronUp size={16} className="text-gray-400" />
@@ -227,10 +201,11 @@ export default function DocumentsPage() {
                         <FolderOpen size={28} className="mb-2 text-gray-300" />
                         <p className="text-xs">Belum ada dokumen untuk proyek ini</p>
                         <button
-                          onClick={(e) => handleOpenUpload(e, p.id)}
+                          onClick={(e) => handleExportProjectPDF(e, p)}
+                          disabled={exportingProjectId === p.id}
                           className="mt-2 text-xs text-blue-500 hover:underline"
                         >
-                          + Unggah sekarang
+                          {exportingProjectId === p.id ? 'Membuat PDF...' : 'Export PDF proyek'}
                         </button>
                       </div>
                     ) : (
@@ -253,7 +228,7 @@ export default function DocumentsPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                              <p className="text-xs text-gray-400">{doc.uploader} · {doc.date}</p>
+                              <p className="text-xs text-gray-400">{doc.uploader} - {doc.date}</p>
                             </div>
 
                             <Badge variant={typeVariant[doc.type] || 'default'}>{doc.type}</Badge>
@@ -321,82 +296,6 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* Upload Modal */}
-      <Modal
-        open={open}
-        onClose={() => { if (!uploading) setOpen(false) }}
-        title={`Unggah Dokumen Ã¢â‚¬â€ ${selectedProject?.name || ''}`}
-        size="md"
-      >
-        <div className="space-y-4">
-          {/* Doc type selector */}
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1.5">Jenis Dokumen</label>
-            <div className="flex flex-wrap gap-2">
-              {DOC_TYPES.map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, type: t }))}
-                  className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
-                    form.type === t
-                      ? 'bg-[#237043] text-white border-[#237043]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#237043] hover:text-[#237043]'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* File upload */}
-          <FileUpload
-            key={open ? 'open' : 'closed'}
-            label="Upload File (PDF / Gambar, maks. 20 MB)"
-            accept={{ 'image/*': [], 'application/pdf': [] }}
-            maxFiles={1}
-            onFilesChange={files => setForm(f => ({ ...f, files }))}
-          />
-
-          {/* Selected file info */}
-          {form.files.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-              <FileText size={13} />
-              <span className="truncate font-medium">{form.files[0].name}</span>
-              <span className="text-blue-400 shrink-0">({(form.files[0].size / 1024).toFixed(0)} KB)</span>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2 justify-end pt-1">
-            <button
-              onClick={() => setOpen(false)}
-              disabled={uploading}
-              className="btn-secondary disabled:opacity-50"
-            >
-              Batal
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={uploading || form.files.length === 0}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Mengunggah...
-                </>
-              ) : (
-                <>
-                  <Upload size={14} />
-                  Simpan
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }

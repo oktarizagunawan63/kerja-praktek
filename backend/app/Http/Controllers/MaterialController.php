@@ -67,7 +67,7 @@ class MaterialController extends Controller
             $project->update(['progress' => $progress]);
         }
 
-        ActivityLogger::log($request->user(), 'Update Material Terpasang', "Tambah {$data['qty_terpasang']} {$material->unit} {$material->name}" . ($data['catatan'] ? ' — '.$data['catatan'] : ''), $project->id);
+        ActivityLogger::log($request->user(), 'Update Material Terpasang', "Tambah {$data['qty_terpasang']} {$material->unit} {$material->name}" . ($data['catatan'] ? ' - '.$data['catatan'] : ''), $project->id);
 
         return response()->json($this->format($material->fresh()));
     }

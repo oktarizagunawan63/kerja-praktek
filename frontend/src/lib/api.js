@@ -26,6 +26,16 @@ const getToken = () => {
   }
 }
 
+const getFirstValidationMessage = (errors = {}) => {
+  const firstField = Object.keys(errors)[0]
+  const firstError = firstField ? errors[firstField] : null
+
+  if (Array.isArray(firstError)) return firstError[0]
+  if (typeof firstError === 'string') return firstError
+
+  return null
+}
+
 const request = (endpoint, options = {}) => {
   const { dedupeKey, ...fetchOptions } = options
   const url = `${API_BASE}${endpoint}`
@@ -66,13 +76,15 @@ const request = (endpoint, options = {}) => {
       }
       
       if (response.status === 403) {
-        throw new Error('You do not have permission to perform this action.')
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.message || 'Anda tidak memiliki izin untuk melakukan aksi ini.')
       }
       
       if (response.status === 422) {
         const data = await response.json()
         console.error('Validation errors:', data.errors)
-        throw { message: data.message || 'Validation error', errors: data.errors || {}, status: 422 }
+        const validationMessage = getFirstValidationMessage(data.errors)
+        throw { message: validationMessage || data.message || 'Data belum valid.', errors: data.errors || {}, status: 422 }
       }
       
       if (!response.ok) {
@@ -236,7 +248,7 @@ export const api = {
     return request(`/activity-logs${queryString ? '?' + queryString : ''}`)
   },
   
-  // Notifications (legacy aliases — kept for backward compat)
+  // Notifications (legacy aliases - kept for backward compat)
   getUnreadNotificationCount: () => request('/notifications/unread-count'),
   markNotificationAsRead: (id) => request(`/notifications/${id}/mark-read`, { method: 'POST' }),
   markAllNotificationsAsRead: () => request('/notifications/mark-all-read', { method: 'POST' }),
@@ -247,7 +259,7 @@ export const api = {
     return request(`/documents${queryString ? '?' + queryString : ''}`)
   },
   uploadDocument: (formData) => {
-    // FormData upload — must NOT set Content-Type (browser sets multipart boundary automatically)
+    // FormData upload - must NOT set Content-Type (browser sets multipart boundary automatically)
     const token = getToken()
     const url = `${API_BASE}/documents`
     const headers = { 'Accept': 'application/json' }

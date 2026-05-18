@@ -170,7 +170,7 @@ export default function FunnelDetailPage() {
             onClick={() => navigate('/funnels')} 
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
           >
-            ← Kembali ke Daftar
+            Kembali ke Daftar
           </button>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function FunnelDetailPage() {
             onClick={() => navigate('/funnels')}
             className="px-4 py-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-md mb-4 transition-colors font-medium"
           >
-            ← Kembali ke Daftar
+            Kembali ke Daftar
           </button>
           
           <div className="flex items-start justify-between">
@@ -211,13 +211,13 @@ export default function FunnelDetailPage() {
                   onClick={() => setShowWonModal(true)}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
                 >
-                  ✓ Menang
+                  Menang
                 </button>
                 <button
                   onClick={() => setShowLostModal(true)}
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
                 >
-                  ✕ Kalah
+                  Kalah
                 </button>
               </div>
             )}
@@ -249,17 +249,9 @@ export default function FunnelDetailPage() {
                 <p className="text-lg font-semibold text-gray-900">{funnel.qty} {funnel.unit}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Target Close Date</p>
+                <p className="text-sm text-gray-600 mb-1">Close Date</p>
                 <p className="text-sm font-medium text-gray-900">
                   {new Date(funnel.target_close_date).toLocaleDateString('id-ID', { 
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-                  })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Deadline Customer</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {new Date(funnel.deadline_date).toLocaleDateString('id-ID', { 
                     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
                   })}
                 </p>
@@ -321,7 +313,7 @@ export default function FunnelDetailPage() {
           {funnel.status === 'won' && (
             <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
               <h3 className="text-sm font-semibold text-green-900 mb-3">
-                ✓ Deal Menang!
+                Deal Menang!
               </h3>
               <div className="space-y-2">
                 <div>
@@ -353,7 +345,7 @@ export default function FunnelDetailPage() {
           {funnel.status === 'lost' && (
             <div className="bg-red-50 rounded-2xl p-6 border border-red-200">
               <h3 className="text-sm font-semibold text-red-900 mb-3">
-                ✕ Deal Kalah
+                Deal Kalah
               </h3>
               <div className="space-y-2">
                 <div>

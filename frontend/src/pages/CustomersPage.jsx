@@ -467,7 +467,7 @@ export default function CustomersPage() {
                 {/* Auto-show coordinates when available */}
                 {lokasiAmbil && formData.latitude && formData.longitude && (
                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-                    ðŸ“ {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                    GPS: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
                   </div>
                 )}
               </div>

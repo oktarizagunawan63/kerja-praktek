@@ -28,6 +28,8 @@ export default function Topbar({ onMenuClick }) {
   const [showResults, setShowResults] = useState(false)
   const [searchResults, setSearchResults] = useState({ projects: [], customers: [], users: [] })
   const [isSearching, setIsSearching] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const searchRef = useRef(null)
 
   // Debounced search function
@@ -79,12 +81,15 @@ export default function Topbar({ onMenuClick }) {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true)
       await api.logout()
     } catch (error) {
       console.warn('Logout API error:', error)
     } finally {
       logout()
       navigate('/login', { replace: true })
+      setIsLoggingOut(false)
+      setShowLogoutConfirm(false)
     }
   }
 
@@ -125,7 +130,7 @@ export default function Topbar({ onMenuClick }) {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-[#de168c]/30 hover:bg-[#f399cc]/15 hover:text-[#de168c] sm:px-3"
             >
               <LogOut size={16} />
@@ -191,7 +196,7 @@ export default function Topbar({ onMenuClick }) {
                       <button key={u.id} onClick={() => handleSelect(u.url)}
                         className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors">
                         <p className="text-sm font-medium text-gray-800">{u.name}</p>
-                        <p className="text-xs text-gray-400">{u.subtitle} · {u.role}</p>
+                        <p className="text-xs text-gray-400">{u.subtitle} - {u.role}</p>
                       </button>
                     ))}
                   </div>
@@ -202,6 +207,44 @@ export default function Topbar({ onMenuClick }) {
         )}
       </div>
       </div>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/45 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f399cc]/20 text-[#de168c]">
+                <LogOut size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Yakin ingin keluar?</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Sesi Anda akan ditutup dan Anda perlu login ulang untuk masuk ke dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={isLoggingOut}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#de168c] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#c2147d] disabled:opacity-60"
+              >
+                <LogOut size={15} />
+                {isLoggingOut ? 'Keluar...' : 'Keluar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

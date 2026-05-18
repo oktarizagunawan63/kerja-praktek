@@ -208,6 +208,8 @@ class EngineerController extends Controller
                 || (isset($project->site_manager_id) && (int) $project->site_manager_id === (int) $user->id)
                 || (isset($project->created_by) && (int) $project->created_by === (int) $user->id)
                 || (isset($project->user_id) && (int) $project->user_id === (int) $user->id)
+                || strcasecmp((string) ($project->pm_name ?? ''), (string) $user->name) === 0
+                || strcasecmp((string) ($project->pm_email ?? ''), (string) $user->email) === 0
             );
             $isAssignedEngineer = ProjectAssignment::where('project_id', $request->project_id)
                 ->where('user_id', $user->id)
@@ -469,11 +471,27 @@ class EngineerController extends Controller
     {
         try {
             $user = Auth::user();
-            
-            $reports = EngineerProgressReport::where('user_id', $user->id)
-                ->with('project')
-                ->latest()
-                ->get();
+
+            $query = EngineerProgressReport::with(['project', 'user:id,name,role']);
+
+            if (in_array($user->role, ['administrator', 'admin'], true)) {
+                // Administrator can see all progress reports.
+            } elseif ($user->role === 'site_manager') {
+                $projectIds = Project::query()
+                    ->where(function ($projectQuery) use ($user) {
+                        $projectQuery
+                            ->where('project_manager_id', $user->id)
+                            ->orWhere('pm_name', $user->name)
+                            ->orWhere('pm_email', $user->email);
+                    })
+                    ->pluck('id');
+
+                $query->whereIn('project_id', $projectIds);
+            } else {
+                $query->where('user_id', $user->id);
+            }
+
+            $reports = $query->latest()->get();
 
             return response()->json([
                 'success' => true,

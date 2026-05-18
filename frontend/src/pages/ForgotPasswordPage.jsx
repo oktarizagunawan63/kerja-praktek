@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
 
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
-              Â© 2026 PT Amsar Prima Mandiri
+              Copyright 2026 PT Amsar Prima Mandiri
             </p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            Â© 2026 PT Amsar Prima Mandiri
+            Copyright 2026 PT Amsar Prima Mandiri
           </p>
         </div>
       </div>

@@ -225,7 +225,7 @@ class RealisasiVisitController extends Controller
             $visitorName  = $user->name;
             foreach ($managers as $mgr) {
                 sendVisitNotif($mgr->id, 'success',
-                    '✅ Visit Selesai',
+                    'Visit Selesai',
                     "{$visitorName} telah menyelesaikan kunjungan ke {$customerName} pada " . now()->format('d M Y H:i') . '.');
             }
 
@@ -363,14 +363,14 @@ class RealisasiVisitController extends Controller
             // Notif ke sales yang ditugaskan
             if ($planVisit->assigned_to) {
                 sendVisitNotif($planVisit->assigned_to, 'deadline_warning',
-                    '⚠️ Kunjungan Terlewat',
+                    'Kunjungan Terlewat',
                     "Kunjungan ke {$customerName} pada {$visitDate} telah ditandai sebagai TERLEWAT.");
             }
             // Notif ke Sales Manager / Admin
             $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
             foreach ($managers as $mgr) {
                 sendVisitNotif($mgr->id, 'deadline_warning',
-                    '⚠️ Kunjungan Terlewat',
+                    'Kunjungan Terlewat',
                     "Kunjungan ke {$customerName} ({$visitDate}) oleh " . (User::find($planVisit->assigned_to)?->name ?? '-') . " telah ditandai TERLEWAT.");
             }
             
@@ -528,15 +528,15 @@ class RealisasiVisitController extends Controller
                 $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
                 foreach ($managers as $mgr) {
                     sendVisitNotif($mgr->id, 'info',
-                        '🔔 Unplanned Visit Menunggu Approval',
+                        'Unplanned Visit Menunggu Approval',
                         "{$user->name} melakukan kunjungan tidak terencana ke " . ($customerName ?? 'customer') . " ({$customerCompany}). Mohon ditinjau dan disetujui.");
                 }
             } else {
-                // Sales Manager langsung approved — notifikasi ke admin
+                // Sales Manager langsung approved - notifikasi ke admin
                 $admins = User::where('role', 'administrator')->get();
                 foreach ($admins as $admin) {
                     sendVisitNotif($admin->id, 'success',
-                        '✅ Unplanned Visit Baru',
+                        'Unplanned Visit Baru',
                         "{$user->name} menambahkan kunjungan tidak terencana ke " . ($customerName ?? 'customer') . " dan langsung disetujui.");
                 }
             }
@@ -596,7 +596,7 @@ class RealisasiVisitController extends Controller
 
             // NOTIFIKASI: beri tahu sales bahwa unplanned visit disetujui
             sendVisitNotif($realisasiVisit->visited_by, 'success',
-                '✅ Unplanned Visit Disetujui',
+                'Unplanned Visit Disetujui',
                 "Kunjungan tidak terencana Anda ke " . ($realisasiVisit->customer_name ?? 'customer') . " telah disetujui oleh {$user->name}.");
             
             return response()->json([
@@ -665,7 +665,7 @@ class RealisasiVisitController extends Controller
 
             // NOTIFIKASI: beri tahu sales bahwa unplanned visit ditolak
             sendVisitNotif($realisasiVisit->visited_by, 'over_budget',
-                '❌ Unplanned Visit Ditolak',
+                'Unplanned Visit Ditolak',
                 "Kunjungan tidak terencana Anda ke " . ($realisasiVisit->customer_name ?? 'customer') . " ditolak oleh {$user->name}. Alasan: {$request->rejection_reason}");
             
             return response()->json([

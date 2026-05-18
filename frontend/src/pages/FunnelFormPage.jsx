@@ -34,7 +34,6 @@ export default function FunnelFormPage() {
     unit: 'unit',
     estimated_value: '',
     deal_stage: 'prospek',
-    deadline_date: '',
     target_close_date: '',
     win_probability: 'middle',
     initial_notes: ''
@@ -92,7 +91,6 @@ export default function FunnelFormPage() {
         qty: f.qty || '',
         unit: f.unit || 'unit',
         deal_stage: f.deal_stage || 'prospek',
-        deadline_date: f.deadline_date || '',
         target_close_date: f.target_close_date || '',
         win_probability: f.win_probability || 'middle',
         initial_notes: f.initial_notes || ''
@@ -165,16 +163,20 @@ export default function FunnelFormPage() {
     if (!formData.segment) return toast.error('Segment harus dipilih')
     if (formData.segment === 'umum' && !formData.segment_custom.trim()) return toast.error('Segment custom harus diisi')
     if (!formData.qty || formData.qty <= 0) return toast.error('QTY harus diisi dengan angka positif')
-    if (!formData.deadline_date) return toast.error('Deadline date harus diisi')
-    if (!formData.target_close_date) return toast.error('Target close date harus diisi')
+    if (!formData.target_close_date) return toast.error('Close date harus diisi')
 
     try {
       setLoading(true)
+      const payload = {
+        ...formData,
+        deadline_date: formData.target_close_date,
+      }
+
       if (isEdit) {
-        await api.updateFunnel(id, formData)
+        await api.updateFunnel(id, payload)
         toast.success('Funnel berhasil diupdate')
       } else {
-        await api.createFunnel(formData)
+        await api.createFunnel(payload)
         toast.success('Funnel berhasil ditambahkan')
       }
       navigate('/funnels')
@@ -221,11 +223,11 @@ export default function FunnelFormPage() {
             Informasi Customer
           </h2>
 
-          {/* Customer Searchable Dropdown â€” full width */}
+          {/* Customer Searchable Dropdown - full width */}
           <div className="mb-4" ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nama Customer <span className="text-red-500">*</span>
-              <span className="ml-2 text-xs text-blue-500 font-normal">â†“ pilih untuk auto-isi data</span>
+              <span className="ml-2 text-xs text-blue-500 font-normal">pilih untuk auto-isi data</span>
             </label>
             <div className="relative">
               <div className={`flex items-center border rounded-lg bg-white overflow-hidden transition-all ${showDropdown ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'}`}>
@@ -268,21 +270,21 @@ export default function FunnelFormPage() {
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900 text-sm">{customer.name}</p>
                             {customer.company && (
-                              <p className="text-xs text-gray-500 mt-0.5">ðŸ¥ {customer.company}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">RS/Perusahaan: {customer.company}</p>
                             )}
                             {(customer.city || customer.address) && (
-                              <p className="text-xs text-gray-400 mt-0.5 truncate">ðŸ“ {customer.city || customer.address}</p>
+                              <p className="text-xs text-gray-400 mt-0.5 truncate">Lokasi: {customer.city || customer.address}</p>
                             )}
                           </div>
                           {customer.phone && (
-                            <span className="text-xs text-gray-400 shrink-0 mt-0.5">ðŸ“ž {customer.phone}</span>
+                            <span className="text-xs text-gray-400 shrink-0 mt-0.5">Tel: {customer.phone}</span>
                           )}
                         </div>
                       </button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                      {customerSearch ? `Tidak ditemukan "${customerSearch}" â€” isi manual di bawah` : 'Ketik untuk mencari customer...'}
+                      {customerSearch ? `Tidak ditemukan "${customerSearch}" - isi manual di bawah` : 'Ketik untuk mencari customer...'}
                     </div>
                   )}
                 </div>
@@ -291,7 +293,7 @@ export default function FunnelFormPage() {
 
             {selectedCustomer && (
               <div className="mt-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-xs text-green-700">
-                <span>âœ…</span>
+                <span>Terisi</span>
                 <span>Data <strong>{selectedCustomer.name}</strong> berhasil diisi otomatis dari Customer List</span>
               </div>
             )}
@@ -449,13 +451,7 @@ export default function FunnelFormPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Deadline Date <span className="text-red-500">*</span></label>
-              <input type="date" name="deadline_date" value={formData.deadline_date} onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" required />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Target Close Date <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Close Date <span className="text-red-500">*</span></label>
               <input type="date" name="target_close_date" value={formData.target_close_date} onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" required />
             </div>

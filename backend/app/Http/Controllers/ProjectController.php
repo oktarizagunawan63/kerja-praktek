@@ -117,22 +117,39 @@ class ProjectController extends Controller
 
             $days = now()->diffInDays($data['deadline'], false);
             $status = $days < 0 ? 'delayed' : ($days <= 30 ? 'at_risk' : 'on_track');
+            $siteManager = null;
+
+            if ($user->role === 'site_manager') {
+                $siteManager = $user;
+            } elseif (!empty($data['phone'])) {
+                $siteManager = \App\Models\User::where('role', 'site_manager')
+                    ->where('email', $data['phone'])
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if (!$siteManager && !empty($data['pm'])) {
+                $siteManager = \App\Models\User::where('role', 'site_manager')
+                    ->where('name', $data['pm'])
+                    ->where('is_active', true)
+                    ->first();
+            }
 
             // Create project with only existing database columns
             $project = Project::create([
                 'name'               => $data['name'],
                 'location'           => $data['location'],
-                'pm_name'            => $data['pm'] ?? $user->name,
-                'pm_email'           => $data['phone'] ?? $user->email,
+                'pm_name'            => $siteManager?->name ?? $data['pm'] ?? $user->name,
+                'pm_email'           => $siteManager?->email ?? $data['phone'] ?? $user->email,
                 'end_date'           => $data['deadline'],
                 'start_date'         => now()->toDateString(),
                 'rab'                => $data['rab'],
                 'rab_realisasi'      => 0,
                 'progress'           => 0,
                 'status'             => $status,
-                'project_manager_id' => $user->id,
+                'project_manager_id' => $siteManager?->id ?? $user->id,
                 'created_by'         => $user->id,
-                'site_manager_id'    => $user->role === 'site_manager' ? $user->id : null,
+                'site_manager_id'    => $siteManager?->id,
                 'user_id'            => $user->id,
                 'assigned_engineers' => [],
             ]);
@@ -221,12 +238,13 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $user = $request->user();
-        $allowedFields = ['name', 'location', 'pm', 'phone', 'deadline', 'rab', 'realisasi', 'progress'];
+        $allowedFields = ['name', 'location', 'pm', 'phone', 'deadline', 'rab', 'realisasi', 'rab_note', 'rab_mode', 'rab_amount', 'progress'];
         $requestedFields = collect($request->only($allowedFields))
             ->filter(fn($value) => $value !== null)
             ->keys()
             ->values();
-        $isRabOnlyUpdate = $requestedFields->count() === 1 && $requestedFields->first() === 'realisasi';
+        $isRabOnlyUpdate = $requestedFields->isNotEmpty()
+            && $requestedFields->every(fn($field) => in_array($field, ['realisasi', 'rab_note', 'rab_mode', 'rab_amount'], true));
         
         // RBAC: Check if user can update this project
         if (!$this->canUpdateProject($user, $project) && !($isRabOnlyUpdate && $this->canUpdateRabRealization($user, $project))) {
@@ -245,6 +263,9 @@ class ProjectController extends Controller
             'deadline'   => 'sometimes|date',
             'rab'        => 'sometimes|numeric|min:0',
             'realisasi'  => 'sometimes|numeric|min:0',
+            'rab_note'   => 'nullable|string|max:500',
+            'rab_mode'   => 'nullable|string|in:add,set',
+            'rab_amount' => 'nullable|numeric|min:0',
             'progress'   => 'sometimes|integer|min:0|max:100',
         ]);
 
@@ -255,7 +276,30 @@ class ProjectController extends Controller
         if (isset($data['phone']))     $mapped['pm_email']         = $data['phone'];
         if (isset($data['deadline']))  $mapped['end_date']         = $data['deadline'];
         if (isset($data['rab']))       $mapped['rab']             = $data['rab'];
-        if (isset($data['realisasi'])) $mapped['rab_realisasi']   = $data['realisasi'];
+        if (isset($data['realisasi'])) {
+            $mapped['rab_realisasi'] = $data['realisasi'];
+
+            if (Schema::hasColumn('projects', 'rab_expenses')) {
+                $existingExpenses = is_array($project->rab_expenses) ? $project->rab_expenses : [];
+                $mode = $data['rab_mode'] ?? 'set';
+                $amount = isset($data['rab_amount'])
+                    ? (float) $data['rab_amount']
+                    : max(0, (float) $data['realisasi'] - (float) $project->rab_realisasi);
+
+                $existingExpenses[] = [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'mode' => $mode,
+                    'amount' => $amount,
+                    'total_after' => (float) $data['realisasi'],
+                    'note' => trim((string) ($data['rab_note'] ?? '')),
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                    'created_at' => now()->toIso8601String(),
+                ];
+
+                $mapped['rab_expenses'] = $existingExpenses;
+            }
+        }
         if (isset($data['progress']))  $mapped['progress']         = $data['progress'];
 
         // Auto status dari deadline
@@ -788,6 +832,7 @@ class ProjectController extends Controller
             'end_date'    => $p->end_date ?? $p->deadline ?? null,
             'rab'         => (float)($p->rab ?? $p->budget ?? 0),
             'realisasi'   => (float)($p->rab_realisasi ?? $p->budget_realisasi ?? 0),
+            'rabExpenses' => is_array($p->rab_expenses) ? array_values($p->rab_expenses) : [],
             'progress'    => $p->progress ?? 0,
             'status'      => $p->status ?? 'on_track',
             'projectManagerId' => $p->project_manager_id ?? null,
@@ -1020,6 +1065,14 @@ class ProjectController extends Controller
             }
 
             if (isset($project->created_by) && $project->created_by == $user->id) {
+                return true;
+            }
+
+            if (strcasecmp((string) ($project->pm_name ?? ''), (string) $user->name) === 0) {
+                return true;
+            }
+
+            if (strcasecmp((string) ($project->pm_email ?? ''), (string) $user->email) === 0) {
                 return true;
             }
         }

@@ -211,7 +211,7 @@ class SalesFunnelController extends Controller
                 'unit' => 'required|in:unit,set,pcs',
                 'estimated_value' => 'nullable|numeric|min:0',
                 'deal_stage' => 'required|in:prospek,qualified,proposal,negosiasi,closing',
-                'deadline_date' => 'required|date',
+                'deadline_date' => 'nullable|date',
                 'target_close_date' => 'required|date',
                 'win_probability' => 'required|in:low,middle,high,very_high',
                 'win_percentage' => 'nullable|integer|min:0|max:100',
@@ -228,6 +228,7 @@ class SalesFunnelController extends Controller
             }
             
             $data = $validator->validated();
+            $data['deadline_date'] = $data['target_close_date'];
             
             // Default estimated_value if not provided
             if (!isset($data['estimated_value'])) {
@@ -275,8 +276,8 @@ class SalesFunnelController extends Controller
             foreach ($managers as $mgr) {
                 if ($mgr->id !== $user->id) {
                     sendNotif($mgr->id, 'info',
-                        '📋 Funnel Baru Ditambahkan',
-                        "{$user->name} menambahkan funnel baru: {$funnel->customer_name} ({$funnel->customer_company}) — {$funnel->segment}"
+                        'Funnel Baru Ditambahkan',
+                        "{$user->name} menambahkan funnel baru: {$funnel->customer_name} ({$funnel->customer_company}) - {$funnel->segment}"
                     );
                 }
             }
@@ -352,7 +353,7 @@ class SalesFunnelController extends Controller
             $user = Auth::user();
             $funnel = SalesFunnel::findOrFail($id);
             
-            // Access control — administrator can edit all including won/lost
+            // Access control - administrator can edit all including won/lost
             if (!in_array($user->role, ['administrator']) && $funnel->status !== 'open') {
                 return response()->json([
                     'success' => false,
@@ -383,7 +384,7 @@ class SalesFunnelController extends Controller
                 'unit' => 'sometimes|required|in:unit,set,pcs',
                 'estimated_value' => 'nullable|numeric|min:0',
                 'deal_stage' => 'sometimes|required|in:prospek,qualified,proposal,negosiasi,closing',
-                'deadline_date' => 'sometimes|required|date',
+                'deadline_date' => 'nullable|date',
                 'target_close_date' => 'sometimes|required|date',
                 'win_probability' => 'sometimes|required|in:low,middle,high,very_high',
                 'win_percentage' => 'nullable|integer|min:0|max:100',
@@ -399,6 +400,9 @@ class SalesFunnelController extends Controller
             }
             
             $data = $validator->validated();
+            if (isset($data['target_close_date'])) {
+                $data['deadline_date'] = $data['target_close_date'];
+            }
             
             // Track stage change
             $oldStage = $funnel->deal_stage;
@@ -488,7 +492,7 @@ class SalesFunnelController extends Controller
             $user = Auth::user();
             $funnel = SalesFunnel::findOrFail($id);
             
-            // Access control — administrator bypass
+            // Access control - administrator bypass
             if ($user->role === 'sales' && $funnel->assigned_to != $user->id) {
                 return response()->json([
                     'success' => false,
@@ -538,6 +542,11 @@ class SalesFunnelController extends Controller
             $segmentLabel = strtoupper($funnel->segment ?? 'Umum');
             $projectName = "[FUNNEL] {$funnel->customer_company} - {$segmentLabel}";
             $descriptionNotes = $data['won_notes'] ? "\nCatatan: {$data['won_notes']}" : "";
+            $siteManager = User::where('role', 'site_manager')
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->first();
+
             $project = Project::create([
                 'name'        => $projectName,
                 'description' => "Proyek dari Sales Funnel (WON).\nCustomer: {$funnel->customer_name}\nSegment: {$segmentLabel}\nNilai Estimasi: Rp " . number_format($funnel->estimated_value, 0, ',', '.') . $descriptionNotes,
@@ -548,16 +557,20 @@ class SalesFunnelController extends Controller
                 'budget'      => $funnel->estimated_value,
                 'budget_realisasi' => 0,
                 'progress'    => 0,
-                'pm_name'     => null,
-                'pm_email'    => null,
-                'project_manager_id' => $user->id, // Required field
+                'pm_name'     => $siteManager?->name,
+                'pm_email'    => $siteManager?->email,
+                'project_manager_id' => $siteManager?->id ?? $user->id,
+                'site_manager_id' => $siteManager?->id,
+                'created_by' => $user->id,
+                'user_id' => $user->id,
+                'assigned_engineers' => [],
             ]);
 
             // Notify Sales Manager, Admin, Site Manager about WON + new project
             $notifyRoles = User::whereIn('role', ['sales_manager', 'administrator', 'site_manager'])->get();
             foreach ($notifyRoles as $recipient) {
                 sendNotif($recipient->id, 'success',
-                    '🏆 Deal WON! Proyek Baru Dibuat',
+                    'Deal WON! Proyek Baru Dibuat',
                     "Funnel {$funnel->customer_name} ({$funnel->customer_company}) berhasil WON. Proyek '{$projectName}' telah dibuat dan menunggu assignment Site Manager.",
                     ['funnel_id' => $funnel->id, 'project_id' => $project->id]
                 );
@@ -565,7 +578,7 @@ class SalesFunnelController extends Controller
             // Also notify the sales person
             if ($user->role !== 'sales') {
                 sendNotif($funnel->assigned_to, 'success',
-                    '🏆 Selamat! Deal Anda WON',
+                    'Selamat! Deal Anda WON',
                     "Funnel {$funnel->customer_name} telah ditandai sebagai WON. Proyek baru telah dibuat untuk ditindaklanjuti."
                 );
             }
@@ -644,7 +657,7 @@ class SalesFunnelController extends Controller
             $managers = User::whereIn('role', ['sales_manager', 'administrator'])->get();
             foreach ($managers as $mgr) {
                 sendNotif($mgr->id, 'over_budget',
-                    '❌ Deal Lost',
+                    'Deal Lost',
                     "Funnel {$funnel->customer_name} ({$funnel->customer_company}) ditandai LOST. Alasan: {$data['lost_reason_category']}.",
                     ['funnel_id' => $funnel->id]
                 );

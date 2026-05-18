@@ -3329,3 +3329,244 @@ Nilai Estimasi: Rp 0, Bandar Lampung, on_track, 2026-05-13, 2026-12-13 00:00:00,
 [2026-05-16 04:37:40] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
 [2026-05-16 04:37:40] local.INFO: ENGINEERS FOUND: 1  
 [2026-05-16 04:37:40] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:29:50] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:29:50] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:29:50] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:30:00] local.INFO: DELETE project request started {"project_id":"17","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T01:30:00.085875Z"} 
+[2026-05-18 08:30:02] local.INFO: DELETE project: User authenticated {"project_id":"17","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:30:03] local.INFO: DELETE project: Project found {"project_id":"17","project_name":"Rs Eka","project_manager_id":21,"project_status":"completed"} 
+[2026-05-18 08:30:03] local.INFO: DELETE project: Success {"project_id":"17","project_name":"Rs Eka","user_id":21,"deleted_relations":{"materials":2,"documents":2,"engineer_progress_reports":2,"project_assignments":1,"project_notifications":4,"activity_logs_detached":4},"deleted_at":"2026-05-18T01:30:03.684739Z"} 
+[2026-05-18 08:30:05] local.INFO: DELETE project request started {"project_id":"17","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T01:30:05.114997Z"} 
+[2026-05-18 08:30:05] local.INFO: DELETE project: User authenticated {"project_id":"17","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:30:05] local.ERROR: DELETE project: Project not found {"project_id":"17","user_id":21,"error":"No query results for model [App\\Models\\Project] 17"} 
+[2026-05-18 08:30:08] local.INFO: DELETE project request started {"project_id":"17","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T01:30:08.154250Z"} 
+[2026-05-18 08:30:08] local.INFO: DELETE project: User authenticated {"project_id":"17","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:30:08] local.ERROR: DELETE project: Project not found {"project_id":"17","user_id":21,"error":"No query results for model [App\\Models\\Project] 17"} 
+[2026-05-18 08:30:10] local.INFO: DELETE project request started {"project_id":"17","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T01:30:10.138805Z"} 
+[2026-05-18 08:30:10] local.INFO: DELETE project: User authenticated {"project_id":"17","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:30:11] local.ERROR: DELETE project: Project not found {"project_id":"17","user_id":21,"error":"No query results for model [App\\Models\\Project] 17"} 
+[2026-05-18 08:38:09] local.INFO: Project store data: {"name":"Rs Eka","location":"Jalan Cluster Centro Havana No. BLOK MA\/8, Tangerang Selatan, Banten, 15310","pm":"Oktariza Gunawan","phone":"oktarizagunawan63@gmail.com","deadline":"2026-10-27","rab":3500000,"status":"on_track"}  
+[2026-05-18 08:38:12] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:38:12] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:38:12] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:38:22] local.INFO: Engineer assignment request {"project_id":18,"engineer_ids":[22],"user":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:38:22] local.INFO: Created database assignments for project: Rs Eka  
+[2026-05-18 08:38:40] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:38:50] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:42:09] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:43:03] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:43:08] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:43:18] local.INFO: Engineer 22 assigned to projects: [18]  
+[2026-05-18 08:44:44] local.INFO: Project store data: {"name":"Rs Mayapda","location":"Jalan Cluster Centro Havana No. BLOK MA\/8, Tangerang Selatan, Banten, 15310","pm":"Oktariza Gunawan","phone":"oktarizagunawan63@gmail.com","deadline":"2026-10-27","rab":1000000,"status":"on_track"}  
+[2026-05-18 08:44:48] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:44:48] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:44:48] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:44:49] local.INFO: Engineer assignment request {"project_id":19,"engineer_ids":[22],"user":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 08:44:49] local.INFO: Created database assignments for project: Rs Mayapda  
+[2026-05-18 08:48:33] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:48:33] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:48:33] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:48:40] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:48:40] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:48:40] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:49:12] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:49:12] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-18 08:49:12] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-18 08:52:58] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 08:54:11] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 19 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
+[2026-05-18 09:01:00] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 19 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
+[2026-05-18 09:32:48] local.INFO: Engineer 22 assigned to projects: [18,19]  
+[2026-05-18 09:32:55] local.INFO: Engineer 22 assigned to projects: [18,19]  
+[2026-05-18 09:33:00] local.INFO: Engineer 22 assigned to projects: [18,19]  
+[2026-05-18 09:33:34] local.INFO: Engineer 22 assigned to projects: [18,19]  
+[2026-05-18 09:33:45] local.INFO: Engineer 22 assigned to projects: [18,19]  
+[2026-05-18 09:48:18] local.ERROR: SQLSTATE[HY000]: General error: 1826 Duplicate foreign key constraint name 'sales_funnels_customer_id_foreign' (Connection: mysql, SQL: alter table `sales_funnels` add constraint `sales_funnels_customer_id_foreign` foreign key (`customer_id`) references `customers` (`id`) on delete cascade) {"exception":"[object] (Illuminate\\Database\\QueryException(code: HY000): SQLSTATE[HY000]: General error: 1826 Duplicate foreign key constraint name 'sales_funnels_customer_id_foreign' (Connection: mysql, SQL: alter table `sales_funnels` add constraint `sales_funnels_customer_id_foreign` foreign key (`customer_id`) references `customers` (`id`) on delete cascade) at C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php:825)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate/Database/Connection->runQueryCallback('alter table `sa...', Array, Object(Closure))
+#1 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(560): Illuminate/Database/Connection->run('alter table `sa...', Array, Object(Closure))
+#2 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Blueprint.php(118): Illuminate/Database/Connection->statement('alter table `sa...')
+#3 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Builder.php(564): Illuminate/Database/Schema/Blueprint->build(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Schema/Grammars/MySqlGrammar))
+#4 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Builder.php(406): Illuminate/Database/Schema/Builder->build(Object(Illuminate/Database/Schema/Blueprint))
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate/Database/Schema/Builder->table('sales_funnels', Object(Closure))
+#6 C:/laragon/www/kerjapraktek/backend/database/migrations/2026_05_13_100000_add_customer_foreign_key_to_sales_funnels.php(14): Illuminate/Support/Facades/Facade::__callStatic('table', Array)
+#7 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(507): Illuminate/Database/Migrations/Migration@anonymous->up()
+#8 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(432): Illuminate/Database/Migrations/Migrator->runMethod(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(441): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->runMigration(Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/View/Components/Task.php(40): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(798): Illuminate/Console/View/Components/Task->render('2026_05_13_1000...', Object(Closure))
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->write('Illuminate//Cons...', '2026_05_13_1000...', Object(Closure))
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(211): Illuminate/Database/Migrations/Migrator->runUp('C://laragon//www//...', 21, false)
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(138): Illuminate/Database/Migrations/Migrator->runPending(Array, Array)
+#16 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(117): Illuminate/Database/Migrations/Migrator->run(Array, Array)
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(658): Illuminate/Database/Console/Migrations/MigrateCommand->Illuminate/Database/Console/Migrations/{closure}()
+#18 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(110): Illuminate/Database/Migrations/Migrator->usingConnection(NULL, Object(Closure))
+#19 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(89): Illuminate/Database/Console/Migrations/MigrateCommand->runMigrations()
+#20 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate/Database/Console/Migrations/MigrateCommand->handle()
+#21 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#22 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#23 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#24 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#25 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#26 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#27 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#28 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#29 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Database/Console/Migrations/MigrateCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#30 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#31 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#32 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#33 {main}
+
+[previous exception] [object] (PDOException(code: HY000): SQLSTATE[HY000]: General error: 1826 Duplicate foreign key constraint name 'sales_funnels_customer_id_foreign' at C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php:571)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(571): PDOStatement->execute()
+#1 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(812): Illuminate/Database/Connection->Illuminate/Database/{closure}('alter table `sa...', Array)
+#2 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate/Database/Connection->runQueryCallback('alter table `sa...', Array, Object(Closure))
+#3 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php(560): Illuminate/Database/Connection->run('alter table `sa...', Array, Object(Closure))
+#4 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Blueprint.php(118): Illuminate/Database/Connection->statement('alter table `sa...')
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Builder.php(564): Illuminate/Database/Schema/Blueprint->build(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Schema/Grammars/MySqlGrammar))
+#6 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Schema/Builder.php(406): Illuminate/Database/Schema/Builder->build(Object(Illuminate/Database/Schema/Blueprint))
+#7 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate/Database/Schema/Builder->table('sales_funnels', Object(Closure))
+#8 C:/laragon/www/kerjapraktek/backend/database/migrations/2026_05_13_100000_add_customer_foreign_key_to_sales_funnels.php(14): Illuminate/Support/Facades/Facade::__callStatic('table', Array)
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(507): Illuminate/Database/Migrations/Migration@anonymous->up()
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(432): Illuminate/Database/Migrations/Migrator->runMethod(Object(Illuminate/Database/MySqlConnection), Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(441): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->runMigration(Object(Illuminate/Database/Migrations/Migration@anonymous), 'up')
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/View/Components/Task.php(40): Illuminate/Database/Migrations/Migrator->Illuminate/Database/Migrations/{closure}()
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(798): Illuminate/Console/View/Components/Task->render('2026_05_13_1000...', Object(Closure))
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(244): Illuminate/Database/Migrations/Migrator->write('Illuminate//Cons...', '2026_05_13_1000...', Object(Closure))
+#16 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(211): Illuminate/Database/Migrations/Migrator->runUp('C://laragon//www//...', 21, false)
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(138): Illuminate/Database/Migrations/Migrator->runPending(Array, Array)
+#18 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(117): Illuminate/Database/Migrations/Migrator->run(Array, Array)
+#19 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Migrations/Migrator.php(658): Illuminate/Database/Console/Migrations/MigrateCommand->Illuminate/Database/Console/Migrations/{closure}()
+#20 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(110): Illuminate/Database/Migrations/Migrator->usingConnection(NULL, Object(Closure))
+#21 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Database/Console/Migrations/MigrateCommand.php(89): Illuminate/Database/Console/Migrations/MigrateCommand->runMigrations()
+#22 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate/Database/Console/Migrations/MigrateCommand->handle()
+#23 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#24 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#25 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#26 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#27 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#28 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#29 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#30 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#31 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Database/Console/Migrations/MigrateCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#32 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#33 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#34 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#35 {main}
+"} 
+[2026-05-18 14:48:36] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:34.238906Z"} 
+[2026-05-18 14:48:36] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:36] local.INFO: DELETE project: Project found {"project_id":"19","project_name":"Rs Mayapda","project_manager_id":21,"project_status":"completed"} 
+[2026-05-18 14:48:36] local.INFO: DELETE project: Success {"project_id":"19","project_name":"Rs Mayapda","user_id":21,"deleted_relations":{"materials":1,"documents":2,"engineer_progress_reports":2,"project_assignments":1,"project_notifications":4,"activity_logs_detached":4},"deleted_at":"2026-05-18T07:48:36.968180Z"} 
+[2026-05-18 14:48:37] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:37.494987Z"} 
+[2026-05-18 14:48:37] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:37] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:38] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:38.511686Z"} 
+[2026-05-18 14:48:38] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:38] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:39] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:39.111171Z"} 
+[2026-05-18 14:48:39] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:39] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:39] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:39.731411Z"} 
+[2026-05-18 14:48:39] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:40] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:40] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:40.367899Z"} 
+[2026-05-18 14:48:40] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:40] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:40] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:40.940192Z"} 
+[2026-05-18 14:48:40] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:41] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:41] local.INFO: DELETE project request started {"project_id":"19","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:41.524858Z"} 
+[2026-05-18 14:48:41] local.INFO: DELETE project: User authenticated {"project_id":"19","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:41] local.ERROR: DELETE project: Project not found {"project_id":"19","user_id":21,"error":"No query results for model [App\\Models\\Project] 19"} 
+[2026-05-18 14:48:43] local.INFO: DELETE project request started {"project_id":"18","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T07:48:43.703676Z"} 
+[2026-05-18 14:48:43] local.INFO: DELETE project: User authenticated {"project_id":"18","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-18 14:48:44] local.INFO: DELETE project: Project found {"project_id":"18","project_name":"Rs Eka","project_manager_id":21,"project_status":"completed"} 
+[2026-05-18 14:48:44] local.INFO: DELETE project: Success {"project_id":"18","project_name":"Rs Eka","user_id":21,"deleted_relations":{"materials":2,"documents":2,"engineer_progress_reports":2,"project_assignments":1,"project_notifications":4,"activity_logs_detached":4},"deleted_at":"2026-05-18T07:48:44.054521Z"} 
+[2026-05-18 14:49:32] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 19 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
+[2026-05-18 14:49:42] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 14:50:13] local.INFO: PlanVisit store request data: {"customer_id":"44","assigned_to":"20","tanggal_visit":"2026-05-18","waktu_visit":"15:00","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"follow up nursecall","catatan":null} 
+[2026-05-18 14:50:13] local.INFO: PlanVisit created successfully: {"id":50} 
+[2026-05-18 14:50:13] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-18 14:53:29] local.ERROR: Writing to directory C:/Users/oktar/AppData/Roaming/PsySH is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to directory C:/Users/oktar/AppData/Roaming/PsySH is not allowed. at C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/ConfigPaths.php:456)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(1024, 'Writing to dire...', 'C://laragon//www//...', 456)
+#1 [internal function]: Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure}(1024, 'Writing to dire...', 'C://laragon//www//...', 456)
+#2 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/ConfigPaths.php(456): trigger_error('Writing to dire...', 1024)
+#3 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/ConfigPaths.php(485): Psy/ConfigPaths::ensureDir('C:/Users/oktar/...')
+#4 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/Configuration.php(1076): Psy/ConfigPaths::touchFileWithMkdir('C:/Users/oktar/...')
+#5 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/Configuration.php(1116): Psy/Configuration->setHistoryFile('C:/Users/oktar/...')
+#6 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/Configuration.php(1293): Psy/Configuration->getHistoryFile()
+#7 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/Shell.php(191): Psy/Configuration->getReadline()
+#8 C:/laragon/www/kerjapraktek/backend/vendor/psy/psysh/src/Shell.php(2171): Psy/Shell->boot()
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/tinker/src/Console/TinkerCommand.php(77): Psy/Shell->execute('App////Models////Us...')
+#10 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#11 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#12 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#13 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#14 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#15 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate/Container/Container->call(Array)
+#16 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#17 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#18 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#19 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#20 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#21 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#22 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#23 {main}
+"} 
+[2026-05-18 14:54:16] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 14:54:19] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 14:54:38] local.INFO: PlanVisit store request data: {"customer_id":"45","assigned_to":"19","tanggal_visit":"2026-05-18","waktu_visit":"15:00","lokasi":"Jalan Cluster CJalan Cluster Centro Havana No. BLOK MA/8entro Havana No. BLOK MA/8","tujuan":"follow up nursecall","catatan":null} 
+[2026-05-18 14:54:38] local.INFO: PlanVisit created successfully: {"id":51} 
+[2026-05-18 14:54:38] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-18 14:57:03] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 14:57:19] local.INFO: PlanVisit store request data: {"customer_id":"46","assigned_to":"19","tanggal_visit":"2026-05-18","waktu_visit":"15:00","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"follow up nursecall","catatan":null} 
+[2026-05-18 14:57:19] local.INFO: PlanVisit created successfully: {"id":52} 
+[2026-05-18 14:57:19] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-18 15:23:06] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-18 15:23:27] local.INFO: PlanVisit store request data: {"customer_id":"47","assigned_to":"20","tanggal_visit":"2026-05-18","waktu_visit":"16:00","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"tertarik nursecall","catatan":null} 
+[2026-05-18 15:23:27] local.INFO: PlanVisit created successfully: {"id":53} 
+[2026-05-18 15:23:28] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-18 15:23:55] local.INFO: PlanVisit index - User: ramaatteriza17@gmail.com (Role: sales), Results: 1  
+[2026-05-18 15:23:58] local.INFO: PlanVisit index - User: ramaatteriza17@gmail.com (Role: sales), Results: 1  
+[2026-05-18 15:25:15] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city`, `province` from `customers` where `id` in (47) and `approval_status` = approved order by `name` asc)  
+[2026-05-18 15:26:51] local.INFO: PlanVisit index - User: ramaatteriza17@gmail.com (Role: sales), Results: 0  
+[2026-05-18 15:27:23] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city`, `province` from `customers` where `id` in (47) and `approval_status` = approved order by `name` asc)  
+[2026-05-18 15:30:38] local.INFO: PlanVisit index - User: admin@ptamsar.co.id (Role: administrator), Results: 0  
+[2026-05-18 15:30:49] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'where clause' (Connection: mysql, SQL: select * from `warnings` where `status` = all order by `created_at` desc)  
+[2026-05-18 15:30:53] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'where clause' (Connection: mysql, SQL: select * from `warnings` where `status` = all order by `created_at` desc)  
+[2026-05-18 15:33:04] local.INFO: DELETE project request started {"project_id":"20","user_id":1,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T08:33:04.134734Z"} 
+[2026-05-18 15:33:04] local.INFO: DELETE project: User authenticated {"project_id":"20","user_id":1,"user_role":"administrator","user_email":"admin@ptamsar.co.id"} 
+[2026-05-18 15:33:04] local.INFO: DELETE project: Project found {"project_id":"20","project_name":"[FUNNEL] rs eka - NURSECALL","project_manager_id":20,"project_status":"on_track"} 
+[2026-05-18 15:33:04] local.INFO: DELETE project: Success {"project_id":"20","project_name":"[FUNNEL] rs eka - NURSECALL","user_id":1,"deleted_relations":[],"deleted_at":"2026-05-18T08:33:04.498984Z"} 
+[2026-05-18 15:33:10] local.INFO: DELETE project request started {"project_id":"14","user_id":1,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-18T08:33:10.217186Z"} 
+[2026-05-18 15:33:10] local.INFO: DELETE project: User authenticated {"project_id":"14","user_id":1,"user_role":"administrator","user_email":"admin@ptamsar.co.id"} 
+[2026-05-18 15:33:10] local.INFO: DELETE project: Project found {"project_id":"14","project_name":"Rs Eka","project_manager_id":1,"project_status":"on_track"} 
+[2026-05-18 15:33:10] local.INFO: DELETE project: Success {"project_id":"14","project_name":"Rs Eka","user_id":1,"deleted_relations":[],"deleted_at":"2026-05-18T08:33:10.548603Z"} 
+[2026-05-18 15:38:25] local.ERROR: The "--compact" option does not exist. {"exception":"[object] (Symfony\\Component\\Console\\Exception\\RuntimeException(code: 0): The \"--compact\" option does not exist. at C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Input/ArgvInput.php:226)
+[stacktrace]
+#0 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Input/ArgvInput.php(155): Symfony/Component/Console/Input/ArgvInput->addLongOption('compact', NULL)
+#1 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Input/ArgvInput.php(88): Symfony/Component/Console/Input/ArgvInput->parseLongOption('--compact')
+#2 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Input/ArgvInput.php(77): Symfony/Component/Console/Input/ArgvInput->parseToken('--compact', true)
+#3 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Input/Input.php(53): Symfony/Component/Console/Input/ArgvInput->parse()
+#4 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Command/Command.php(295): Symfony/Component/Console/Input/Input->bind(Object(Symfony/Component/Console/Input/InputDefinition))
+#5 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#6 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#7 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Foundation/Console/RouteListCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#8 C:/laragon/www/kerjapraktek/backend/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#9 C:/laragon/www/kerjapraktek/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#10 C:/laragon/www/kerjapraktek/backend/artisan(24): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#11 {main}
+"} 
+[2026-05-18 15:42:09] local.ERROR: Password reset send token error: SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'token' at row 1 (Connection: mysql, SQL: insert into `password_reset_tokens` (`email`, `token`, `expires_at`, `created_at`) values (timothilois007@gmail.com, $2y$12$.IYJMR6.xRTfhY7gybJu8OToR7Kh2.XeyDEzu3P.Xzc/ezAEE3.AO, 2026-05-18 15:52:09, 2026-05-18 15:42:09))  
+[2026-05-18 15:42:17] local.ERROR: Password reset send token error: SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'token' at row 1 (Connection: mysql, SQL: insert into `password_reset_tokens` (`email`, `token`, `expires_at`, `created_at`) values (timothilois007@gmail.com, $2y$12$PWzPGLiuO3NX4V/9HsOHpOSrmNSPbtV95M7CJ6Ui4c8HFaV7REPCS, 2026-05-18 15:52:17, 2026-05-18 15:42:17))  
+[2026-05-18 15:42:48] local.ERROR: Password reset send token error: SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'token' at row 1 (Connection: mysql, SQL: insert into `password_reset_tokens` (`email`, `token`, `expires_at`, `created_at`) values (timothilois007@gmail.com, $2y$12$JN8747KI4wBDcA6QJAIFx.oxJtn1S.vQJ37CbdV3WnO4ieb6iXLC., 2026-05-18 15:52:48, 2026-05-18 15:42:48))  
+[2026-05-18 15:43:32] local.ERROR: Password reset send token error: SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'token' at row 1 (Connection: mysql, SQL: insert into `password_reset_tokens` (`email`, `token`, `expires_at`, `created_at`) values (timothilois007@gmail.com, $2y$12$3/Ru/9X7RP0ugyGVYtoSrOj4pXLhIxKODQT0jVs51rmjLs5B7z88e, 2026-05-18 15:53:32, 2026-05-18 15:43:32))  
+[2026-05-18 15:46:54] local.ERROR: Password reset send token error: Unable to connect with STARTTLS: stream_socket_enable_crypto(): SSL operation failed with code 1. OpenSSL Error messages:
+error:0A000086:SSL routines::certificate verify failed  
+[2026-05-18 15:48:26] local.INFO: Password reset OTP sent to: timothilois007@gmail.com  
+[2026-05-18 15:50:16] local.INFO: Password reset OTP sent to: timothilois007@gmail.com  
+[2026-05-18 15:52:54] local.INFO: Password successfully reset for user: timothilois007@gmail.com  

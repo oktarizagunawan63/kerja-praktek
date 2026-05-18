@@ -2,13 +2,13 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatRupiah } from './formatRupiah'
 
-// ── Export semua proyek (untuk direktur) ──────────────────────────────────────
+// Export semua proyek (untuk direktur)
 export const exportLaporanPDF = (projects) => {
-  _generatePDF(projects, 'Laporan Monitoring Proyek — Semua')
+  _generatePDF(projects, 'Laporan Monitoring Proyek - Semua')
 }
 
-// ── Export satu proyek (untuk site manager / direktur) ───────────────────────
-export const exportProyekPDF = (project, materials = [], docs = []) => {
+// Export satu proyek (untuk site manager / direktur)
+export const exportProyekPDF = (project, materials = [], docs = [], progressReports = []) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const now = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
 
@@ -18,7 +18,7 @@ export const exportProyekPDF = (project, materials = [], docs = []) => {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('PT AMSAR — LAPORAN PROYEK', 14, 10)
+  doc.text('PT AMSAR - LAPORAN PROYEK', 14, 10)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.text(`Medical Services  |  Dicetak: ${now}`, 14, 17)
@@ -79,18 +79,20 @@ export const exportProyekPDF = (project, materials = [], docs = []) => {
     })
   }
 
-  // Dokumen
-  if (docs.length > 0) {
+  const progressRows = buildProgressRows(progressReports, docs)
+
+  // Nama Progres
+  if (progressRows.length > 0) {
     const startY = (doc.lastAutoTable?.finalY || 68) + 8
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(30, 30, 30)
-    doc.text('Dokumen Proyek', 14, startY)
+    doc.text('Nama Progres', 14, startY)
 
     autoTable(doc, {
       startY: startY + 3,
-      head: [['Nama File', 'Tipe', 'Diupload Oleh', 'Tanggal']],
-      body: docs.map(d => [d.name, d.type, d.uploader, d.date]),
+      head: [['Nama Progres', 'Progress', 'Dilaporkan Oleh', 'Tanggal']],
+      body: progressRows,
       styles: { fontSize: 8, cellPadding: 2.5 },
       headStyles: { fillColor: [15, 76, 129], textColor: 255, fontStyle: 'bold', fontSize: 8 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -110,7 +112,44 @@ export const exportProyekPDF = (project, materials = [], docs = []) => {
   doc.save(`Laporan_${safeName}_${new Date().toISOString().split('T')[0]}.pdf`)
 }
 
-// ── Internal helper untuk export semua proyek ─────────────────────────────────
+function buildProgressRows(progressReports = [], docs = []) {
+  const rows = []
+
+  progressReports.forEach(report => {
+    let plans = report.plan_updates
+
+    if (typeof plans === 'string') {
+      try {
+        plans = JSON.parse(plans || '[]')
+      } catch {
+        plans = []
+      }
+    }
+
+    if (!Array.isArray(plans)) return
+
+    plans.forEach(plan => {
+      if (!plan?.name) return
+      rows.push([
+        plan.name,
+        `${plan.progress_percentage ?? report.progress_percentage ?? 0}%`,
+        report.user?.name || report.engineer_name || report.uploader || '-',
+        report.reported_at ? new Date(report.reported_at).toLocaleDateString('id-ID') : '-',
+      ])
+    })
+  })
+
+  if (rows.length > 0) return rows
+
+  return docs.map(d => [
+    d.progressName || d.planName || d.name,
+    d.type || '-',
+    d.uploader || '-',
+    d.date || '-',
+  ])
+}
+
+// Internal helper untuk export semua proyek
 function _generatePDF(projects, title) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const now = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -120,7 +159,7 @@ function _generatePDF(projects, title) {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.text(`PT AMSAR — ${title.toUpperCase()}`, 14, 10)
+  doc.text(`PT AMSAR - ${title.toUpperCase()}`, 14, 10)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.text(`Medical Services  |  Dicetak: ${now}`, 14, 17)
@@ -214,7 +253,7 @@ function _generatePDF(projects, title) {
 }
 
 
-// ── Export Visit Reports ──────────────────────────────────────────────────────
+// Export Visit Reports
 export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const now = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -316,10 +355,6 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
                     visit.visit_outcome === 'follow_up' ? 'Follow-up' :
                     visit.visit_outcome === 'not_interested' ? 'Not Interested' :
                     visit.visit_outcome === 'rescheduled' ? 'Rescheduled' : '-'
-    const dealAmount = visit.deal_amount ? formatRupiah(visit.deal_amount) : '-'
-    const gps = visit.latitude && visit.longitude ? 
-                `${parseFloat(visit.latitude).toFixed(4)}, ${parseFloat(visit.longitude).toFixed(4)}` : '-'
-
     return [
       index + 1,
       visitDate,
@@ -327,15 +362,13 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
       customerCompany,
       salesName,
       status,
-      outcome,
-      dealAmount,
-      gps
+      outcome
     ]
   })
 
   autoTable(doc, {
     startY: yPos,
-    head: [['No', 'Tanggal', 'Customer', 'Perusahaan', 'Sales', 'Status', 'Outcome', 'Deal Amount', 'GPS']],
+    head: [['No', 'Tanggal', 'Customer', 'Perusahaan', 'Sales', 'Status', 'Outcome']],
     body: tableData,
     styles: { 
       fontSize: 7, 
@@ -358,9 +391,7 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
       3: { cellWidth: 35 },
       4: { cellWidth: 30 },
       5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 25, halign: 'center' },
-      7: { cellWidth: 30, halign: 'right' },
-      8: { cellWidth: 40, fontSize: 6 }
+      6: { cellWidth: 65, halign: 'center' }
     },
     margin: { left: 14, right: 14 },
   })
@@ -373,14 +404,12 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
       salesSummary[salesName] = {
         total: 0,
         completed: 0,
-        missed: 0,
-        dealAmount: 0
+        missed: 0
       }
     }
     salesSummary[salesName].total++
     if (visit.status === 'done') salesSummary[salesName].completed++
     if (visit.status === 'missed') salesSummary[salesName].missed++
-    if (visit.deal_amount) salesSummary[salesName].dealAmount += parseFloat(visit.deal_amount)
   })
 
   if (Object.keys(salesSummary).length > 1) {
@@ -395,13 +424,12 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
       data.total,
       data.completed,
       data.missed,
-      `${data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0}%`,
-      formatRupiah(data.dealAmount)
+      `${data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0}%`
     ])
 
     autoTable(doc, {
       startY: summaryY + 3,
-      head: [['Sales', 'Total Visit', 'Completed', 'Missed', 'Success Rate', 'Total Deal']],
+      head: [['Sales', 'Total Visit', 'Completed', 'Missed', 'Success Rate']],
       body: salesTableData,
       styles: { fontSize: 8, cellPadding: 2.5 },
       headStyles: { fillColor: [22, 101, 52], textColor: 255, fontStyle: 'bold', fontSize: 8 },
@@ -410,8 +438,7 @@ export const exportVisitReportsPDF = (visits, filters = {}, stats = {}) => {
         1: { halign: 'center' },
         2: { halign: 'center' },
         3: { halign: 'center' },
-        4: { halign: 'center' },
-        5: { halign: 'right' }
+        4: { halign: 'center' }
       }
     })
   }

@@ -190,7 +190,7 @@ export default function RealisasiVisitsPage() {
       const location = await getCurrentLocation()
       setCurrentLocation(location)
       
-      // Validate distance to customer location
+      // Distance is informational only. The photo/GPS coordinates are the visit proof.
       if (visit.customer?.latitude && visit.customer?.longitude) {
         const distance = calculateDistance(
           location.latitude,
@@ -199,12 +199,7 @@ export default function RealisasiVisitsPage() {
           parseFloat(visit.customer.longitude)
         )
         
-        if (distance > 100) { // 100 meters radius
-          toast.error(`Anda terlalu jauh dari lokasi customer (${Math.round(distance)}m). Maksimal 100m.`, { id: 'location' })
-          return
-        }
-        
-        toast.success(`Lokasi terverifikasi (${Math.round(distance)}m dari customer)`, { id: 'location' })
+        toast.success(`Lokasi tersimpan (${Math.round(distance)}m dari titik customer)`, { id: 'location' })
       } else {
         toast.success('Lokasi berhasil didapatkan', { id: 'location' })
       }
@@ -1176,7 +1171,7 @@ export default function RealisasiVisitsPage() {
             <form onSubmit={async (e) => {
               e.preventDefault()
 
-              // âš‘ Guard: prevent double-submit
+              // Guard: prevent double-submit
               if (submitting) return
 
               if (!currentLocation) {
@@ -1506,6 +1501,14 @@ export default function RealisasiVisitsPage() {
       {showCamera && (
         <CameraAttendance
           onCapture={(captureData) => {
+            if (captureData.latitude && captureData.longitude) {
+              setCurrentLocation({
+                latitude: captureData.latitude,
+                longitude: captureData.longitude,
+                accuracy: captureData.gps_data?.accuracy,
+              })
+            }
+
             // Check if we're in unplanned form or planned form
             if (showUnplannedForm) {
               setUnplannedFormData(prev => ({ ...prev, photo: captureData.photo }))

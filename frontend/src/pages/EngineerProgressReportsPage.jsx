@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Calendar, Eye, TrendingUp } from '@icons'
+import { FileText, Calendar, Eye, TrendingUp, X } from '@icons'
 import { api } from '../lib/api'
 import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
@@ -147,7 +147,7 @@ export default function EngineerProgressReportsPage() {
               onClick={() => setSelectedPhoto(null)}
               className="absolute top-2 right-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-colors"
             >
-              âœ•
+              <X size={20} />
             </button>
           </div>
         </div>

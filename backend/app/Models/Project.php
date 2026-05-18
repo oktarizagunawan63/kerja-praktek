@@ -11,7 +11,7 @@ class Project extends Model
 
     protected $fillable = [
         'name', 'description', 'location', 'status',
-        'start_date', 'end_date', 'rab', 'rab_realisasi',
+        'start_date', 'end_date', 'rab', 'rab_realisasi', 'rab_expenses',
         'progress', 'project_manager_id', 'pm_name', 'pm_email',
         'completed_at', 'assigned_engineers', 'created_by',
         'site_manager_id', 'user_id',
@@ -23,6 +23,7 @@ class Project extends Model
         'completed_at'       => 'datetime',
         'rab'                => 'decimal:2',
         'rab_realisasi'      => 'decimal:2',
+        'rab_expenses'       => 'array',
         'progress'           => 'integer',
         'assigned_engineers' => 'array',
     ];

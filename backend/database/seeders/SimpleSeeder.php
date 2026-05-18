@@ -12,7 +12,7 @@ class SimpleSeeder extends Seeder
 {
     public function run(): void
     {
-        echo "🌱 Starting simple database seeding...\n";
+        echo "Starting simple database seeding...\n";
 
         // Clear existing data
         echo "Clearing existing data...\n";
@@ -123,17 +123,17 @@ class SimpleSeeder extends Seeder
                 'completed_at'       => '2025-12-28',
             ]);
 
-            echo "✅ Created 3 projects\n";
+            echo "OK Created 3 projects\n";
         } else {
-            echo "⚠️ Projects table not found, skipping project creation\n";
+            echo "Warning: Projects table not found, skipping project creation\n";
         }
 
-        echo "\n🎉 Simple database seeding completed successfully!\n";
-        echo "\n📊 Summary:\n";
+        echo "\nSimple database seeding completed successfully!\n";
+        echo "\nSummary:\n";
         echo "- Users: 5 records\n";
         echo "- Projects: " . (Schema::hasTable('projects') ? "3 records" : "0 (table not found)") . "\n";
         
-        echo "\n🔑 Login Credentials:\n";
+        echo "\nLogin Credentials:\n";
         echo "Administrator: admin@ptamsar.co.id / password\n";
         echo "Site Manager: sitemanager@ptamsar.co.id / password\n";
         echo "Engineer: engineer@ptamsar.co.id / password\n";

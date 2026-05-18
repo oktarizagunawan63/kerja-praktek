@@ -47,7 +47,7 @@ export default function SuccessModal({
           iconBg: 'bg-green-100',
           borderColor: 'border-green-200',
           bgGradient: 'from-green-50 to-emerald-50',
-          title: title || 'User Berhasil Disetujui! ðŸŽ‰',
+          title: title || 'User Berhasil Disetujui!',
           defaultMessage: user ? `${user.name} telah disetujui sebagai ${user.role}` : 'User berhasil disetujui'
         }
       case 'rejection':

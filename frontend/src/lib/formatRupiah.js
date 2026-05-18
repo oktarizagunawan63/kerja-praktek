@@ -1,10 +1,10 @@
 /**
  * Format angka ke Rupiah singkat
- * 1000000000 → Rp 1 M
- * 500000000  → Rp 500 Jt
- * 1500000    → Rp 1,5 Jt
- * 750000     → Rp 750 Rb
- * 5000       → Rp 5.000
+ * 1000000000 -> Rp 1 M
+ * 500000000  -> Rp 500 Jt
+ * 1500000    -> Rp 1,5 Jt
+ * 750000     -> Rp 750 Rb
+ * 5000       -> Rp 5.000
  */
 export const formatRupiah = (val) => {
   const n = parseFloat(val) || 0

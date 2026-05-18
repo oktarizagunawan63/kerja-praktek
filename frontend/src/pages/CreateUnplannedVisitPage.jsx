@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Camera, MapPin, ArrowLeft, DollarSign } from '@icons'
+import { Camera, MapPin, ArrowLeft } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import CameraAttendance from '../components/ui/CameraAttendance'
 import toast from 'react-hot-toast'
-import { formatRupiah } from '../lib/formatRupiah'
 
 export default function CreateUnplannedVisitPage() {
   const { user } = useAuthStore()
@@ -24,8 +23,6 @@ export default function CreateUnplannedVisitPage() {
     visit_purpose: '',
     meeting_notes: '',
     visit_outcome: '',
-    deal_amount: '',
-    deal_notes: '',
     latitude: null,
     longitude: null
   })
@@ -117,13 +114,6 @@ export default function CreateUnplannedVisitPage() {
       return
     }
     
-    if (formData.visit_outcome === 'closed') {
-      if (!formData.deal_amount || parseFloat(formData.deal_amount) <= 0) {
-        toast.error('Deal amount wajib diisi untuk closed deal')
-        return
-      }
-    }
-    
     if (!photoData || !photoData.photo) {
       toast.error('Foto bukti visit wajib diambil')
       return
@@ -145,8 +135,6 @@ export default function CreateUnplannedVisitPage() {
         visit_purpose: formData.visit_purpose.trim(),
         meeting_notes: formData.meeting_notes.trim(),
         visit_outcome: formData.visit_outcome,
-        deal_amount: formData.visit_outcome === 'closed' ? parseFloat(formData.deal_amount) : null,
-        deal_notes: formData.visit_outcome === 'closed' ? formData.deal_notes : null,
         latitude: formData.latitude,
         longitude: formData.longitude,
         photos: [photoData.photo]
@@ -398,47 +386,6 @@ export default function CreateUnplannedVisitPage() {
             </label>
           </div>
 
-          {/* Deal Amount - Conditional */}
-          {formData.visit_outcome === 'closed' && (
-            <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Deal Amount (IDR) <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <DollarSign size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="number"
-                    value={formData.deal_amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deal_amount: e.target.value }))}
-                    min="0"
-                    step="1000"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="450000000"
-                    required
-                  />
-                </div>
-                {formData.deal_amount && (
-                  <p className="text-sm text-green-600 mt-2 font-semibold">
-                    {formatRupiah(parseInt(formData.deal_amount))}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Deal Notes (Opsional)
-                </label>
-                <textarea
-                  value={formData.deal_notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, deal_notes: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Contract type, payment terms, timeline..."
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Photo with GPS */}

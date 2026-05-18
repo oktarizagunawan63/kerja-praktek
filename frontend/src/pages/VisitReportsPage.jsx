@@ -134,7 +134,7 @@ export default function VisitReportsPage() {
 
       {/* Filters */}
       <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">⚙ Filter Laporan</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">Filter Laporan</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Periode</label>
@@ -202,7 +202,7 @@ export default function VisitReportsPage() {
         </div>
       )}
 
-      {/* Period Data Table — FIX: pakai item.date bukan item.period */}
+      {/* Period Data Table - FIX: pakai item.date bukan item.period */}
       {periodData.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100">

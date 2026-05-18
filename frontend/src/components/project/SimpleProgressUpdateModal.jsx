@@ -578,7 +578,7 @@ export default function SimpleProgressUpdateModal({
               className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               disabled={submitting}
             >
-              {submitting ? 'Menyimpan...' : '✓ Simpan Progress'}
+              {submitting ? 'Menyimpan...' : 'Simpan Progress'}
             </Button>
           )}
         </div>

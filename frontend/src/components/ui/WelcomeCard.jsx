@@ -28,15 +28,25 @@ export default function WelcomeCard({ user, onDismiss }) {
           ]
         }
       case 'sales_manager':
-      case 'site_manager':
         return {
           title: 'Selamat Datang, Sales Manager!',
           message: 'Anda dapat mengelola customer dan visit management dengan efisien.',
           features: [
+            'Kelola customer dan funnel sales',
+            'Approve rencana kunjungan',
+            'Monitor performa tim sales',
+            'Akses laporan kunjungan'
+          ]
+        }
+      case 'site_manager':
+        return {
+          title: 'Selamat Datang, Site Manager!',
+          message: 'Anda dapat mengelola proyek, bahan, plan pekerjaan, dan progress lapangan.',
+          features: [
             'Kelola proyek yang ditugaskan',
-            'Approve registrasi engineer',
-            'Monitor progress proyek',
-            'Koordinasi dengan tim lapangan'
+            'Tambah dan edit material proyek',
+            'Update plan pekerjaan dan progress',
+            'Koordinasi dengan engineer lapangan'
           ]
         }
       case 'engineer':
@@ -117,7 +127,7 @@ export default function WelcomeCard({ user, onDismiss }) {
 
           <div className="mt-4 pt-4 border-t border-blue-200">
             <p className="text-xs text-gray-500">
-              ðŸ’¡ <strong>Tips:</strong> Jelajahi menu di sidebar untuk memulai. 
+            <strong>Tips:</strong> Jelajahi menu di sidebar untuk memulai. 
               Jika ada pertanyaan, hubungi administrator sistem.
             </p>
           </div>

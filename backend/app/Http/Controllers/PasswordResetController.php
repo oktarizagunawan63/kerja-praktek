@@ -21,6 +21,10 @@ class PasswordResetController extends Controller
     public function sendResetToken(Request $request)
     {
         try {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->email)),
+            ]);
+
             // Validate email
             $request->validate([
                 'email' => 'required|email'
@@ -102,6 +106,11 @@ class PasswordResetController extends Controller
     public function verifyToken(Request $request)
     {
         try {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->email)),
+                'token' => preg_replace('/\D/', '', (string) $request->token),
+            ]);
+
             $request->validate([
                 'email' => 'required|email',
                 'token' => 'required|string|size:6'
@@ -131,7 +140,7 @@ class PasswordResetController extends Controller
             if (!Hash::check($request->token, $resetRecord->token)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode salah atau expired.'
+                    'message' => 'Kode salah atau sudah diganti. Pakai kode terbaru dari email.'
                 ], 400);
             }
 
@@ -164,6 +173,11 @@ class PasswordResetController extends Controller
     public function resetPassword(Request $request)
     {
         try {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->email)),
+                'token' => preg_replace('/\D/', '', (string) $request->token),
+            ]);
+
             $request->validate([
                 'email' => 'required|email',
                 'token' => 'required|string|size:6',
@@ -194,7 +208,7 @@ class PasswordResetController extends Controller
             if (!Hash::check($request->token, $resetRecord->token)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode salah atau expired.'
+                    'message' => 'Kode salah atau sudah diganti. Pakai kode terbaru dari email.'
                 ], 400);
             }
 

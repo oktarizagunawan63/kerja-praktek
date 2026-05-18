@@ -15,7 +15,10 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await api.login(form)
+      const res = await api.login({
+        email: form.email.trim(),
+        password: form.password,
+      })
       setAuth(res.token, res.user)
 
       const redirectRole = String(res.user.role || '').toLowerCase()

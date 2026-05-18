@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
                 'approved_by' => 1
             ]);
 
-            echo "✓ Admin user created\n";
+            echo "OK Admin user created\n";
         }
 
         // Create sample projects
@@ -48,9 +48,9 @@ class DatabaseSeeder extends Seeder
                 'status' => 'planning'
             ]);
 
-            echo "✓ Sample projects created\n";
+            echo "OK Sample projects created\n";
         }
 
-        echo "✓ Database seeding completed successfully!\n";
+        echo "OK Database seeding completed successfully!\n";
     }
 }

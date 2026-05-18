@@ -482,13 +482,13 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-900">
-                        {activity.user_name} â€¢ {activity.check_out_time ? 'Check Out' : 'Check In'}
+                        {activity.user_name} - {activity.check_out_time ? 'Check Out' : 'Check In'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {activity.check_out_time || activity.check_in_time ? 
                           new Date(activity.check_out_time || activity.check_in_time).toLocaleTimeString('id-ID') : 
                           'N/A'
-                        } â€¢ {activity.date ? 
+                        } - {activity.date ? 
                           new Date(activity.date).toLocaleDateString('id-ID') : 
                           'N/A'
                         }
