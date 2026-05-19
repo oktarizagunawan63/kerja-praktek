@@ -275,8 +275,17 @@ class PlanVisitController extends Controller
         try {
             $user = Auth::user();
             
-            // Sales and engineer cannot update
-            if (in_array($user->role, ['sales', 'engineer'])) {
+            $requestedFields = collect($request->only([
+                'customer_id', 'assigned_to', 'tanggal_visit', 'waktu_visit', 'lokasi', 'tujuan', 'catatan', 'status'
+            ]))
+                ->filter(fn($value) => $value !== null)
+                ->keys()
+                ->values();
+            $isScheduleOnlyUpdate = $requestedFields->isNotEmpty()
+                && $requestedFields->every(fn($field) => in_array($field, ['tanggal_visit', 'waktu_visit', 'catatan'], true));
+
+            // Sales can only reschedule their own assigned visit. Engineer cannot update visit plans.
+            if ($user->role === 'engineer') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk mengubah data plan visit'
@@ -309,6 +318,13 @@ class PlanVisitController extends Controller
                     'success' => false,
                     'message' => 'Plan visit not found'
                 ], 404);
+            }
+
+            if ($user->role === 'sales' && (!$isScheduleOnlyUpdate || $planVisit->assigned_to !== $user->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sales hanya bisa reschedule visit yang ditugaskan kepadanya'
+                ], 403);
             }
             
             $planVisit->update($request->only([

@@ -4,6 +4,13 @@ import useAuthStore from '../store/authStore'
 import { api } from '../lib/api'
 import toast from 'react-hot-toast'
 
+const VISIT_OUTCOME_LABELS = {
+  closed: 'Closed / Deal',
+  follow_up: 'Follow-up',
+  not_interested: 'Tidak Tertarik',
+  rescheduled: 'Dijadwal Ulang',
+}
+
 export default function SalesManagerDashboard() {
   const { user } = useAuthStore()
   const [stats, setStats] = useState({
@@ -157,17 +164,17 @@ export default function SalesManagerDashboard() {
   }, [pendingUnplannedVisits])
 
   const statCards = [
-    { label: 'Total Customers', value: stats.total_customers || 0, icon: Users, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-    { label: 'Plan Visits', value: stats.total_plan_visits || 0, icon: Calendar, color: 'text-blue-700', bg: 'bg-blue-50' },
-    { label: 'Completed Visits', value: stats.completed_visits || 0, icon: CheckSquare, color: 'text-green-700', bg: 'bg-green-50' },
-    { label: 'Active Sales', value: stats.total_sales || 0, icon: TrendingUp, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+    { label: 'Total Customer', value: stats.total_customers || 0, icon: Users, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+    { label: 'Plan Visit', value: stats.total_plan_visits || 0, icon: Calendar, color: 'text-blue-700', bg: 'bg-blue-50' },
+    { label: 'Visit Terealisasi', value: stats.completed_visits || 0, icon: CheckSquare, color: 'text-green-700', bg: 'bg-green-50' },
+    { label: 'Sales Aktif', value: stats.total_sales || 0, icon: TrendingUp, color: 'text-indigo-700', bg: 'bg-indigo-50' },
   ]
 
   const quickActions = [
-    { label: 'Manage Customers', icon: Users, path: '/customers' },
-    { label: 'Plan Visits', icon: Calendar, path: '/plan-visits' },
-    { label: 'View Reports', icon: TrendingUp, path: '/visit-reports' },
-    { label: 'Manage Warnings', icon: AlertTriangle, path: '/warnings' },
+    { label: 'Kelola Customer', icon: Users, path: '/customers' },
+    { label: 'Kelola Plan Visit', icon: Calendar, path: '/plan-visits' },
+    { label: 'Lihat Report', icon: TrendingUp, path: '/visit-reports' },
+    { label: 'Cek Warning', icon: AlertTriangle, path: '/warnings' },
   ]
 
   return (
@@ -177,7 +184,7 @@ export default function SalesManagerDashboard() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Sales Management</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-950">Sales Manager Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Welcome back, {user?.name}. Monitor team activity, visit approval, and monthly performance.</p>
+            <p className="mt-1 text-sm text-slate-500">Halo, {user?.name}. Prioritaskan approval, warning, dan visit team yang perlu tindak lanjut.</p>
           </div>
         </div>
 
@@ -206,11 +213,30 @@ export default function SalesManagerDashboard() {
               ))}
             </div>
 
+            {(uniquePendingUnplannedVisits.length > 0 || uniqueWarnings.length > 0) && (
+              <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-emerald-950">Prioritas Hari Ini</h2>
+                    <p className="text-sm text-emerald-800">Selesaikan approval dan warning agar report team tetap rapi.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => window.location.href = '/realisasi-visits'} className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-100">
+                      {uniquePendingUnplannedVisits.length} approval
+                    </button>
+                    <button onClick={() => window.location.href = '/warnings'} className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50">
+                      {uniqueWarnings.length} warning
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-semibold text-slate-950">Recent Customers</h2>
+                    <h2 className="text-base font-semibold text-slate-950">Customer Terbaru</h2>
                     <p className="text-sm text-slate-500">Customer terbaru dari sales manager dan team.</p>
                   </div>
                   <button onClick={() => window.location.href = '/customers'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
@@ -244,7 +270,7 @@ export default function SalesManagerDashboard() {
               <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-semibold text-slate-950">Recent Plan Visits</h2>
+                    <h2 className="text-base font-semibold text-slate-950">Plan Visit Terdekat</h2>
                     <p className="text-sm text-slate-500">Agenda visit terdekat dari team sales.</p>
                   </div>
                   <button onClick={() => window.location.href = '/plan-visits'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
@@ -285,7 +311,7 @@ export default function SalesManagerDashboard() {
                     </div>
                     <div>
                       <h2 className="text-base font-semibold text-slate-950">Pending Unplanned Visits Approval</h2>
-                      <p className="text-sm text-slate-500">Review kunjungan tidak terencana dari team.</p>
+                      <p className="text-sm text-slate-500">Validasi kunjungan tidak terencana dari team sebelum masuk riwayat/report.</p>
                     </div>
                   </div>
                   <span className="w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
@@ -308,9 +334,9 @@ export default function SalesManagerDashboard() {
                           <p className="text-sm text-slate-700">{visit.customer_company || '-'}</p>
                           <p className="mt-1 text-sm text-slate-600">{visit.visit_purpose}</p>
                           <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-                            <div><span className="font-semibold">Sales:</span> {visit.visited_by}</div>
+                            <div><span className="font-semibold">Sales:</span> {visit.visitor?.name || '-'}</div>
                             <div><span className="font-semibold">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}</div>
-                            <div><span className="font-semibold">Outcome:</span> {visit.visit_outcome}</div>
+                            <div><span className="font-semibold">Outcome:</span> {VISIT_OUTCOME_LABELS[visit.visit_outcome] || visit.visit_outcome || '-'}</div>
                           </div>
                         </div>
                       </div>
@@ -342,8 +368,8 @@ export default function SalesManagerDashboard() {
               <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-semibold text-slate-950">Recent Warnings</h2>
-                    <p className="text-sm text-slate-500">Warning terbaru dari aktivitas sales.</p>
+                    <h2 className="text-base font-semibold text-slate-950">Warning yang Perlu Dicek</h2>
+                    <p className="text-sm text-slate-500">Klik lihat semua untuk cek detail dan tandai selesai dicek.</p>
                   </div>
                   <button onClick={() => window.location.href = '/warnings'} className="text-sm font-semibold text-red-700 hover:text-red-800">
                     Lihat Semua
@@ -371,7 +397,7 @@ export default function SalesManagerDashboard() {
               <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-semibold text-slate-950">Sales Performance</h2>
+                    <h2 className="text-base font-semibold text-slate-950">Performa Sales</h2>
                     <p className="text-sm text-slate-500">Ringkasan performa sales bulan ini.</p>
                   </div>
                   <button onClick={() => window.location.href = '/visit-reports'} className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">

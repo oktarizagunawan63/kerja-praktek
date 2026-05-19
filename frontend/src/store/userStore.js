@@ -13,6 +13,16 @@ const getAuthToken = () => {
   }
 }
 
+const stripSensitiveUserFields = (user) => {
+  if (!user || typeof user !== 'object') return user
+  const { password, password_confirmation, current_password, ...safeUser } = user
+  return safeUser
+}
+
+const stripSensitiveUsers = (users) => (
+  Array.isArray(users) ? users.map(stripSensitiveUserFields) : []
+)
+
 /**
  * User management store
  * Administrator bisa buat akun sales_manager dan engineer
@@ -27,7 +37,7 @@ const useUserStore = create(
       addUser: (userData) => {
         const newUser = {
           id: Date.now().toString(),
-          ...userData,
+          ...stripSensitiveUserFields(userData),
           assignedProjects: userData.assignedProjects || [],
         }
         set(s => ({ users: [...s.users, newUser] }))
@@ -35,7 +45,7 @@ const useUserStore = create(
       },
 
       updateUser: (id, fields) =>
-        set(s => ({ users: s.users.map(u => u.id === id ? { ...u, ...fields } : u) })),
+        set(s => ({ users: s.users.map(u => u.id === id ? { ...u, ...stripSensitiveUserFields(fields) } : u) })),
 
       deleteUser: (id) =>
         set(s => ({ users: s.users.filter(u => u.id !== id) })),
@@ -60,10 +70,6 @@ const useUserStore = create(
 
       getUserById: (id) => get().users.find(u => u.id === id),
 
-      // Login check
-      loginCheck: (email, password) =>
-        get().users.find(u => u.email === email && u.password === password) || null,
-
       // Fetch users from backend API
       fetchUsers: async () => {
         try {
@@ -85,7 +91,7 @@ const useUserStore = create(
             const users = data.data || data;
             
             // Force update the store
-            set({ users: Array.isArray(users) ? users : [] });
+            set({ users: stripSensitiveUsers(users) });
             
             // Also trigger a re-render by updating a timestamp
             set(state => ({ ...state, lastFetch: Date.now() }));
@@ -101,9 +107,15 @@ const useUserStore = create(
       },
 
       // Set users from external source (like API)
-      setUsers: (users) => set({ users: Array.isArray(users) ? users : [] }),
+      setUsers: (users) => set({ users: stripSensitiveUsers(users) }),
     }),
-    { name: 'amsar-users' }
+    {
+      name: 'amsar-users',
+      partialize: (state) => ({
+        ...state,
+        users: stripSensitiveUsers(state.users),
+      }),
+    }
   )
 )
 

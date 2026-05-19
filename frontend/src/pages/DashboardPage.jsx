@@ -354,7 +354,7 @@ export default function DashboardPage() {
   const roleKPIs = getRoleSpecificKPIs()
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* Welcome Card for New Users */}
       {(showWelcome || isNewUser()) && (
         <WelcomeCard 
@@ -369,14 +369,14 @@ export default function DashboardPage() {
         <p className="text-[#de168c]">Dashboard monitoring proyek PT Amsar Prima Mandiri</p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-[#de168c]">Dashboard Overview</h1>
           <p className="text-sm text-[#de168c] mt-0.5">Real-time project monitoring</p>
         </div>
         {(user?.role === 'administrator' || user?.role === 'direktur') && siteManagers.length > 0 && (
           <select value={filterSM} onChange={e => setFilterSM(e.target.value)}
-            className="form-select">
+            className="form-select w-full sm:w-auto">
             <option value="all">Semua Site Manager</option>
             {siteManagers.map(sm => (
               <option key={sm.id} value={sm.id}>{sm.name}</option>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4 xl:gap-6">
         {roleKPIs.map((kpi, index) => {
           const IconComponent = kpi.icon
           return (

@@ -37,10 +37,10 @@ class SalesController extends Controller
                 ->where('approval_status', 'approved')
                 ->count();
             
-            // 2. Assigned Visits - count plan_visits assigned to this sales with status scheduled/approved/ongoing
-            // Note: 'approved' and 'ongoing' might not exist in DB, using 'scheduled' as active visits
+            // 2. Assigned Visits - visits that still need action from this sales
             $assignedVisitsCount = PlanVisit::where('assigned_to', $user->id)
-                ->where('status', 'scheduled')
+                ->whereIn('status', ['pending', 'approved', 'scheduled'])
+                ->whereDoesntHave('realisasiVisit')
                 ->count();
             
             // 3. Completed Visits This Month - count completed visits via realisasi_visits
@@ -86,29 +86,20 @@ class SalesController extends Controller
                     ];
                 });
             
-            // 7. Get My Assigned Visits (max 5 upcoming) - optimized with select
-            $myVisits = PlanVisit::select('id', 'customer_id', 'tanggal_visit', 'waktu_visit', 'lokasi', 'tujuan')
+            // 7. Get My Assigned Visits (max 5 upcoming/pending) - optimized with select
+            $myVisits = PlanVisit::select('id', 'customer_id', 'tanggal_visit', 'waktu_visit', 'lokasi', 'tujuan', 'status')
                 ->with([
                     'customer:id,name,company',
                     'realisasiVisit:id,plan_visit_id,status'
                 ])
                 ->where('assigned_to', $user->id)
-                ->where('status', 'scheduled')
+                ->whereIn('status', ['pending', 'approved', 'scheduled'])
+                ->whereDoesntHave('realisasiVisit')
                 ->where('tanggal_visit', '>=', $today)
                 ->orderBy('tanggal_visit', 'asc')
                 ->limit(5)
                 ->get()
                 ->map(function($visit) {
-                    // Determine display status based on realisasi
-                    $displayStatus = 'scheduled';
-                    if ($visit->realisasiVisit) {
-                        if ($visit->realisasiVisit->status === 'done') {
-                            $displayStatus = 'completed';
-                        } elseif ($visit->realisasiVisit->status === 'missed') {
-                            $displayStatus = 'cancelled';
-                        }
-                    }
-                    
                     return [
                         'id' => $visit->id,
                         'customer' => [
@@ -120,7 +111,7 @@ class SalesController extends Controller
                         'waktu_visit' => $visit->waktu_visit,
                         'lokasi' => $visit->lokasi,
                         'tujuan' => $visit->tujuan,
-                        'status' => $displayStatus
+                        'status' => $visit->status
                     ];
                 });
             

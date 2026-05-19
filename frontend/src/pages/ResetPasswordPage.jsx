@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Key, Clock, AlertCircle, CheckCircle, Eye, EyeOff, Mail } from '@icons'
 import toast from 'react-hot-toast'
@@ -20,8 +20,13 @@ export default function ResetPasswordPage() {
   const [step, setStep] = useState(STEPS.TOKEN)
   const [email, setEmail] = useState(emailFromUrl)
   const [token, setToken] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const passwordRef = useRef(null)
+  const passwordConfirmationRef = useRef(null)
+  const [passwordStatus, setPasswordStatus] = useState({
+    hasPassword: false,
+    hasConfirmation: false,
+    matches: false,
+  })
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false)
@@ -51,15 +56,28 @@ export default function ResetPasswordPage() {
   }
 
   const validatePassword = () => {
-    if (!password || password.length < 6) {
+    const nextPassword = passwordRef.current?.value || ''
+    const nextConfirmation = passwordConfirmationRef.current?.value || ''
+
+    if (!nextPassword || nextPassword.length < 6) {
       toast.error('Password minimal 6 karakter')
       return false
     }
-    if (password !== passwordConfirmation) {
+    if (nextPassword !== nextConfirmation) {
       toast.error('Konfirmasi password tidak sama')
       return false
     }
     return true
+  }
+
+  const syncPasswordStatus = () => {
+    const nextPassword = passwordRef.current?.value || ''
+    const nextConfirmation = passwordConfirmationRef.current?.value || ''
+    setPasswordStatus({
+      hasPassword: nextPassword.length > 0,
+      hasConfirmation: nextConfirmation.length > 0,
+      matches: nextPassword.length > 0 && nextPassword === nextConfirmation,
+    })
   }
 
   const normalizedEmail = email.trim().toLowerCase()
@@ -104,16 +122,22 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
+    const nextPassword = passwordRef.current?.value || ''
+    const nextConfirmation = passwordConfirmationRef.current?.value || ''
+
     try {
       const response = await api.resetPassword({
         email: normalizedEmail,
         token: normalizedToken,
-        password,
-        password_confirmation: passwordConfirmation
+        password: nextPassword,
+        password_confirmation: nextConfirmation
       })
       
       if (response.success) {
         toast.success('Password berhasil direset!')
+        if (passwordRef.current) passwordRef.current.value = ''
+        if (passwordConfirmationRef.current) passwordConfirmationRef.current.value = ''
+        syncPasswordStatus()
         setStep(STEPS.SUCCESS)
         
         // Auto redirect to login after 3 seconds
@@ -267,8 +291,10 @@ export default function ResetPasswordPage() {
           label="Password Baru"
           type={showPassword ? 'text' : 'password'}
           placeholder="Masukkan password baru"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          ref={passwordRef}
+          name="new-password"
+          autoComplete="new-password"
+          onChange={syncPasswordStatus}
           required
           disabled={loading}
           rightIcon={
@@ -289,8 +315,10 @@ export default function ResetPasswordPage() {
           label="Konfirmasi Password"
           type={showPasswordConfirmation ? 'text' : 'password'}
           placeholder="Ulangi password baru"
-          value={passwordConfirmation}
-          onChange={(e) => setPasswordConfirmation(e.target.value)}
+          ref={passwordConfirmationRef}
+          name="confirm-new-password"
+          autoComplete="new-password"
+          onChange={syncPasswordStatus}
           required
           disabled={loading}
           rightIcon={
@@ -303,11 +331,11 @@ export default function ResetPasswordPage() {
             </button>
           }
         />
-        {password && passwordConfirmation && (
+        {passwordStatus.hasPassword && passwordStatus.hasConfirmation && (
           <p className={`text-xs mt-1 ${
-            password === passwordConfirmation ? 'text-green-600' : 'text-red-600'
+            passwordStatus.matches ? 'text-green-600' : 'text-red-600'
           }`}>
-            {password === passwordConfirmation ? 'Password cocok' : 'Password tidak cocok'}
+            {passwordStatus.matches ? 'Password cocok' : 'Password tidak cocok'}
           </p>
         )}
       </div>
@@ -315,7 +343,7 @@ export default function ResetPasswordPage() {
       <Button
         type="submit"
         loading={loading}
-        disabled={!password || !passwordConfirmation || password !== passwordConfirmation || loading}
+        disabled={!passwordStatus.hasPassword || !passwordStatus.hasConfirmation || !passwordStatus.matches || loading}
         className="w-full"
       >
         {loading ? 'Mereset Password...' : 'Reset Password'}

@@ -45,25 +45,26 @@
 <body>
     <div class="container">
         <h2>Reset Password Akun Anda</h2>
-        
+
         <p>Halo,</p>
-        
+
         <p>Kami menerima permintaan untuk mereset password akun Anda.</p>
-        
+
         <p>Gunakan kode berikut untuk melanjutkan proses reset password:</p>
-        
+
         <div class="code-box">
             <strong>Kode Verifikasi:</strong><br>
             <div class="code"><?php echo e($token); ?></div>
         </div>
-        
+
         <div class="warning">
-            <strong>⚠️ Penting:</strong> Kode ini hanya berlaku selama 10 menit.
+            <strong>Penting:</strong> Kode ini hanya berlaku selama 10 menit.
         </div>
-        
+
         <p>Jika Anda tidak merasa melakukan permintaan ini, abaikan email ini.</p>
-        
+
         <p>Terima kasih.</p>
     </div>
 </body>
-</html><?php /**PATH C:\laragon\www\kerjapraktek\backend\resources\views/emails/password-reset.blade.php ENDPATH**/ ?>
+</html>
+<?php /**PATH C:\laragon\www\kerjapraktek\backend\resources\views/emails/password-reset.blade.php ENDPATH**/ ?>

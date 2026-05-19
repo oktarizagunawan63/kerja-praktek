@@ -27,18 +27,31 @@ export default function SalesDashboard() {
   }, [my_visits])
 
   const statCards = [
-    { label: 'My Customers', value: stats.my_customers || 0, icon: Users, color: 'text-red-700', bg: 'bg-red-50' },
-    { label: 'Assigned Visits', value: stats.assigned_visits || 0, icon: Calendar, color: 'text-blue-700', bg: 'bg-blue-50' },
-    { label: 'Completed Visits', value: stats.completed_visits || 0, icon: CheckSquare, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-    { label: 'This Month Target', value: `${stats.monthly_completion || 0}%`, icon: Target, color: 'text-amber-700', bg: 'bg-amber-50' },
+    { label: 'Customer Saya', value: stats.my_customers || 0, icon: Users, color: 'text-red-700', bg: 'bg-red-50' },
+    { label: 'Visit Ditugaskan', value: stats.assigned_visits || 0, icon: Calendar, color: 'text-blue-700', bg: 'bg-blue-50' },
+    { label: 'Visit Terealisasi', value: stats.completed_visits || 0, icon: CheckSquare, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+    { label: 'Target Bulan Ini', value: `${stats.monthly_completion || 0}%`, icon: Target, color: 'text-amber-700', bg: 'bg-amber-50' },
   ]
 
   const quickActions = [
-    { label: 'My Customers', icon: Users, path: '/customers' },
-    { label: 'Plan Visits', icon: Calendar, path: '/plan-visits' },
-    { label: 'Complete Visit', icon: CheckSquare, path: '/realisasi-visits' },
-    { label: 'Attendance', icon: Clock, path: '/attendance' },
+    { label: 'Customer Saya', icon: Users, path: '/customers' },
+    { label: 'Lihat Plan Visit', icon: Calendar, path: '/plan-visits' },
+    { label: 'Mulai / Catat Visit', icon: CheckSquare, path: '/realisasi-visits' },
+    { label: 'Absen', icon: Clock, path: '/attendance' },
   ]
+
+  const getVisitStatusMeta = (status) => {
+    const map = {
+      pending: { label: 'Menunggu Approval', className: 'bg-amber-50 text-amber-700' },
+      approved: { label: 'Siap Visit', className: 'bg-blue-50 text-blue-700' },
+      scheduled: { label: 'Direncanakan', className: 'bg-blue-50 text-blue-700' },
+      ongoing: { label: 'Sedang Berjalan', className: 'bg-amber-50 text-amber-700' },
+      completed: { label: 'Selesai', className: 'bg-emerald-50 text-emerald-700' },
+      cancelled: { label: 'Terlewat', className: 'bg-red-50 text-red-700' },
+    }
+
+    return map[status] || { label: status || '-', className: 'bg-slate-100 text-slate-700' }
+  }
 
   useEffect(() => {
     fetchDashboardData()
@@ -105,7 +118,7 @@ export default function SalesDashboard() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-red-700">Sales Workspace</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-950">Sales Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Welcome back, {user?.name}. Pantau customer, visit, dan performa bulan ini.</p>
+            <p className="mt-1 text-sm text-slate-500">Halo, {user?.name}. Fokus utama: lihat jadwal, mulai visit, reschedule, atau catat unplanned visit.</p>
           </div>
         </div>
 
@@ -149,7 +162,7 @@ export default function SalesDashboard() {
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">My Customers</h2>
+                <h2 className="text-base font-semibold text-slate-950">Customer Saya</h2>
                 <p className="text-sm text-slate-500">Customer terbaru yang terhubung ke akun sales.</p>
               </div>
               <button onClick={() => navigate('/customers')} className="text-sm font-semibold text-red-700 hover:text-red-800">
@@ -185,11 +198,11 @@ export default function SalesDashboard() {
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">My Assigned Visits</h2>
-                <p className="text-sm text-slate-500">Visit terdekat yang perlu ditindaklanjuti.</p>
+                <h2 className="text-base font-semibold text-slate-950">Visit yang Harus Ditindaklanjuti</h2>
+                <p className="text-sm text-slate-500">Gunakan halaman realisasi untuk mulai visit, reschedule, atau tandai terlewat.</p>
               </div>
-              <button onClick={() => navigate('/plan-visits')} className="text-sm font-semibold text-red-700 hover:text-red-800">
-                View All
+              <button onClick={() => navigate('/realisasi-visits')} className="text-sm font-semibold text-red-700 hover:text-red-800">
+                Buka Aksi Visit
               </button>
             </div>
 
@@ -198,7 +211,7 @@ export default function SalesDashboard() {
                 uniqueVisits.map((visit) => (
                   <button
                     key={visit.id}
-                    onClick={() => navigate('/plan-visits')}
+                    onClick={() => navigate('/realisasi-visits')}
                     className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left transition-colors hover:border-red-200 hover:bg-red-50"
                   >
                     <div className="flex items-start gap-3">
@@ -216,16 +229,8 @@ export default function SalesDashboard() {
                               year: 'numeric'
                             })}
                           </span>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            visit.status === 'scheduled' || visit.status === 'approved' ? 'bg-blue-50 text-blue-700' :
-                            visit.status === 'ongoing' ? 'bg-amber-50 text-amber-700' :
-                            visit.status === 'completed' ? 'bg-emerald-50 text-emerald-700' :
-                            'bg-slate-100 text-slate-700'
-                          }`}>
-                            {visit.status === 'scheduled' || visit.status === 'approved' ? 'Direncanakan' :
-                             visit.status === 'ongoing' ? 'Sedang Berjalan' :
-                             visit.status === 'completed' ? 'Selesai' :
-                             visit.status}
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getVisitStatusMeta(visit.status).className}`}>
+                            {getVisitStatusMeta(visit.status).label}
                           </span>
                         </div>
                       </div>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Warning extends Model
 {
@@ -15,7 +16,9 @@ class Warning extends Model
         'message',
         'user_id',
         'plan_visit_id',
-        'is_read'
+        'is_read',
+        'priority',
+        'status',
     ];
 
     protected $casts = [
@@ -35,7 +38,13 @@ class Warning extends Model
     // Mark as read
     public function markAsRead()
     {
-        $this->update(['is_read' => true]);
+        $data = ['is_read' => true];
+
+        if (Schema::hasColumn('warnings', 'status')) {
+            $data['status'] = 'read';
+        }
+
+        $this->update($data);
     }
 
     // Create warning for missed visit

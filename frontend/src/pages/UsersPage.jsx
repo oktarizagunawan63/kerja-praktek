@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Plus, Trash2, UserCheck, X } from '@icons'
 import Modal from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
@@ -30,7 +30,7 @@ const divisionLabel = {
   engineering: 'Engineering'
 }
 
-const EMPTY = { name: '', email: '', password: '', role: '', division: '', assignedProjects: [] }
+const EMPTY = { name: '', email: '', role: '', division: '', assignedProjects: [] }
 
 export default function UsersPage() {
   const projects = useAppStore(state => state.projects)
@@ -40,6 +40,7 @@ export default function UsersPage() {
   const [assignOpen, setAssignOpen] = useState(false)
   const [form, setForm]         = useState(EMPTY)
   const [selUser, setSelUser]   = useState(null)
+  const passwordRef = useRef(null)
 
   // Fetch users from API
   useEffect(() => {
@@ -67,7 +68,8 @@ export default function UsersPage() {
 
   const handleAdd = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.email || !form.password || !form.division || !form.role) { 
+    const password = passwordRef.current?.value || ''
+    if (!form.name || !form.email || !password || !form.division || !form.role) { 
       toast.error('Semua field wajib diisi')
       return 
     }
@@ -79,6 +81,7 @@ export default function UsersPage() {
     try {
       const payload = {
         ...form,
+        password,
         division: form.division === 'management' ? null : form.division
       }
 
@@ -87,6 +90,7 @@ export default function UsersPage() {
         toast.success('User berhasil ditambahkan')
         setOpen(false)
         setForm(EMPTY)
+        if (passwordRef.current) passwordRef.current.value = ''
         fetchUsers() // Refresh the list
       } else {
         console.error('Unexpected create response:', response)
@@ -296,7 +300,7 @@ export default function UsersPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1">Password</label>
-            <input type="password" required minLength="6" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+            <input ref={passwordRef} type="password" name="new-user-password" autoComplete="new-password" required minLength="6"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Minimal 6 karakter"/>
           </div>
           <div>

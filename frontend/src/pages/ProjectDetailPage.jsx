@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Plus, FileText, Image, Trash2,
@@ -456,7 +456,10 @@ export default function ProjectDetailPage() {
           <CheckCircle size={18} className="text-green-600 shrink-0"/>
           <div>
             <p className="text-sm font-semibold text-green-800">Proyek Telah Selesai</p>
-            <p className="text-xs text-green-600">Selesai pada {project.completedAt ? new Date(project.completedAt).toLocaleDateString('id-ID') : '-'}</p>
+            <p className="text-xs text-green-600">
+              Selesai pada {project.completedAt ? new Date(project.completedAt).toLocaleDateString('id-ID') : '-'}
+              {canEditRab ? ' - RAB masih bisa dicatat atau dikoreksi.' : ''}
+            </p>
           </div>
         </div>
       )}
@@ -476,7 +479,7 @@ export default function ProjectDetailPage() {
           <p className="text-xs text-gray-400 mt-0.5">
             {isRabOver ? `Over ${formatRupiah(Math.abs(rabRemaining))}` : `Sisa ${formatRupiah(rabRemaining)}`}
           </p>
-          {!isCompleted && canEditRab && (
+          {canEditRab && (
                     <button onClick={() => { 
                 setRabMode('add')
                 setRabInput('')
@@ -754,7 +757,7 @@ export default function ProjectDetailPage() {
                       Total terpakai {formatRupiah(rabUsed)} dari RAB {formatRupiah(rabTotal)}
                     </p>
                   </div>
-                  {!isCompleted && canEditRab && (
+                  {canEditRab && (
                     <button onClick={() => {
                         setRabMode('add')
                         setRabInput('')
@@ -1385,12 +1388,14 @@ export default function ProjectDetailPage() {
 function NewEngineerInline({ onCreated }) {
   const { addUser } = useUserStore()
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [form, setForm] = useState({ name: '', email: '' })
+  const passwordRef = useRef(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.email || !form.password) return
+    const password = passwordRef.current?.value || ''
+    if (!form.name || !form.email || !password) return
     
     setLoading(true)
     try {
@@ -1407,7 +1412,7 @@ function NewEngineerInline({ onCreated }) {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
-          password: form.password,
+          password,
           role: 'engineer',
           division: 'engineering'
         })
@@ -1425,7 +1430,8 @@ function NewEngineerInline({ onCreated }) {
         
         // Reset form
         setOpen(false)
-        setForm({ name: '', email: '', password: '' })
+        setForm({ name: '', email: '' })
+        if (passwordRef.current) passwordRef.current.value = ''
         
         toast.success(`Engineer ${form.name} berhasil dibuat!`)
       } else {
@@ -1456,7 +1462,7 @@ function NewEngineerInline({ onCreated }) {
       <input required type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))}
         className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
         placeholder="Email..." disabled={loading}/>
-      <input required type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))}
+      <input ref={passwordRef} required type="password" name="new-engineer-password" autoComplete="new-password"
         className="w-full px-3 py-1.5 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
         placeholder="Password..." disabled={loading}/>
       <div className="flex gap-2 pt-1">

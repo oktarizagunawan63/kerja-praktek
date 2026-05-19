@@ -355,18 +355,27 @@ export default function ProjectProgressUpdateModal({
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+              <p className="text-sm font-semibold text-blue-800">Isi progress per pekerjaan</p>
+              <div className="mt-2 grid gap-2 text-xs text-blue-700 md:grid-cols-3">
+                <div className="rounded-md bg-white/70 px-3 py-2">1. Tulis nama pekerjaan</div>
+                <div className="rounded-md bg-white/70 px-3 py-2">2. Pilih material yang dipasang</div>
+                <div className="rounded-md bg-white/70 px-3 py-2">3. Isi qty dan upload foto</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
+              <label className="block text-sm font-semibold text-gray-800">
                 Plan Pekerjaan
               </label>
               <button
                 type="button"
                 onClick={addPlan}
-                className="inline-flex items-center gap-1 text-sm text-[#237043] hover:text-[#5a9844]"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#237043]/20 bg-[#237043]/5 px-3 py-2 text-sm font-medium text-[#237043] hover:bg-[#237043]/10"
                 disabled={submitting}
               >
                 <Plus size={14} />
-                Tambah Plan
+                Tambah Plan Pekerjaan Lain
               </button>
             </div>
 
@@ -376,10 +385,26 @@ export default function ProjectProgressUpdateModal({
 
                 return (
                   <div key={plan.id || planIndex} className="border border-gray-200 rounded-lg p-3 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Plan {planIndex + 1}</p>
+                        <p className="text-xs text-gray-500">Satu plan bisa berisi satu atau beberapa material.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePlan(planIndex)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-500"
+                        disabled={submitting}
+                      >
+                        <Trash2 size={14} />
+                        Hapus Plan
+                      </button>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">
-                          Nama Plan
+                          Nama pekerjaan / aktivitas
                         </label>
                         <div className="relative">
                           <Target size={15} className="absolute left-3 top-3 text-gray-400" />
@@ -387,22 +412,11 @@ export default function ProjectProgressUpdateModal({
                             value={plan.name}
                             onChange={(e) => handlePlanChange(planIndex, 'name', e.target.value)}
                             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#de168c] focus:border-[#de168c] resize-none"
-                            placeholder={planIndex === 0 ? 'Contoh: Menarik kabel dari panel utama ke ruang server' : 'Contoh: Penempatan router dan konfigurasi jaringan'}
+                            placeholder={planIndex === 0 ? 'Contoh: Tarik kabel dari panel utama ke ruang server' : 'Contoh: Pasang router dan konfigurasi jaringan'}
                             rows={2}
                             disabled={submitting}
                           />
                         </div>
-                      </div>
-
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          onClick={() => removePlan(planIndex)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
-                          disabled={submitting}
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </div>
 
@@ -422,7 +436,7 @@ export default function ProjectProgressUpdateModal({
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-xs font-medium text-gray-600">
-                          Barang Plan
+                          Material yang dipasang
                         </label>
                         <div className="flex items-center gap-2">
                           <button
@@ -432,7 +446,7 @@ export default function ProjectProgressUpdateModal({
                             disabled={submitting || loadingMaterials}
                           >
                             <Plus size={13} />
-                            Material Baru
+                            Buat Material Baru
                           </button>
                           <button
                             type="button"
@@ -441,7 +455,7 @@ export default function ProjectProgressUpdateModal({
                             disabled={submitting || loadingMaterials}
                           >
                             <Plus size={13} />
-                            Tambah Barang
+                            Tambah Material di Plan Ini
                           </button>
                         </div>
                       </div>
@@ -560,6 +574,16 @@ export default function ProjectProgressUpdateModal({
                 )
               })}
             </div>
+
+            <button
+              type="button"
+              onClick={addPlan}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-3 text-sm font-medium text-[#237043] hover:border-[#237043] hover:bg-[#237043]/5"
+              disabled={submitting}
+            >
+              <Plus size={15} />
+              Tambah Plan Pekerjaan Lain
+            </button>
           </div>
 
           <div>

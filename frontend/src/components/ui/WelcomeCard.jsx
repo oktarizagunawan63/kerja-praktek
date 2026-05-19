@@ -77,56 +77,56 @@ export default function WelcomeCard({ user, onDismiss }) {
   const welcome = getRoleWelcomeMessage(user?.role)
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6 relative">
+    <div className="relative mb-4 min-w-0 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:mb-6 sm:p-6">
       <button
         onClick={handleDismiss}
-        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        className="absolute right-3 top-3 text-gray-400 transition-colors hover:text-gray-600 sm:right-4 sm:top-4"
       >
-        <X size={20} />
+        <X size={18} />
       </button>
 
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-blue-600" />
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="shrink-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 sm:h-12 sm:w-12">
+            <CheckCircle className="h-5 w-5 text-blue-600 sm:h-6 sm:w-6" />
           </div>
         </div>
 
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="min-w-0 flex-1 pr-5 sm:pr-0">
+          <h3 className="mb-2 text-base font-semibold leading-snug text-gray-900 sm:text-lg">
             {welcome.title}
           </h3>
           
-          <p className="text-gray-600 mb-4">
+          <p className="mb-4 text-sm leading-relaxed text-gray-600 sm:text-base">
             Halo <strong>{user?.name}</strong>! {welcome.message}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
             {welcome.features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                <span>{feature}</span>
+              <div key={index} className="flex min-w-0 items-start gap-2 text-sm text-gray-700">
+                <CheckCircle size={16} className="mt-0.5 shrink-0 text-green-500" />
+                <span className="min-w-0 leading-relaxed">{feature}</span>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <Users size={16} />
-              <span>Role: {user?.role}</span>
+          <div className="flex flex-col gap-2 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <Users size={16} className="shrink-0" />
+              <span className="min-w-0 break-words">Role: {user?.role}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <FolderOpen size={16} />
+            <div className="flex min-w-0 items-center gap-2">
+              <FolderOpen size={16} className="shrink-0" />
               <span>Status: Aktif</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Bell size={16} />
+            <div className="flex min-w-0 items-center gap-2">
+              <Bell size={16} className="shrink-0" />
               <span>Notifikasi: Aktif</span>
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-blue-200">
-            <p className="text-xs text-gray-500">
+          <div className="mt-4 border-t border-blue-200 pt-4">
+            <p className="text-xs leading-relaxed text-gray-500">
             <strong>Tips:</strong> Jelajahi menu di sidebar untuk memulai. 
               Jika ada pertanyaan, hubungi administrator sistem.
             </p>

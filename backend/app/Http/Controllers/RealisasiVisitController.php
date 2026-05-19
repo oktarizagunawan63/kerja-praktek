@@ -6,9 +6,11 @@ use App\Models\RealisasiVisit;
 use App\Models\PlanVisit;
 use App\Models\ProjectNotification;
 use App\Models\User;
+use App\Models\Warning;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 
 // Helper: kirim notifikasi visit
 function sendVisitNotif($userId, $type, $title, $message) {
@@ -39,8 +41,8 @@ class RealisasiVisitController extends Controller
     }
 
     /**
-     * Get all completed visits for Riwayat Visit tab
-     * Returns ALL realisasi visits with status = done (both planned and unplanned)
+     * Get all realized visits for Riwayat Visit tab
+     * Returns completed and missed realisasi visits.
      */
     public function index(Request $request)
     {
@@ -58,9 +60,9 @@ class RealisasiVisitController extends Controller
                 ], 403);
             }
             
-            // Get ALL completed visits (planned + unplanned) for Riwayat Visit
+            // Get ALL realized visits (planned + approved unplanned) for Riwayat Visit
             $query = RealisasiVisit::with(['planVisit.customer', 'directCustomer', 'visitor'])
-                ->where('status', 'done')
+                ->whereIn('status', ['done', 'missed'])
                 ->where(function ($q) {
                     $q->where(function ($planned) {
                         $planned->where(function ($type) {
@@ -70,6 +72,7 @@ class RealisasiVisitController extends Controller
                             ->whereHas('planVisit.customer');
                     })->orWhere(function ($unplanned) {
                         $unplanned->where('type', 'unplanned')
+                            ->where('approval_status', 'approved')
                             ->whereHas('directCustomer');
                     });
                 });
@@ -105,7 +108,7 @@ class RealisasiVisitController extends Controller
     }
 
     /**
-     * Get only unplanned visits that are approved for My Unplanned Visits tab
+     * Get unplanned visits created by the current user/team, including approval status.
      */
     public function getMyUnplannedVisits(Request $request)
     {
@@ -114,10 +117,9 @@ class RealisasiVisitController extends Controller
 
             $user = Auth::user();
             
-            // Get ONLY unplanned visits that are approved and done
+            // Show all approval states so sales can track pending/rejected submissions.
             $query = RealisasiVisit::with(['directCustomer', 'visitor'])
                 ->where('type', 'unplanned')
-                ->where('approval_status', 'approved')
                 ->where('status', 'done');
             
             // Role-based filtering
@@ -350,11 +352,35 @@ class RealisasiVisitController extends Controller
             
             $realisasiVisit = RealisasiVisit::create([
                 'plan_visit_id' => $planVisitId,
+                'type'          => 'planned',
                 'status'        => 'missed',
                 'visit_time'    => null,
                 'notes'         => 'Visit marked as missed',
                 'visited_by'    => Auth::id(),
             ]);
+
+            $warningData = [
+                'title' => 'Visit Terlewat',
+                'message' => "Visit ke " . ($planVisit->customer->name ?? 'customer') . " pada {$planVisit->tanggal_visit} ditandai terlewat.",
+                'is_read' => false,
+            ];
+
+            if (Schema::hasColumn('warnings', 'priority')) {
+                $warningData['priority'] = 'high';
+            }
+
+            if (Schema::hasColumn('warnings', 'status')) {
+                $warningData['status'] = 'unread';
+            }
+
+            Warning::updateOrCreate(
+                [
+                    'type' => 'missed_visit',
+                    'plan_visit_id' => $planVisit->id,
+                    'user_id' => $planVisit->assigned_to ?: Auth::id(),
+                ],
+                $warningData
+            );
 
             // NOTIFIKASI: beri tahu Sales dan Sales Manager
             $customerName = $planVisit->customer->name ?? 'Customer';

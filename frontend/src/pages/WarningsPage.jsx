@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, CheckCircle, Clock, User, Trash2, Filter } from '@icons'
+import { AlertTriangle, CheckCircle, Clock, User, Trash2, Filter, ArrowRight } from '@icons'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
 import '../styles/responsive-global.css'
 
 export default function WarningsPage() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [warnings, setWarnings] = useState([])
   const [warningStats, setWarningStats] = useState({})
   const [loading, setLoading] = useState(true)
@@ -39,7 +39,10 @@ export default function WarningsPage() {
       
       // Fetch warning stats
       const statsResponse = await api.getWarningStats()
-      setWarningStats(statsResponse.data || {})
+      setWarningStats({
+        ...(warningsResponse.summary || {}),
+        ...(statsResponse.data || {})
+      })
       
     } catch (error) {
       toast.error('Gagal memuat data warnings')
@@ -108,6 +111,23 @@ export default function WarningsPage() {
     return <Clock className="text-yellow-500" size={16} />
   }
 
+  const getWarningActionLabel = (warning) => {
+    const type = warning.type || ''
+    if (type === 'missed_visit') return 'Cek riwayat visit'
+    if (type === 'late_attendance' || type === 'no_attendance') return 'Cek attendance'
+    return 'Lihat detail'
+  }
+
+  const handleOpenRelatedAction = (warning) => {
+    const type = warning.type || ''
+    if (type === 'late_attendance' || type === 'no_attendance') {
+      navigate('/attendance')
+      return
+    }
+
+    navigate('/realisasi-visits')
+  }
+
   const columns = [
     {
       key: 'status',
@@ -123,13 +143,18 @@ export default function WarningsPage() {
       key: 'title',
       label: 'Warning',
       render: (warning) => (
-        <div>
+        <div className="min-w-[260px] max-w-xl">
           <p className={`font-medium ${warning.is_read ? 'text-gray-600' : 'text-gray-900'}`}>
             {warning.title}
           </p>
           <p className={`text-sm ${warning.is_read ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
             {warning.message}
           </p>
+          {warning.plan_visit?.customer?.name && (
+            <p className="mt-1 text-xs font-medium text-amber-700">
+              Customer: {warning.plan_visit.customer.name}
+            </p>
+          )}
         </div>
       )
     },
@@ -165,22 +190,33 @@ export default function WarningsPage() {
       label: 'Aksi',
       render: (warning) => (
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenRelatedAction(warning)}
+            className="inline-flex items-center gap-1 rounded-lg border border-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+            title={getWarningActionLabel(warning)}
+          >
+            <ArrowRight size={13} />
+            {getWarningActionLabel(warning)}
+          </button>
           {!warning.is_read && (
             <button
               onClick={() => handleMarkAsRead(warning)}
-              className="p-1 text-green-600 hover:bg-green-50 rounded"
+              className="inline-flex items-center gap-1 rounded-lg border border-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
               title="Tandai sebagai dibaca"
             >
               <CheckCircle size={14} />
+              Selesai dicek
             </button>
           )}
-          <button
-            onClick={() => handleDeleteWarning(warning)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Hapus"
-          >
-            <Trash2 size={14} />
-          </button>
+          {user?.role === 'administrator' && (
+            <button
+              onClick={() => handleDeleteWarning(warning)}
+              className="p-1 text-red-600 hover:bg-red-50 rounded"
+              title="Hapus"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       )
     }
@@ -204,8 +240,8 @@ export default function WarningsPage() {
       {/* Header */}
       <div className="header-responsive">
         <div>
-          <h1 className="header-title">Warning Management</h1>
-          <p className="header-subtitle">Kelola warning dan notifikasi sistem</p>
+          <h1 className="header-title">Pusat Warning</h1>
+          <p className="header-subtitle">Daftar masalah operasional yang perlu dicek, seperti visit terlewat atau absensi bermasalah.</p>
         </div>
         
         <button 
@@ -213,9 +249,21 @@ export default function WarningsPage() {
           className="btn-responsive primary"
         >
           <CheckCircle size={16} />
-          <span className="mobile-hidden">Mark All as Read</span>
-          <span className="desktop-hidden tablet-hidden">Mark All</span>
+          <span className="mobile-hidden">Tandai Semua Sudah Dicek</span>
+          <span className="desktop-hidden tablet-hidden">Selesai</span>
         </button>
+      </div>
+
+      <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 shrink-0 text-amber-700" size={20} />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Warning dipakai untuk hal yang perlu tindakan.</p>
+            <p className="mt-1 text-sm text-amber-800">
+              Buka aksi terkait dulu, lalu tandai warning sebagai sudah dicek supaya daftar tetap bersih.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -223,7 +271,7 @@ export default function WarningsPage() {
         <div className="stats-card" style={{ borderLeft: '4px solid #de168c' }}>
           <div className="stats-card-header">
             <div>
-              <p className="stats-card-label">Total Warnings</p>
+              <p className="stats-card-label">Total Warning</p>
               <p className="stats-card-value" style={{ color: '#de168c' }}>{warningStats.total || 0}</p>
             </div>
             <div className="stats-card-icon" style={{ background: '#de168c' }}>
@@ -235,7 +283,7 @@ export default function WarningsPage() {
         <div className="stats-card" style={{ borderLeft: '4px solid #8ac04a' }}>
           <div className="stats-card-header">
             <div>
-              <p className="stats-card-label">Unread</p>
+              <p className="stats-card-label">Perlu Dicek</p>
               <p className="stats-card-value" style={{ color: '#8ac04a' }}>{warningStats.unread || 0}</p>
             </div>
             <div className="stats-card-icon" style={{ background: '#8ac04a' }}>
@@ -247,7 +295,7 @@ export default function WarningsPage() {
         <div className="stats-card" style={{ borderLeft: '4px solid #5a9844' }}>
           <div className="stats-card-header">
             <div>
-              <p className="stats-card-label">Read</p>
+              <p className="stats-card-label">Sudah Dicek</p>
               <p className="stats-card-value" style={{ color: '#5a9844' }}>{warningStats.read || 0}</p>
             </div>
             <div className="stats-card-icon" style={{ background: '#5a9844' }}>
@@ -259,7 +307,7 @@ export default function WarningsPage() {
         <div className="stats-card" style={{ borderLeft: '4px solid #237043' }}>
           <div className="stats-card-header">
             <div>
-              <p className="stats-card-label">High Priority</p>
+              <p className="stats-card-label">Prioritas Tinggi</p>
               <p className="stats-card-value" style={{ color: '#237043' }}>{warningStats.high_priority || 0}</p>
             </div>
             <div className="stats-card-icon" style={{ background: '#237043' }}>
@@ -273,7 +321,7 @@ export default function WarningsPage() {
       <div className="filter-panel">
         <h2 className="filter-title">
           <Filter size={18} />
-          Filter Warnings
+          Filter Warning
         </h2>
         
         <div className="form-row-responsive sm-2 md-3">
@@ -287,8 +335,8 @@ export default function WarningsPage() {
               className="input-responsive"
             >
               <option value="all">Semua</option>
-              <option value="unread">Belum Dibaca</option>
-              <option value="read">Sudah Dibaca</option>
+              <option value="unread">Perlu Dicek</option>
+              <option value="read">Sudah Dicek</option>
             </select>
           </div>
           

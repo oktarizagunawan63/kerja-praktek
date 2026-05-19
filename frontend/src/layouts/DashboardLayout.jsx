@@ -58,7 +58,7 @@ export default function DashboardLayout() {
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="app-content flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-6 lg:py-6">
+        <main className="app-content flex-1 overflow-y-auto px-2.5 py-3 sm:px-4 sm:py-5 lg:px-6 lg:py-6">
           <Outlet />
         </main>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
@@ -6,7 +6,8 @@ import { api } from '../lib/api'
 import amsarLogo from '../assets/icon.ico?url'
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [email, setEmail] = useState('')
+  const passwordRef = useRef(null)
   const [loading, setLoading] = useState(false)
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
@@ -14,12 +15,17 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    const password = passwordRef.current?.value || ''
+
     try {
       const res = await api.login({
-        email: form.email.trim(),
-        password: form.password,
+        email: email.trim(),
+        password,
       })
       setAuth(res.token, res.user)
+      if (passwordRef.current) {
+        passwordRef.current.value = ''
+      }
 
       const redirectRole = String(res.user.role || '').toLowerCase()
       if (redirectRole === 'sales_manager') {
@@ -36,6 +42,9 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(err.message || 'Email atau password salah')
     } finally {
+      if (passwordRef.current) {
+        passwordRef.current.value = ''
+      }
       setLoading(false)
     }
   }
@@ -59,9 +68,11 @@ export default function LoginPage() {
             <label className="mb-1.5 block text-sm font-medium text-[#237043]">Email</label>
             <input
               type="email"
+              name="email"
+              autoComplete="username"
               required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-[#a4ca9a] bg-[#b7cdc0]/20 px-4 py-2.5 text-sm text-[#237043] placeholder:text-[#5a9844] focus:border-[#de168c] focus:outline-none focus:ring-2 focus:ring-[#de168c]/35"
               placeholder="nama@ptamsar.co.id"
             />
@@ -69,10 +80,11 @@ export default function LoginPage() {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[#237043]">Password</label>
             <input
+              ref={passwordRef}
               type="password"
+              name="password"
+              autoComplete="current-password"
               required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full rounded-lg border border-[#a4ca9a] bg-[#b7cdc0]/20 px-4 py-2.5 text-sm text-[#237043] placeholder:text-[#5a9844] focus:border-[#de168c] focus:outline-none focus:ring-2 focus:ring-[#de168c]/35"
               placeholder="Password Anda"
             />

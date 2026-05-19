@@ -222,6 +222,8 @@ export const api = {
   getWarningStats: () => request('/warnings/stats'),
   createWarning: (data) => request('/warnings', { method: 'POST', body: JSON.stringify(data) }),
   updateWarning: (id, data) => request(`/warnings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  markWarningRead: (id) => request(`/warnings/${id}/read`, { method: 'PUT' }),
+  markAllWarningsRead: () => request('/warnings/mark-all-read', { method: 'PUT' }),
   deleteWarning: (id) => request(`/warnings/${id}`, { method: 'DELETE' }),
   
   // Visit Reports

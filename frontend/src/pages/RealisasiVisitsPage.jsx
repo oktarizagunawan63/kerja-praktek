@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X } from '@icons'
+import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X, Calendar } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
@@ -63,6 +63,13 @@ const getCurrentLocation = () => {
   })
 }
 
+const VISIT_OUTCOME_META = {
+  closed: { label: 'Closed / Deal', className: 'bg-green-100 text-green-700' },
+  follow_up: { label: 'Follow-up', className: 'bg-blue-100 text-blue-700' },
+  not_interested: { label: 'Tidak Tertarik', className: 'bg-red-100 text-red-700' },
+  rescheduled: { label: 'Dijadwal Ulang', className: 'bg-amber-100 text-amber-700' },
+}
+
 export default function RealisasiVisitsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -76,6 +83,8 @@ export default function RealisasiVisitsPage() {
   const [showVisitForm, setShowVisitForm] = useState(false)
   const [showUnplannedForm, setShowUnplannedForm] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState(null)
+  const [rescheduleVisit, setRescheduleVisit] = useState(null)
+  const [rescheduleForm, setRescheduleForm] = useState({ tanggal_visit: '', waktu_visit: '', catatan: '' })
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [currentLocation, setCurrentLocation] = useState(null)
@@ -299,7 +308,7 @@ export default function RealisasiVisitsPage() {
   }
 
   const handleMarkAsMissed = async (visit) => {
-    if (!window.confirm(`Tandai visit ke ${visit.customer?.name} sebagai terlewat?`)) return
+    if (!window.confirm(`Tandai visit ke ${visit.customer?.name} sebagai terlewat? Visit akan ditutup sebagai tidak terlaksana dan tidak muncul lagi di pending visit.`)) return
     
     try {
       // visit.id is the plan_visit_id from pending visits
@@ -337,7 +346,7 @@ export default function RealisasiVisitsPage() {
     }
   }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, type = 'planned') => {
     const badges = {
       done: 'bg-green-100 text-green-700',
       missed: 'bg-red-100 text-red-700',
@@ -345,7 +354,7 @@ export default function RealisasiVisitsPage() {
     }
     
     const labels = {
-      done: 'Selesai',
+      done: type === 'unplanned' ? 'Terealisasi' : 'Selesai',
       missed: 'Terlewat',
       pending: 'Pending'
     }
@@ -353,6 +362,63 @@ export default function RealisasiVisitsPage() {
     return (
       <span className={`text-xs px-2 py-1 rounded-full ${badges[status] || badges.pending}`}>
         {labels[status] || status}
+      </span>
+    )
+  }
+
+  const openRescheduleModal = (visit) => {
+    setRescheduleVisit(visit)
+    setRescheduleForm({
+      tanggal_visit: visit.tanggal_visit || new Date().toISOString().split('T')[0],
+      waktu_visit: visit.waktu_visit || '',
+      catatan: visit.catatan || '',
+    })
+  }
+
+  const handleRescheduleVisit = async (e) => {
+    e.preventDefault()
+
+    if (!rescheduleVisit) return
+    if (!rescheduleForm.tanggal_visit) {
+      toast.error('Tanggal baru wajib diisi')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const existingNote = rescheduleVisit.catatan || ''
+      const rescheduleNote = `Reschedule dari ${rescheduleVisit.tanggal_visit || '-'}${rescheduleVisit.waktu_visit ? ` ${rescheduleVisit.waktu_visit}` : ''}`
+      const nextNote = [existingNote, rescheduleNote, rescheduleForm.catatan]
+        .map(value => String(value || '').trim())
+        .filter(Boolean)
+        .join('\n')
+
+      await api.updatePlanVisit(rescheduleVisit.id, {
+        tanggal_visit: rescheduleForm.tanggal_visit,
+        waktu_visit: rescheduleForm.waktu_visit,
+        catatan: nextNote,
+      })
+
+      toast.success('Jadwal visit berhasil di-reschedule')
+      setRescheduleVisit(null)
+      setRescheduleForm({ tanggal_visit: '', waktu_visit: '', catatan: '' })
+      fetchData()
+    } catch (error) {
+      toast.error(error.message || 'Gagal reschedule visit')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const getOutcomeBadge = (outcome) => {
+    const meta = VISIT_OUTCOME_META[outcome] || {
+      label: outcome || '-',
+      className: 'bg-gray-100 text-gray-700',
+    }
+
+    return (
+      <span className={`text-xs px-2 py-1 rounded-full font-medium ${meta.className}`}>
+        {meta.label}
       </span>
     )
   }
@@ -424,6 +490,15 @@ export default function RealisasiVisitsPage() {
       label: 'Aksi',
       render: (visit) => (
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => openRescheduleModal(visit)}
+            className="text-amber-700 border-amber-200 hover:bg-amber-50"
+          >
+            <Calendar size={14} />
+            Reschedule
+          </Button>
           <Button
             size="sm"
             onClick={() => handleStartVisit(visit)}
@@ -577,8 +652,11 @@ export default function RealisasiVisitsPage() {
       key: 'status',
       label: 'Status',
       render: (realisasi) => (
-        <div className="min-w-[80px]">
-          {getStatusBadge(realisasi.status)}
+        <div className="flex min-w-[110px] flex-col gap-1">
+          {realisasi.type === 'unplanned' && realisasi.visit_outcome
+            ? getOutcomeBadge(realisasi.visit_outcome)
+            : getStatusBadge(realisasi.status, realisasi.type)}
+          {realisasi.type === 'unplanned' && getStatusBadge(realisasi.status, realisasi.type)}
         </div>
       )
     }
@@ -836,23 +914,8 @@ export default function RealisasiVisitsPage() {
                       <p className="font-semibold text-gray-900">{visit.customer_name}</p>
                       <p className="text-sm text-gray-600">{visit.customer_company}</p>
                     </div>
-                    <div className="flex gap-2">
-                      {/* Completion Status Badge */}
-                      {visit.status === 'done' && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-                          Selesai
-                        </span>
-                      )}
-                      {visit.status === 'missed' && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                          Terlewat
-                        </span>
-                      )}
-                      {visit.status === 'pending' && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
-                          Belum Visit
-                        </span>
-                      )}
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {visit.visit_outcome && getOutcomeBadge(visit.visit_outcome)}
                       {/* Approval Status Badge */}
                       <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
                         visit.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
@@ -869,7 +932,7 @@ export default function RealisasiVisitsPage() {
                     <p><span className="font-medium">Date:</span> {new Date(visit.visit_date).toLocaleDateString('id-ID')}</p>
                     <p><span className="font-medium">Purpose:</span> {visit.visit_purpose}</p>
                     {visit.visit_outcome && (
-                      <p><span className="font-medium">Outcome:</span> {visit.visit_outcome}</p>
+                      <p><span className="font-medium">Outcome:</span> {VISIT_OUTCOME_META[visit.visit_outcome]?.label || visit.visit_outcome}</p>
                     )}
                   </div>
                   {visit.approval_status === 'rejected' && visit.rejection_reason && (
@@ -907,6 +970,78 @@ export default function RealisasiVisitsPage() {
           />
         </div>
       </div>
+      )}
+
+      {/* Visit Form Modal */}
+      {rescheduleVisit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Reschedule Visit</h2>
+                <p className="text-sm text-gray-500">{rescheduleVisit.customer?.name || 'Customer'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRescheduleVisit(null)}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRescheduleVisit} className="space-y-4">
+              <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-xs text-amber-700">
+                Gunakan ini kalau customer minta jadwal ulang. Visit tetap berada di pending sampai benar-benar dilakukan atau ditandai terlewat.
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tanggal Baru <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={rescheduleForm.tanggal_visit}
+                    onChange={(event) => setRescheduleForm(prev => ({ ...prev, tanggal_visit: event.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Jam Baru</label>
+                  <input
+                    type="time"
+                    value={rescheduleForm.waktu_visit}
+                    onChange={(event) => setRescheduleForm(prev => ({ ...prev, waktu_visit: event.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Reschedule</label>
+                <textarea
+                  value={rescheduleForm.catatan}
+                  onChange={(event) => setRescheduleForm(prev => ({ ...prev, catatan: event.target.value }))}
+                  rows={3}
+                  className="w-full resize-none px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Contoh: customer minta diundur karena meeting internal"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setRescheduleVisit(null)} disabled={submitting}>
+                  Batal
+                </Button>
+                <Button type="submit" disabled={submitting} className="bg-amber-600 hover:bg-amber-700">
+                  {submitting ? 'Menyimpan...' : 'Simpan Jadwal Baru'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Visit Form Modal */}
@@ -1427,7 +1562,7 @@ export default function RealisasiVisitsPage() {
                       onChange={(e) => setUnplannedFormData(prev => ({ ...prev, visit_outcome: e.target.value }))}
                       className="text-yellow-600"
                     />
-                    <span className="text-sm font-medium">Rescheduled</span>
+                    <span className="text-sm font-medium">Rescheduled - kunjungan dicatat, perlu jadwal ulang</span>
                   </label>
                 </div>
               </div>

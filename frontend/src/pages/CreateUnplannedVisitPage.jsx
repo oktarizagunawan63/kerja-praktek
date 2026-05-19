@@ -381,7 +381,7 @@ export default function CreateUnplannedVisitPage() {
                 className="mt-1" />
               <div className="flex-1">
                 <p className="font-medium text-gray-900">Rescheduled</p>
-                <p className="text-sm text-gray-600">Pertemuan dijadwalkan ulang</p>
+                <p className="text-sm text-gray-600">Kunjungan hari ini sudah dicatat, hasilnya perlu jadwal ulang</p>
               </div>
             </label>
           </div>

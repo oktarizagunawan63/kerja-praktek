@@ -119,6 +119,7 @@ class VisitReportController extends Controller
                                 ->whereNotNull('report_plan_customers.id');
                         })->orWhere(function ($unplanned) {
                             $unplanned->where('realisasi_visits.type', 'unplanned')
+                                ->where('realisasi_visits.approval_status', 'approved')
                                 ->whereNotNull('report_direct_customers.id');
                         });
                     });

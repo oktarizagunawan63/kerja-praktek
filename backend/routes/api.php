@@ -133,8 +133,10 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::prefix('warnings')->group(function () {
         Route::get('/', [WarningController::class, 'index']);
         Route::get('/stats', [WarningController::class, 'getWarningStats']);
+        Route::put('/mark-all-read', [WarningController::class, 'markAllAsRead']);
         Route::post('/', [WarningController::class, 'store']);
         Route::get('/{id}', [WarningController::class, 'show']);
+        Route::put('/{id}/read', [WarningController::class, 'markAsRead']);
         Route::put('/{id}', [WarningController::class, 'update']);
         Route::delete('/{id}', [WarningController::class, 'destroy']);
     });

@@ -479,8 +479,8 @@ body,
 /* Responsive spacing adjustments */
 @media (max-width: 640px) {
   .app-content {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 10px;
+    padding-right: 10px;
     padding-bottom: 18px;
   }
 

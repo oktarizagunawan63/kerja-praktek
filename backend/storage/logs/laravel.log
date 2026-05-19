@@ -3570,3 +3570,58 @@ error:0A000086:SSL routines::certificate verify failed
 [2026-05-18 15:48:26] local.INFO: Password reset OTP sent to: timothilois007@gmail.com  
 [2026-05-18 15:50:16] local.INFO: Password reset OTP sent to: timothilois007@gmail.com  
 [2026-05-18 15:52:54] local.INFO: Password successfully reset for user: timothilois007@gmail.com  
+[2026-05-20 02:44:59] local.INFO: Project store data: {"name":"pak heru","location":"Jalan Cluster Centro Havana No. BLOK MA\/8, Tangerang Selatan, Banten, 15310","pm":"Oktariza Gunawan","phone":"oktarizagunawan63@gmail.com","deadline":"2026-10-27","rab":3500000,"status":"on_track"}  
+[2026-05-20 02:45:03] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:45:03] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 02:45:03] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:45:08] local.INFO: Engineer assignment request {"project_id":21,"engineer_ids":[22],"user":"oktarizagunawan63@gmail.com"} 
+[2026-05-20 02:45:08] local.INFO: Created database assignments for project: pak heru  
+[2026-05-20 02:45:43] local.INFO: Project store data: {"name":"pak agung","location":"Jalan Cluster Centro Havana No. BLOK MA\/8, Tangerang Selatan, Banten, 15310","pm":"Oktariza Gunawan","phone":"oktarizagunawan63@gmail.com","deadline":"2026-10-20","rab":3000000,"status":"on_track"}  
+[2026-05-20 02:45:47] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:45:47] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 02:45:47] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:45:49] local.INFO: Engineer assignment request {"project_id":22,"engineer_ids":[22],"user":"oktarizagunawan63@gmail.com"} 
+[2026-05-20 02:45:49] local.INFO: Created database assignments for project: pak agung  
+[2026-05-20 02:46:21] local.INFO: Engineer 22 assigned to projects: [21,22]  
+[2026-05-20 02:47:30] local.INFO: Engineer 22 assigned to projects: [21,22]  
+[2026-05-20 02:48:54] local.INFO: Engineer 22 assigned to projects: [21,22]  
+[2026-05-20 02:49:49] local.INFO: Engineer 22 assigned to projects: [21,22]  
+[2026-05-20 02:50:23] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:50:23] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 02:50:23] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:51:58] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:51:58] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 02:51:58] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:53:48] local.INFO: Engineer 22 assigned to projects: [21,22]  
+[2026-05-20 02:58:27] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 02:58:27] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 02:58:27] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 03:07:36] local.INFO: ALL USERS: [{"id":1,"name":"Administrator","email":"admin@ptamsar.co.id","role":"administrator","is_active":true},{"id":19,"name":"Timothi Lois Suryanto","email":"timothilois007@gmail.com","role":"sales_manager","is_active":true},{"id":20,"name":"Rama Atteriza","email":"ramaatteriza17@gmail.com","role":"sales","is_active":true},{"id":21,"name":"Oktariza Gunawan","email":"oktarizagunawan63@gmail.com","role":"site_manager","is_active":true},{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 03:07:36] local.INFO: ENGINEERS FOUND: 1  
+[2026-05-20 03:07:36] local.INFO: ENGINEER DATA: [{"id":22,"name":"Muchtar Ali Anwar","email":"starsszscor@gmail.com","role":"engineer","is_active":true}]  
+[2026-05-20 03:09:48] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 03:10:30] local.INFO: PlanVisit store request data: {"customer_id":"50","assigned_to":"20","tanggal_visit":"2026-05-20","waktu_visit":"03:15","lokasi":"Jalan Cluster Centro Havana No. BLOK MA/8","tujuan":"Follow Up nursecall","catatan":null} 
+[2026-05-20 03:10:30] local.INFO: PlanVisit created successfully: {"id":54} 
+[2026-05-20 03:10:31] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-20 03:11:55] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-20 03:15:19] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-20 03:15:25] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 1  
+[2026-05-20 03:49:33] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 03:49:39] local.ERROR: Warning index error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'EXISTS subquery' (Connection: mysql, SQL: select * from `warnings` where `user_id` = 19 or exists (select * from `users` where `warnings`.`user_id` = `users`.`id` and `role` = sales) and `status` = all order by `created_at` desc)  
+[2026-05-20 03:50:11] local.INFO: PlanVisit index - User: ramaatteriza17@gmail.com (Role: sales), Results: 0  
+[2026-05-20 03:51:39] local.INFO: DELETE project request started {"project_id":"21","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-19T20:51:39.492360Z"} 
+[2026-05-20 03:51:39] local.INFO: DELETE project: User authenticated {"project_id":"21","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-20 03:51:39] local.INFO: DELETE project: Project found {"project_id":"21","project_name":"pak heru","project_manager_id":21,"project_status":"on_track"} 
+[2026-05-20 03:51:39] local.INFO: DELETE project: Success {"project_id":"21","project_name":"pak heru","user_id":21,"deleted_relations":{"materials":1,"documents":2,"engineer_progress_reports":2,"project_assignments":1,"project_notifications":3,"activity_logs_detached":3},"deleted_at":"2026-05-19T20:51:39.837531Z"} 
+[2026-05-20 03:51:45] local.INFO: DELETE project request started {"project_id":"22","user_id":21,"ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Sa","has_password":true,"timestamp":"2026-05-19T20:51:45.403116Z"} 
+[2026-05-20 03:51:45] local.INFO: DELETE project: User authenticated {"project_id":"22","user_id":21,"user_role":"site_manager","user_email":"oktarizagunawan63@gmail.com"} 
+[2026-05-20 03:51:45] local.INFO: DELETE project: Project found {"project_id":"22","project_name":"pak agung","project_manager_id":21,"project_status":"completed"} 
+[2026-05-20 03:51:45] local.INFO: DELETE project: Success {"project_id":"22","project_name":"pak agung","user_id":21,"deleted_relations":{"materials":2,"documents":4,"engineer_progress_reports":4,"project_assignments":1,"project_notifications":6,"activity_logs_detached":7},"deleted_at":"2026-05-19T20:51:45.724322Z"} 
+[2026-05-20 03:59:10] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 03:59:13] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 03:59:19] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 03:59:41] local.ERROR: Get visited customers error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'city' in 'field list' (Connection: mysql, SQL: select `id`, `name`, `company`, `phone`, `email`, `address`, `city`, `province` from `customers` where 0 = 1 and `approval_status` = approved order by `name` asc)  
+[2026-05-20 04:00:59] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 04:01:05] local.INFO: PlanVisit index - User: timothilois007@gmail.com (Role: sales_manager), Results: 0  
+[2026-05-20 04:21:12] local.INFO: Password reset OTP sent to: oktarizagunawan63@gmail.com  
+[2026-05-20 04:22:19] local.INFO: Password successfully reset for user: oktarizagunawan63@gmail.com  
