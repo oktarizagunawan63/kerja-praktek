@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { AlertTriangle, CheckCircle, Clock, User, Trash2, Filter, ArrowRight } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
-import DataTable from '../components/ui/DataTable'
 import toast from 'react-hot-toast'
 import '../styles/responsive-global.css'
+
+const PAGE_SIZE = 10
 
 export default function WarningsPage() {
   const { user } = useAuthStore()
@@ -19,6 +20,7 @@ export default function WarningsPage() {
     start_date: '',
     end_date: ''
   })
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     fetchData()
@@ -27,6 +29,10 @@ export default function WarningsPage() {
   useEffect(() => {
     fetchData()
   }, [filters])
+
+  useEffect(() => {
+    setPage(1)
+  }, [filters, warnings.length])
 
   const fetchData = async () => {
     try {
@@ -104,11 +110,26 @@ export default function WarningsPage() {
     )
   }
 
-  const getStatusIcon = (warning) => {
-    if (warning.is_read) {
-      return <CheckCircle className="text-green-500" size={16} />
-    }
-    return <Clock className="text-yellow-500" size={16} />
+  const getReadBadge = (warning) => (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+      warning.is_read ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+    }`}>
+      {warning.is_read ? <CheckCircle size={13} /> : <Clock size={13} />}
+      {warning.is_read ? 'Sudah Dicek' : 'Perlu Dicek'}
+    </span>
+  )
+
+  const formatWarningDate = (value) => {
+    if (!value) return '-'
+    return new Date(value).toLocaleDateString('id-ID')
+  }
+
+  const formatWarningTime = (value) => {
+    if (!value) return '-'
+    return new Date(value).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   const getWarningActionLabel = (warning) => {
@@ -128,99 +149,12 @@ export default function WarningsPage() {
     navigate('/realisasi-visits')
   }
 
-  const columns = [
-    {
-      key: 'status',
-      label: 'Status',
-      render: (warning) => getStatusIcon(warning)
-    },
-    {
-      key: 'priority',
-      label: 'Prioritas',
-      render: (warning) => getPriorityBadge(warning.priority)
-    },
-    {
-      key: 'title',
-      label: 'Warning',
-      render: (warning) => (
-        <div className="min-w-[260px] max-w-xl">
-          <p className={`font-medium ${warning.is_read ? 'text-gray-600' : 'text-gray-900'}`}>
-            {warning.title}
-          </p>
-          <p className={`text-sm ${warning.is_read ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-            {warning.message}
-          </p>
-          {warning.plan_visit?.customer?.name && (
-            <p className="mt-1 text-xs font-medium text-amber-700">
-              Customer: {warning.plan_visit.customer.name}
-            </p>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'user',
-      label: 'User',
-      render: (warning) => (
-        <div className="flex items-center gap-2">
-          <User size={14} className="text-gray-400" />
-          <div>
-            <p className="text-sm font-medium text-gray-900">{warning.user?.name}</p>
-            <p className="text-xs text-gray-500">{warning.user?.role}</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'created_at',
-      label: 'Waktu',
-      render: (warning) => (
-        <div>
-          <p className="text-sm text-gray-900">
-            {new Date(warning.created_at).toLocaleDateString('id-ID')}
-          </p>
-          <p className="text-xs text-gray-500">
-            {new Date(warning.created_at).toLocaleTimeString('id-ID')}
-          </p>
-        </div>
-      )
-    },
-    {
-      key: 'actions',
-      label: 'Aksi',
-      render: (warning) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleOpenRelatedAction(warning)}
-            className="inline-flex items-center gap-1 rounded-lg border border-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
-            title={getWarningActionLabel(warning)}
-          >
-            <ArrowRight size={13} />
-            {getWarningActionLabel(warning)}
-          </button>
-          {!warning.is_read && (
-            <button
-              onClick={() => handleMarkAsRead(warning)}
-              className="inline-flex items-center gap-1 rounded-lg border border-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
-              title="Tandai sebagai dibaca"
-            >
-              <CheckCircle size={14} />
-              Selesai dicek
-            </button>
-          )}
-          {user?.role === 'administrator' && (
-            <button
-              onClick={() => handleDeleteWarning(warning)}
-              className="p-1 text-red-600 hover:bg-red-50 rounded"
-              title="Hapus"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      )
-    }
-  ]
+  const totalPages = Math.max(1, Math.ceil(warnings.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginatedWarnings = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return warnings.slice(start, start + PAGE_SIZE)
+  }, [warnings, currentPage])
 
   // Only Sales Manager can access this page
   if (!can(user, 'view_all_warnings')) {
@@ -366,16 +300,161 @@ export default function WarningsPage() {
         </div>
       </div>
 
-      {/* Warnings Table */}
-      <div className="card-compact">
-        <div className="table-responsive">
-          <DataTable
-            columns={columns}
-            data={warnings}
-            loading={loading}
-            emptyMessage="Tidak ada warning"
-          />
-        </div>
+      {/* Warnings List */}
+      <div className="card-compact overflow-hidden">
+        <WarningsCardList
+          warnings={paginatedWarnings}
+          loading={loading}
+          emptyMessage="Tidak ada warning"
+          getReadBadge={getReadBadge}
+          getPriorityBadge={getPriorityBadge}
+          getWarningActionLabel={getWarningActionLabel}
+          handleOpenRelatedAction={handleOpenRelatedAction}
+          handleMarkAsRead={handleMarkAsRead}
+          handleDeleteWarning={handleDeleteWarning}
+          formatWarningDate={formatWarningDate}
+          formatWarningTime={formatWarningTime}
+          canDelete={user?.role === 'administrator'}
+        />
+        <Pagination
+          page={currentPage}
+          pageSize={PAGE_SIZE}
+          total={warnings.length}
+          onPageChange={setPage}
+        />
+      </div>
+    </div>
+  )
+}
+
+function WarningsCardList({
+  warnings,
+  loading,
+  emptyMessage,
+  getReadBadge,
+  getPriorityBadge,
+  getWarningActionLabel,
+  handleOpenRelatedAction,
+  handleMarkAsRead,
+  handleDeleteWarning,
+  formatWarningDate,
+  formatWarningTime,
+  canDelete,
+}) {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-10">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (warnings.length === 0) {
+    return <div className="py-10 text-center text-sm text-gray-400">{emptyMessage}</div>
+  }
+
+  return (
+    <div className="divide-y divide-gray-100">
+      {warnings.map((warning) => (
+        <article key={warning.id} className="py-4 first:pt-0 last:pb-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                {getReadBadge(warning)}
+                {warning.priority && getPriorityBadge(warning.priority)}
+              </div>
+              <h3 className={`text-sm font-semibold ${warning.is_read ? 'text-gray-600' : 'text-gray-900'}`}>
+                {warning.title}
+              </h3>
+              <p className={`mt-1 break-words text-sm leading-6 ${warning.is_read ? 'text-gray-400' : 'text-gray-600'}`}>
+                {warning.message}
+              </p>
+              {warning.plan_visit?.customer?.name && (
+                <p className="mt-2 break-words text-xs font-medium text-amber-700">
+                  Customer: {warning.plan_visit.customer.name}
+                </p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 sm:w-56 sm:grid-cols-1 sm:text-right">
+              <div>
+                <p className="font-medium text-gray-900">{warning.user?.name || '-'}</p>
+                <p>{warning.user?.role || '-'}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">{formatWarningDate(warning.created_at)}</p>
+                <p>{formatWarningTime(warning.created_at)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <button
+              onClick={() => handleOpenRelatedAction(warning)}
+              className="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg border border-blue-100 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              title={getWarningActionLabel(warning)}
+            >
+              <ArrowRight size={13} />
+              {getWarningActionLabel(warning)}
+            </button>
+            {!warning.is_read && (
+              <button
+                onClick={() => handleMarkAsRead(warning)}
+                className="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg border border-green-100 px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-50"
+                title="Tandai sebagai dibaca"
+              >
+                <CheckCircle size={14} />
+                Selesai dicek
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => handleDeleteWarning(warning)}
+                className="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                title="Hapus"
+              >
+                <Trash2 size={14} />
+                Hapus
+              </button>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, onPageChange }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+      <span>
+        Menampilkan {start}-{end} dari {total} warning
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Sebelumnya
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-gray-700">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Berikutnya
+        </button>
       </div>
     </div>
   )

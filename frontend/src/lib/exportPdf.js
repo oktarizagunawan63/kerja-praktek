@@ -2,6 +2,16 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatRupiah } from './formatRupiah'
 
+const formatPdfMoney = (value) => {
+  const n = Number(value) || 0
+  const fmt = (num, max = 2) => num.toLocaleString('id-ID', { maximumFractionDigits: max })
+
+  if (n >= 1_000_000_000) return `${fmt(n / 1_000_000_000)} M`
+  if (n >= 1_000_000) return `${fmt(n / 1_000_000)} jt`
+  if (n >= 1_000) return `${fmt(n / 1_000, 1)} rb`
+  return `${fmt(n, 0)}`
+}
+
 // Export semua proyek (untuk direktur)
 export const exportLaporanPDF = (projects) => {
   _generatePDF(projects, 'Laporan Monitoring Proyek - Semua')
@@ -209,20 +219,38 @@ function _generatePDF(projects, title) {
 
   autoTable(doc, {
     startY: 61,
-    head: [['No', 'Nama Proyek', 'Lokasi', 'PM', 'Status', 'Progress', 'RAB', 'Realisasi', 'Serapan', 'Deadline']],
+    head: [['#', 'Nama Proyek', 'Lokasi', 'PM', 'Status', '%', 'RAB', 'Realisasi', 'Serap', 'Deadline']],
     body: active.map((p, i) => [
-      i + 1, p.name, p.location, p.pm,
+      String(i + 1), p.name, p.location, p.pm,
       statusLabel[p.status] || p.status,
       `${p.progress || 0}%`,
-      formatRupiah(p.rab),
-      formatRupiah(p.realisasi || 0),
+      formatPdfMoney(p.rab),
+      formatPdfMoney(p.realisasi || 0),
       p.rab ? `${Math.round(((p.realisasi || 0) / p.rab) * 100)}%` : '0%',
       new Date(p.deadline).toLocaleDateString('id-ID'),
     ]),
-    styles: { fontSize: 8, cellPadding: 2.5 },
-    headStyles: { fillColor: [15, 76, 129], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+    styles: {
+      fontSize: 7.2,
+      cellPadding: { top: 2, right: 1.4, bottom: 2, left: 1.4 },
+      overflow: 'hidden',
+      valign: 'middle',
+      minCellHeight: 6,
+    },
+    headStyles: { fillColor: [15, 76, 129], textColor: 255, fontStyle: 'bold', fontSize: 7.2, halign: 'center', overflow: 'hidden' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
-    columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' }, 8: { halign: 'center' } },
+    columnStyles: {
+      0: { cellWidth: 10, minCellWidth: 10, halign: 'center', overflow: 'hidden' },
+      1: { cellWidth: 56 },
+      2: { cellWidth: 38 },
+      3: { cellWidth: 31 },
+      4: { cellWidth: 21, halign: 'center' },
+      5: { cellWidth: 13, halign: 'center' },
+      6: { cellWidth: 27, halign: 'right', overflow: 'hidden' },
+      7: { cellWidth: 27, halign: 'right', overflow: 'hidden' },
+      8: { cellWidth: 14, halign: 'center' },
+      9: { cellWidth: 24, halign: 'center' },
+    },
+    margin: { left: 14, right: 14 },
   })
 
   if (completed.length > 0) {
@@ -233,11 +261,35 @@ function _generatePDF(projects, title) {
     doc.text('Proyek Selesai', 14, finalY)
     autoTable(doc, {
       startY: finalY + 3,
-      head: [['No', 'Nama Proyek', 'Lokasi', 'PM', 'RAB', 'Realisasi', 'Tanggal Selesai']],
-      body: completed.map((p, i) => [i + 1, p.name, p.location, p.pm, formatRupiah(p.rab), formatRupiah(p.realisasi || 0), p.completedAt ? new Date(p.completedAt).toLocaleDateString('id-ID') : '-']),
-      styles: { fontSize: 8, cellPadding: 2.5 },
-      headStyles: { fillColor: [22, 101, 52], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+      head: [['#', 'Nama Proyek', 'Lokasi', 'PM', 'RAB', 'Realisasi', 'Tanggal Selesai']],
+      body: completed.map((p, i) => [
+        String(i + 1),
+        p.name,
+        p.location,
+        p.pm,
+        formatPdfMoney(p.rab),
+        formatPdfMoney(p.realisasi || 0),
+        p.completedAt ? new Date(p.completedAt).toLocaleDateString('id-ID') : '-',
+      ]),
+      styles: {
+        fontSize: 7.2,
+        cellPadding: { top: 2, right: 1.4, bottom: 2, left: 1.4 },
+        overflow: 'hidden',
+        valign: 'middle',
+        minCellHeight: 6,
+      },
+      headStyles: { fillColor: [22, 101, 52], textColor: 255, fontStyle: 'bold', fontSize: 7.2, halign: 'center', overflow: 'hidden' },
       alternateRowStyles: { fillColor: [240, 253, 244] },
+      columnStyles: {
+        0: { cellWidth: 10, minCellWidth: 10, halign: 'center', overflow: 'hidden' },
+        1: { cellWidth: 76 },
+        2: { cellWidth: 48 },
+        3: { cellWidth: 44 },
+        4: { cellWidth: 29, halign: 'right', overflow: 'hidden' },
+        5: { cellWidth: 29, halign: 'right', overflow: 'hidden' },
+        6: { cellWidth: 29, halign: 'center' },
+      },
+      margin: { left: 14, right: 14 },
     })
   }
 

@@ -4,6 +4,8 @@ import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
+const PAGE_SIZE = 10
+
 export default function VisitReportsPage() {
   const { user } = useAuthStore()
   const [reportData, setReportData] = useState(null)
@@ -17,6 +19,9 @@ export default function VisitReportsPage() {
     sales_id: ''
   })
   const [salesUsers, setSalesUsers] = useState([])
+  const [periodPage, setPeriodPage] = useState(1)
+  const [visitPage, setVisitPage] = useState(1)
+  const [performancePage, setPerformancePage] = useState(1)
 
   useEffect(() => {
     if (can(user, 'view_sales_performance')) fetchSalesUsers()
@@ -64,7 +69,12 @@ export default function VisitReportsPage() {
     }
   }
 
-  const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }))
+  const handleFilterChange = (key, value) => {
+    setPeriodPage(1)
+    setVisitPage(1)
+    setPerformancePage(1)
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
 
   const handleExportPDF = async () => {
     if (!detailedVisits || detailedVisits.length === 0) {
@@ -114,6 +124,9 @@ export default function VisitReportsPage() {
   const isSalesManager = can(user, 'view_sales_performance')
   const summary = reportData?.summary
   const periodData = reportData?.period_data || []
+  const paginatedPeriodData = paginate(periodData, periodPage)
+  const paginatedDetailedVisits = paginate(detailedVisits, visitPage)
+  const paginatedSalesPerformance = paginate(salesPerformance, performancePage)
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -219,7 +232,7 @@ export default function VisitReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {periodData.map((item, i) => {
+                {paginatedPeriodData.map((item, i) => {
                   const rate = item.planned > 0 ? Math.round((item.completed / item.planned) * 100) : 0
                   const clr = getPerformanceColor(rate)
                   return (
@@ -243,6 +256,7 @@ export default function VisitReportsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={periodPage} pageSize={PAGE_SIZE} total={periodData.length} onPageChange={setPeriodPage} label="periode" />
         </div>
       )}
 
@@ -272,7 +286,7 @@ export default function VisitReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {detailedVisits.map((visit, i) => {
+                {paginatedDetailedVisits.map((visit, i) => {
                   const customer = visit.plan_visit?.customer || visit.direct_customer || {}
                   const customerName = customer.name || visit.customer_name || '-'
                   const customerCompany = customer.company || visit.customer_company || '-'
@@ -306,6 +320,7 @@ export default function VisitReportsPage() {
                 })}
               </tbody>
             </table>
+            <Pagination page={visitPage} pageSize={PAGE_SIZE} total={detailedVisits.length} onPageChange={setVisitPage} label="kunjungan" />
           </div>
         )}
       </div>
@@ -326,7 +341,7 @@ export default function VisitReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {salesPerformance.map((item, i) => {
+                {paginatedSalesPerformance.map((item, i) => {
                   const clr = getPerformanceColor(item.performance_rate)
                   return (
                     <tr key={i} className="hover:bg-gray-50/50 transition-colors">
@@ -358,8 +373,47 @@ export default function VisitReportsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={performancePage} pageSize={PAGE_SIZE} total={salesPerformance.length} onPageChange={setPerformancePage} label="sales" />
         </div>
       )}
+    </div>
+  )
+}
+
+function paginate(items, page) {
+  const start = (page - 1) * PAGE_SIZE
+  return items.slice(start, start + PAGE_SIZE)
+}
+
+function Pagination({ page, pageSize, total, onPageChange, label }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-gray-100 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-gray-500">Menampilkan {start}-{end} dari {total} {label}</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-gray-700">{page} / {totalPages}</span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }

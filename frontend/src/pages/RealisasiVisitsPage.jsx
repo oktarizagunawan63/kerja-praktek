@@ -70,6 +70,8 @@ const VISIT_OUTCOME_META = {
   rescheduled: { label: 'Dijadwal Ulang', className: 'bg-amber-100 text-amber-700' },
 }
 
+const PAGE_SIZE = 10
+
 export default function RealisasiVisitsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -109,6 +111,7 @@ export default function RealisasiVisitsPage() {
   })
   const [showCamera, setShowCamera] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [myUnplannedPage, setMyUnplannedPage] = useState(1)
 
   useEffect(() => {
     // Check if user has permission to access realisasi visits
@@ -121,6 +124,10 @@ export default function RealisasiVisitsPage() {
       fetchCustomers()
     }
   }, [])
+
+  useEffect(() => {
+    setMyUnplannedPage(1)
+  }, [myUnplannedVisits.length])
 
   const fetchData = async () => {
     try {
@@ -662,6 +669,13 @@ export default function RealisasiVisitsPage() {
     }
   ]
 
+  const myUnplannedTotal = Array.isArray(myUnplannedVisits) ? myUnplannedVisits.length : 0
+  const myUnplannedTotalPages = Math.max(1, Math.ceil(myUnplannedTotal / PAGE_SIZE))
+  const currentMyUnplannedPage = Math.min(myUnplannedPage, myUnplannedTotalPages)
+  const paginatedMyUnplannedVisits = Array.isArray(myUnplannedVisits)
+    ? myUnplannedVisits.slice((currentMyUnplannedPage - 1) * PAGE_SIZE, currentMyUnplannedPage * PAGE_SIZE)
+    : []
+
   // Check permissions first
   if (!can(user, 'view_visit_relations')) {
     return (
@@ -907,7 +921,7 @@ export default function RealisasiVisitsPage() {
                 <p className="text-gray-500">Belum ada unplanned visit</p>
               </div>
             ) : (
-              myUnplannedVisits.map((visit) => (
+              paginatedMyUnplannedVisits.map((visit) => (
                 <div key={visit.id} className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -950,6 +964,13 @@ export default function RealisasiVisitsPage() {
               ))
             )}
           </div>
+          <Pagination
+            page={currentMyUnplannedPage}
+            pageSize={PAGE_SIZE}
+            total={myUnplannedTotal}
+            onPageChange={setMyUnplannedPage}
+            label="unplanned visit"
+          />
         </div>
       )}
 
@@ -1761,6 +1782,45 @@ export default function RealisasiVisitsPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, onPageChange, label }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+      <span>
+        Menampilkan {start}-{end} dari {total} {label}
+      </span>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          Sebelumnya
+        </Button>
+        <span className="min-w-[88px] text-center text-xs font-medium text-gray-500">
+          {page} / {totalPages}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Berikutnya
+        </Button>
+      </div>
     </div>
   )
 }

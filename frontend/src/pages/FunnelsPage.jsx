@@ -5,6 +5,8 @@ import { api } from '../lib/api'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
+const PAGE_SIZE = 10
+
 export default function FunnelsPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -24,10 +26,12 @@ export default function FunnelsPage() {
   })
   const [sortBy, setSortBy] = useState('created_at')
   const [showFilters, setShowFilters] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({ total: 0, currentPage: 1, lastPage: 1 })
 
   useEffect(() => {
     fetchData()
-  }, [filters, sortBy])
+  }, [filters, sortBy, page])
 
   // Listen for navigation state to force refresh
   useEffect(() => {
@@ -49,7 +53,9 @@ export default function FunnelsPage() {
       // Build query params
       const params = {
         ...filters,
-        sort_by: sortBy
+        sort_by: sortBy,
+        page,
+        per_page: PAGE_SIZE,
       }
       
       // Remove empty filters
@@ -62,7 +68,13 @@ export default function FunnelsPage() {
         api.getFunnelStats()
       ])
       
-      setFunnels(funnelsResponse.data?.data || [])
+      const paginator = funnelsResponse.data || {}
+      setFunnels(Array.isArray(paginator.data) ? paginator.data : [])
+      setPagination({
+        total: paginator.total || paginator.data?.length || 0,
+        currentPage: paginator.current_page || page,
+        lastPage: paginator.last_page || 1,
+      })
       setStats(statsResponse.data)
       
     } catch (error) {
@@ -85,10 +97,12 @@ export default function FunnelsPage() {
   }
 
   const handleFilterChange = (key, value) => {
+    setPage(1)
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
   const clearFilters = () => {
+    setPage(1)
     setFilters({
       status: '',
       segment: '',
@@ -231,7 +245,7 @@ export default function FunnelsPage() {
             </button>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => { setPage(1); setSortBy(e.target.value) }}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-[#237043] focus:outline-none focus:ring-2 focus:ring-[#237043]/15"
             >
               <option value="created_at">Terbaru</option>
@@ -430,11 +444,51 @@ export default function FunnelsPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              page={pagination.currentPage}
+              pageSize={PAGE_SIZE}
+              total={pagination.total}
+              totalPages={pagination.lastPage}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>
     </div>
   </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, totalPages, onPageChange }) {
+  const lastPage = Math.max(1, totalPages || Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-slate-100 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-slate-500">Menampilkan {start}-{end} dari {total} deal</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-slate-700">{page} / {lastPage}</span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(lastPage, page + 1))}
+          disabled={page === lastPage}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+    </div>
   )
 }
 

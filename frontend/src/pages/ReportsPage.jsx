@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FileDown, Loader2 } from '../lib/icons.jsx'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import useAppStore from '../store/appStore'
@@ -20,6 +20,7 @@ const statusClass = {
 }
 
 const chartName = (name = '') => name.length > 12 ? `${name.slice(0, 12)}...` : name
+const PAGE_SIZE = 10
 
 export default function ReportsPage() {
   const projects = useAppStore(state => state.projects)
@@ -27,6 +28,7 @@ export default function ReportsPage() {
   const projectsError = useAppStore(state => state.projectsError)
   const fetchProjects = useAppStore(state => state.fetchProjects)
   const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     fetchProjects()
@@ -35,6 +37,16 @@ export default function ReportsPage() {
   const reportProjects = projects || []
   const active = reportProjects.filter(p => p.status !== 'completed')
   const completed = reportProjects.filter(p => p.status === 'completed')
+  const totalPages = Math.max(1, Math.ceil(reportProjects.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return reportProjects.slice(start, start + PAGE_SIZE)
+  }, [currentPage, reportProjects])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const handleExportPDF = async () => {
     if (reportProjects.length === 0) {
@@ -145,7 +157,7 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {reportProjects.map(p => (
+                  {paginatedProjects.map(p => (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2.5 font-medium text-gray-800">{p.name}</td>
                       <td className="px-3 py-2.5 text-gray-600 text-xs">{p.location}</td>
@@ -166,9 +178,52 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={currentPage}
+              pageSize={PAGE_SIZE}
+              total={reportProjects.length}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, onPageChange }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-gray-500">
+        Menampilkan {start}-{end} dari {total} proyek
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-gray-700">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }

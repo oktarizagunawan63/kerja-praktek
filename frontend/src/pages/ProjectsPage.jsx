@@ -22,6 +22,9 @@ const statusMap = {
   completed: { label: 'Selesai',   variant: 'info' },
 }
 
+const ACTIVE_PAGE_SIZE = 10
+const HISTORY_PAGE_SIZE = 10
+
 const EMPTY_FORM = { 
   name: '', 
   location: {
@@ -81,6 +84,8 @@ export default function ProjectsPage() {
   const [selectedEngineers, setSelectedEngineers] = useState([])
   const [availableEngineers, setAvailableEngineers] = useState([])
   const [loadingEngineers, setLoadingEngineers] = useState(false)
+  const [activePage, setActivePage] = useState(1)
+  const [historyPage, setHistoryPage] = useState(1)
   const navigate = useNavigate()
   const normalizeId = (value) => String(value)
   const normalizeAssignedEngineerIds = (value) => {
@@ -230,6 +235,22 @@ export default function ProjectsPage() {
 
   const filtered          = applyFilters(active)
   const filteredCompleted = applyFilters(completed)
+  const activeTotalPages = Math.max(1, Math.ceil(filtered.length / ACTIVE_PAGE_SIZE))
+  const historyTotalPages = Math.max(1, Math.ceil(filteredCompleted.length / HISTORY_PAGE_SIZE))
+  const currentActivePage = Math.min(activePage, activeTotalPages)
+  const currentHistoryPage = Math.min(historyPage, historyTotalPages)
+  const paginatedFiltered = filtered.slice((currentActivePage - 1) * ACTIVE_PAGE_SIZE, currentActivePage * ACTIVE_PAGE_SIZE)
+  const paginatedCompleted = filteredCompleted.slice((currentHistoryPage - 1) * HISTORY_PAGE_SIZE, currentHistoryPage * HISTORY_PAGE_SIZE)
+
+  useEffect(() => {
+    setActivePage(1)
+    setHistoryPage(1)
+  }, [search, filterStatus, filterLokasi, filterBulan, filterTahun])
+
+  useEffect(() => {
+    if (activePage > activeTotalPages) setActivePage(activeTotalPages)
+    if (historyPage > historyTotalPages) setHistoryPage(historyTotalPages)
+  }, [activePage, activeTotalPages, historyPage, historyTotalPages])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -575,8 +596,9 @@ export default function ProjectsPage() {
 
       {/* Active Projects Grid */}
       {filtered.length > 0 ? (
-        <div className="project-cards-grid">
-          {filtered.map(p => (
+        <div className="space-y-4">
+          <div className="project-cards-grid">
+          {paginatedFiltered.map(p => (
             <div key={p.id} className="project-card">
               <div className="project-card-header">
                 <div className="cursor-pointer flex-1 min-w-0" onClick={() => navigate(`/projects/${p.id}`)}>
@@ -719,6 +741,14 @@ export default function ProjectsPage() {
               )}
             </div>
           ))}
+          </div>
+          <Pagination
+            page={currentActivePage}
+            pageSize={ACTIVE_PAGE_SIZE}
+            total={filtered.length}
+            onPageChange={setActivePage}
+            label="proyek aktif"
+          />
         </div>
       ) : (
         <div className="empty-state-responsive">
@@ -752,7 +782,7 @@ export default function ProjectsPage() {
           </div>
           {showHistory && (
             <div className="mt-4 space-y-3">
-              {filteredCompleted.map(p => (
+              {paginatedCompleted.map(p => (
                 <div key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
                   className="project-history-item">
                   <div className="project-history-icon">
@@ -775,6 +805,13 @@ export default function ProjectsPage() {
                     className="text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium">Hapus</button>
                 </div>
               ))}
+              <Pagination
+                page={currentHistoryPage}
+                pageSize={HISTORY_PAGE_SIZE}
+                total={filteredCompleted.length}
+                onPageChange={setHistoryPage}
+                label="proyek selesai"
+              />
             </div>
           )}
         </div>
@@ -1097,6 +1134,43 @@ export default function ProjectsPage() {
           </div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, onPageChange, label }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-gray-500">
+        Menampilkan {start}-{end} dari {total} {label}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-gray-700">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }

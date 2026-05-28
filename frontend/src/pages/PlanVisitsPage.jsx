@@ -7,6 +7,8 @@ import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 import '../styles/responsive-global.css'
 
+const PAGE_SIZE = 10
+
 export default function PlanVisitsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -21,6 +23,7 @@ export default function PlanVisitsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailVisit, setDetailVisit] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [page, setPage] = useState(1)
   const submitLockRef = useRef(false)
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -276,6 +279,17 @@ export default function PlanVisitsPage() {
   ]
 
   const filteredVisits = getFilteredVisits()
+  const totalPages = Math.max(1, Math.ceil(filteredVisits.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginatedVisits = filteredVisits.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, activeFilter])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   return (
     <div className="container-responsive spacing-md">
@@ -407,7 +421,7 @@ export default function PlanVisitsPage() {
         </div>
       ) : (
         <div className="grid-responsive sm-2 lg-4">
-          {filteredVisits.map(visit => (
+          {paginatedVisits.map(visit => (
             <div key={visit.id} className="card-compact">
               {/* Card Header */}
               <div className="flex items-start justify-between mb-3">
@@ -516,6 +530,14 @@ export default function PlanVisitsPage() {
               </div>
             </div>
           ))}
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Pagination
+              page={currentPage}
+              pageSize={PAGE_SIZE}
+              total={filteredVisits.length}
+              onPageChange={setPage}
+            />
+          </div>
         </div>
       )}
 
@@ -832,6 +854,39 @@ export default function PlanVisitsPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function Pagination({ page, pageSize, total, onPageChange }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+
+  if (total <= pageSize) return null
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-gray-500">Menampilkan {start}-{end} dari {total} plan visit</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="min-w-20 text-center text-xs font-semibold text-gray-700">{page} / {totalPages}</span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }
