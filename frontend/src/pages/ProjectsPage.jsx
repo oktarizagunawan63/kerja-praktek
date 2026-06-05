@@ -46,9 +46,8 @@ export default function ProjectsPage() {
   const addProject = useAppStore(state => state.addProject)
   const markComplete = useAppStore(state => state.markComplete)
   const restoreFromTrash = useAppStore(state => state.restoreFromTrash)
-  const deletePermanent = useAppStore(state => state.deletePermanent)
-  const emptyTrash = useAppStore(state => state.emptyTrash)
   const fetchProjects = useAppStore(state => state.fetchProjects)
+  const fetchTrash = useAppStore(state => state.fetchTrash)
   const { user } = useAuthStore()
   const { users, updateUser, fetchUsers } = useUserStore()
   const isSiteManager = user?.role === 'site_manager'
@@ -78,8 +77,6 @@ export default function ProjectsPage() {
   const [editProject, setEditProject]   = useState(null)
   const [deletePassword, setDeletePassword] = useState('')
   const [deletePasswordError, setDeletePasswordError] = useState('')
-  const [emptyTrashModal, setEmptyTrashModal] = useState(false)
-  const [permanentDeleteModal, setPermanentDeleteModal] = useState(null) // { id, name }
   const [assignModal, setAssignModal] = useState(null) // { projectId, projectName }
   const [selectedEngineers, setSelectedEngineers] = useState([])
   const [availableEngineers, setAvailableEngineers] = useState([])
@@ -112,8 +109,11 @@ export default function ProjectsPage() {
   // Fetch projects and users when component mounts
   useEffect(() => {
     fetchProjects()
+    if (can(user, 'delete_project')) {
+      fetchTrash()
+    }
     fetchUsers()
-  }, [fetchProjects, fetchUsers])
+  }, [fetchProjects, fetchTrash, fetchUsers, user])
 
   useEffect(() => {
     if (!editProject) {
@@ -376,6 +376,7 @@ export default function ProjectsPage() {
       
       if (response.success) {
         await fetchProjects()
+        await fetchTrash()
         
         toast.custom((t) => (
           <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
@@ -818,7 +819,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Sampah / Recycle Bin */}
-      {can(user, 'delete_project') && trash.length > 0 && (
+      {can(user, 'delete_project') && (
         <div className="card border-dashed border-red-200 bg-red-50/30">
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -827,10 +828,6 @@ export default function ProjectsPage() {
               <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{trash.length}</span>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setEmptyTrashModal(true)}
-                className="text-xs text-red-500 hover:text-red-700 hover:underline">
-                Kosongkan
-              </button>
               <button onClick={() => setShowTrash(v => !v)} className="text-gray-400 hover:text-gray-600">
                 {showTrash ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
@@ -839,7 +836,9 @@ export default function ProjectsPage() {
 
           {showTrash && (
             <div className="mt-4 space-y-3">
-              {trash.map(p => (
+              {trash.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">Belum ada proyek yang dihapus</p>
+              ) : trash.map(p => (
                 <div key={p.id} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-red-100 opacity-70">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-700 line-through">{p.name}</p>
@@ -849,8 +848,9 @@ export default function ProjectsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => {
-                        restoreFromTrash(p.id)
+                    <button onClick={async () => {
+                        try {
+                          await restoreFromTrash(p.id)
                         toast.custom((t) => (
                           <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] transition-all ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
@@ -862,13 +862,12 @@ export default function ProjectsPage() {
                             </div>
                           </div>
                         ), { duration: 3000 })
+                        } catch (error) {
+                          toast.error(error.message || 'Gagal memulihkan proyek')
+                        }
                       }}
                       className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
                       Pulihkan
-                    </button>
-                    <button onClick={() => setPermanentDeleteModal({ id: p.id, name: p.name })}
-                      className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
-                      Hapus Permanen
                     </button>
                   </div>
                 </div>
@@ -980,60 +979,6 @@ export default function ProjectsPage() {
             <button onClick={() => { setDeletePasswordModal(null); setDeletePassword(''); setDeletePasswordError('') }} className="btn-secondary">Batal</button>
             <button onClick={handleDeleteWithPassword} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
               <Trash2 size={14}/> Hapus
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal: Kosongkan Sampah */}
-      <Modal open={emptyTrashModal} onClose={() => setEmptyTrashModal(false)} title="Kosongkan Sampah" size="sm">
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
-            <Trash2 size={16} className="text-red-500 shrink-0 mt-0.5"/>
-            <div>
-              <p className="text-xs font-semibold text-red-800">Hapus semua proyek di sampah?</p>
-              <p className="text-xs text-red-600 mt-0.5">Tindakan ini tidak bisa dibatalkan. Semua data akan hilang permanen.</p>
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setEmptyTrashModal(false)} className="btn-secondary">Batal</button>
-            <button onClick={() => { emptyTrash(); setEmptyTrashModal(false); toast.success('Sampah dikosongkan') }}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
-              <Trash2 size={14}/> Hapus Semua
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal: Hapus Permanen per Item */}
-      <Modal open={!!permanentDeleteModal} onClose={() => setPermanentDeleteModal(null)} title="Hapus Permanen" size="sm">
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
-            <Trash2 size={16} className="text-red-500 shrink-0 mt-0.5"/>
-            <div>
-              <p className="text-xs font-semibold text-red-800">{permanentDeleteModal?.name}</p>
-              <p className="text-xs text-red-600 mt-0.5">Proyek ini akan dihapus permanen dan tidak bisa dipulihkan.</p>
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setPermanentDeleteModal(null)} className="btn-secondary">Batal</button>
-            <button onClick={() => {
-              deletePermanent(permanentDeleteModal.id)
-              setPermanentDeleteModal(null)
-              toast.custom((t) => (
-                <div className={`flex items-center gap-3 bg-white border border-gray-100 shadow-md rounded-xl px-4 py-3 min-w-[260px] ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
-                  <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <Trash2 size={13} className="text-red-500"/>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{permanentDeleteModal?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Dihapus permanen</p>
-                  </div>
-                </div>
-              ), { duration: 3000 })
-            }}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">
-              <Trash2 size={14}/> Hapus Permanen
             </button>
           </div>
         </div>

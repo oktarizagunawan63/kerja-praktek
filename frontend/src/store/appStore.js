@@ -216,6 +216,36 @@ const useAppStore = create((set, get) => ({
     }
   },
 
+  // Fetch soft-deleted projects from Laravel
+  fetchTrash: async () => {
+    try {
+      const token = getAuthToken()
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${API_BASE}/projects/trash`, {
+        method: 'GET',
+        headers
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      set({ trash: data.data || data || [] })
+    } catch (error) {
+      console.error('Failed to fetch deleted projects:', error)
+      set({ trash: [] })
+    }
+  },
+
   getDocs: (projectId) =>
     get().documents.filter(d => String(d.projectId) === String(projectId)),
 
@@ -441,17 +471,34 @@ const useAppStore = create((set, get) => ({
   },
 
   // Restore project from trash
-  restoreFromTrash: (projectId) => {
-    set(state => {
-      const project = state.trash.find(p => p.id === projectId)
-      if (!project) return state
-      
-      const { deletedAt, ...restoredProject } = project
-      return {
-        trash: state.trash.filter(p => p.id !== projectId),
-        projects: [...state.projects, restoredProject]
+  restoreFromTrash: async (projectId) => {
+    try {
+      const token = getAuthToken()
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       }
-    })
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${API_BASE}/projects/${projectId}/restore`, {
+        method: 'POST',
+        headers
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      await get().fetchProjects()
+      await get().fetchTrash()
+      return true
+    } catch (error) {
+      console.error('Failed to restore project:', error)
+      throw error
+    }
   },
 
   // Permanently delete project

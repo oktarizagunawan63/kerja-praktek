@@ -82,11 +82,25 @@ class ProjectController extends Controller
 
     public function trash(Request $request)
     {
+        $role = strtolower((string) $request->user()?->role);
+
+        if (!in_array($role, ['administrator', 'admin', 'direktur', 'director', 'site_manager', 'project_manager'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk melihat sampah proyek',
+                'data' => [],
+            ], 403);
+        }
+
         $projects = Project::onlyTrashed()
             ->with('projectManager:id,name')
             ->orderByDesc('deleted_at')
             ->get();
-        return response()->json($projects->map(fn($p) => $this->format($p)));
+
+        return response()->json([
+            'success' => true,
+            'data' => $projects->map(fn($p) => $this->format($p))->values(),
+        ]);
     }
 
     public function store(Request $request)
@@ -407,13 +421,13 @@ class ProjectController extends Controller
                 ]);
                 
             } catch (ModelNotFoundException $e) {
-                Log::error('DELETE project: Project not found', [
+                Log::warning('DELETE project: Project not found or already deleted', [
                     'project_id' => $id,
                     'user_id' => $user->id,
                     'error' => $e->getMessage()
                 ]);
                 
-                return $this->errorResponse('Proyek tidak ditemukan', 404);
+                return $this->errorResponse('Proyek tidak ditemukan atau sudah dihapus', 404);
             }
 
             // 6. AUTHORIZATION CHECK
@@ -759,10 +773,24 @@ class ProjectController extends Controller
 
     public function restore(Request $request, $id)
     {
+        $role = strtolower((string) $request->user()?->role);
+
+        if (!in_array($role, ['administrator', 'admin', 'direktur', 'director', 'site_manager', 'project_manager'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk memulihkan proyek',
+                'data' => [],
+            ], 403);
+        }
+
         $project = Project::onlyTrashed()->findOrFail($id);
         $project->restore();
         ActivityLogger::log($request->user(), 'Pulihkan Proyek', "Pulihkan proyek: {$project->name}", $project->id);
-        return response()->json($this->format($project));
+        return response()->json([
+            'success' => true,
+            'data' => $this->format($project),
+            'message' => 'Proyek berhasil dipulihkan',
+        ]);
     }
 
     public function kpiSummary(Request $request)
@@ -879,29 +907,21 @@ class ProjectController extends Controller
      */
     private function checkDeleteAuthorization($user, $project)
     {
+        $role = strtolower((string) $user->role);
+
         // Administrator can delete any project
-        if (in_array($user->role, ['administrator', 'admin'])) {
+        if (in_array($role, ['administrator', 'admin', 'direktur', 'director'], true)) {
             return [
                 'allowed' => true,
                 'reason' => 'administrator_access'
             ];
         }
 
-        // Project manager can delete their own projects
-        if (isset($project->project_manager_id) && $project->project_manager_id == $user->id) {
+        // Site manager can delete projects. Engineers and other roles are denied.
+        if (in_array($role, ['site_manager', 'project_manager'], true)) {
             return [
                 'allowed' => true,
-                'reason' => 'project_manager'
-            ];
-        }
-
-        // Site manager can delete projects they manage
-        if ($user->role === 'site_manager' && 
-            isset($project->project_manager_id) && 
-            $project->project_manager_id == $user->id) {
-            return [
-                'allowed' => true,
-                'reason' => 'site_manager'
+                'reason' => 'site_manager_access'
             ];
         }
 
