@@ -59,6 +59,11 @@ class ManpowerController extends Controller
         return response()->json(['message' => 'Manpower dihapus']);
     }
 
+    public function show(Manpower $manpower)
+    {
+        return response()->json($manpower->load('project:id,name'));
+    }
+
     public function distribution()
     {
         $data = Manpower::where('status', 'active')

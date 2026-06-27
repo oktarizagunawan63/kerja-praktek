@@ -15,29 +15,28 @@ import amsarLogo from '../../assets/amsar.png?url'
 // Pre-defined navigation sections for better performance
 const NAV_SECTIONS = {
   administrator: [
-    { 
-      title: 'Dashboard', 
+    {
+      title: 'Dashboard',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
         { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
       ]
     },
-    { 
-      title: 'Project Management', 
+    {
+      title: 'Project Management',
       items: [
         { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
         { to: '/reports', icon: BarChart3, label: 'Laporan', tourId: 'reports' }
       ]
     },
-    { 
-      title: 'Visit Management', 
+    {
+      title: 'Visit Management',
       items: [
         { to: '/customers', icon: Users, label: 'Customer List', tourId: 'customers' },
         { to: '/plan-visits', icon: Calendar, label: 'Plan Visit', tourId: 'plan-visits' },
         { to: '/realisasi-visits', icon: CheckSquare, label: 'Realisasi Visit', tourId: 'realisasi-visits' },
         { to: '/visit-reports', icon: BarChart3, label: 'Visit Reports', tourId: 'visit-reports' },
-        { to: '/reports', icon: ClipboardCheck, label: 'Laporan Proyek', tourId: 'reports' },
         { to: '/warnings', icon: AlertTriangle, label: 'Warnings', tourId: 'warnings' }
       ]
     },
@@ -57,15 +56,15 @@ const NAV_SECTIONS = {
     }
   ],
   site_manager: [
-    { 
-      title: 'Dashboard', 
+    {
+      title: 'Dashboard',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', tourId: 'dashboard' },
         { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: true, tourId: 'notifications' }
       ]
     },
-    { 
-      title: 'Project Management', 
+    {
+      title: 'Project Management',
       items: [
         { to: '/projects', icon: FolderKanban, label: 'Proyek', tourId: 'projects' },
         { to: '/documents', icon: FileText, label: 'Dokumen', tourId: 'documents' },
@@ -237,6 +236,21 @@ export default function Sidebar({ mobileOpen = false, onClose, onNavigate }) {
             <p className="text-xs text-slate-400">{getRoleDisplayName(user?.role) ?? '-'}</p>
           </div>
         </div>
+        <NavLink
+          to="/profile"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            clsx(
+              'flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+              isActive
+                ? 'bg-white/[0.12] text-white ring-1 ring-white/10'
+                : 'text-slate-400 hover:bg-white/[0.08] hover:text-white'
+            )
+          }
+        >
+          <Settings size={14} />
+          Profil Saya
+        </NavLink>
       </div>
     </aside>
     </>

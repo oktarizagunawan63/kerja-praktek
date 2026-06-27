@@ -50,6 +50,8 @@ Route::prefix('password')->middleware('throttle:3,1')->group(function () {
 Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/auth/password', [AuthController::class, 'changePassword']);
 
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);

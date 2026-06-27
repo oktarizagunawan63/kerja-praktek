@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X, Calendar } from '@icons'
+import { MapPin, CheckCircle, XCircle, Clock, Navigation, Plus, Camera, X, Calendar, Download } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
@@ -7,8 +7,19 @@ import useAuthStore from '../store/authStore'
 import Button from '../components/ui/Button'
 import DataTable from '../components/ui/DataTable'
 import CameraAttendance from '../components/ui/CameraAttendance'
+import { exportToCSV } from '../lib/exportExcel'
 import toast from 'react-hot-toast'
 import '../styles/realisasi-visits.css'
+
+const REALISASI_CSV_COLUMNS = [
+  { key: 'visit_date', label: 'Tanggal', value: (r) => r.visit_date ? new Date(r.visit_date).toLocaleDateString('id-ID') : '-' },
+  { key: 'customer', label: 'Customer', value: (r) => r.plan_visit?.customer?.name || r.direct_customer?.name || r.customer_name || '-' },
+  { key: 'company', label: 'Perusahaan', value: (r) => r.plan_visit?.customer?.company || r.direct_customer?.company || '-' },
+  { key: 'sales', label: 'Sales', value: (r) => r.visitor?.name || '-' },
+  { key: 'status', label: 'Status', value: (r) => ({ done: 'Selesai', missed: 'Tidak Hadir', pending: 'Pending' }[r.status] || r.status || '-') },
+  { key: 'visit_outcome', label: 'Outcome', value: (r) => ({ closed: 'Deal/Closed', follow_up: 'Follow-up', not_interested: 'Tidak Tertarik', rescheduled: 'Dijadwal Ulang' }[r.visit_outcome] || '-') },
+  { key: 'meeting_notes', label: 'Catatan', value: (r) => r.meeting_notes || '-' },
+]
 
 // GPS Helper Functions
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -690,11 +701,20 @@ export default function RealisasiVisitsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Realisasi Visit</h1>
           <p className="text-gray-600">Lakukan kunjungan ke customer dengan GPS tracking</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportToCSV(realisasiVisits, REALISASI_CSV_COLUMNS, 'Realisasi_Visit')}
+            disabled={realisasiVisits.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40"
+          >
+            <Download size={15} />
+            Export CSV
+          </button>
         {can(user, 'create_realisasi_visit') && (
           <Button
             onClick={async () => {
@@ -718,6 +738,7 @@ export default function RealisasiVisitsPage() {
             Tambah Unplanned Visit
           </Button>
         )}
+        </div>
       </div>
 
       {/* Tabs */}

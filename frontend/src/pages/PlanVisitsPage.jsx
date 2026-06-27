@@ -1,11 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock, X } from '@icons'
+import { Plus, Search, Calendar, MapPin, User, Edit, Trash2, Eye, Clock, X, Download } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
+import { exportToCSV } from '../lib/exportExcel'
 import toast from 'react-hot-toast'
 import '../styles/responsive-global.css'
+
+const PLAN_VISIT_CSV_COLUMNS = [
+  { key: 'tanggal_visit', label: 'Tanggal', value: (r) => r.tanggal_visit ? new Date(r.tanggal_visit).toLocaleDateString('id-ID') : '-' },
+  { key: 'waktu_visit', label: 'Waktu', value: (r) => r.waktu_visit || '-' },
+  { key: 'customer', label: 'Customer', value: (r) => r.customer?.name || '-' },
+  { key: 'company', label: 'Perusahaan', value: (r) => r.customer?.company || '-' },
+  { key: 'lokasi', label: 'Lokasi' },
+  { key: 'assigned', label: 'Sales', value: (r) => r.assigned_to_user?.name || r.assignedUser?.name || '-' },
+  { key: 'tujuan', label: 'Tujuan' },
+  { key: 'status', label: 'Status', value: (r) => {
+    if (r.realisasi || r.realisasiVisit || r.realisasi_visit) {
+      const s = r.realisasi?.status || r.realisasiVisit?.status || r.realisasi_visit?.status
+      return s === 'done' ? 'Selesai' : 'Dibatalkan'
+    }
+    return new Date(r.tanggal_visit) < new Date() ? 'Sedang Berjalan' : 'Direncanakan'
+  }},
+]
 
 const PAGE_SIZE = 10
 
@@ -299,18 +317,29 @@ export default function PlanVisitsPage() {
           <h1 className="header-title">Plan Visit</h1>
           <p className="header-subtitle">Kelola rencana kunjungan sales</p>
         </div>
-        
-        {['sales', 'sales_manager'].includes(user?.role) && (
-          <button 
-            onClick={() => setShowAddForm(true)}
-            disabled={submitting}
-            className="btn-responsive primary"
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportToCSV(filteredVisits, PLAN_VISIT_CSV_COLUMNS, 'Plan_Visit')}
+            disabled={filteredVisits.length === 0}
+            className="btn-responsive secondary"
           >
-            <Plus size={16} />
-            <span className="mobile-hidden">Tambah Plan Visit</span>
-            <span className="desktop-hidden tablet-hidden">Tambah</span>
+            <Download size={15} />
+            <span className="mobile-hidden">Export CSV</span>
           </button>
-        )}
+
+          {['sales', 'sales_manager'].includes(user?.role) && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              disabled={submitting}
+              className="btn-responsive primary"
+            >
+              <Plus size={16} />
+              <span className="mobile-hidden">Tambah Plan Visit</span>
+              <span className="desktop-hidden tablet-hidden">Tambah</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions untuk visit hari ini */}

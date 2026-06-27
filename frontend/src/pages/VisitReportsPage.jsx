@@ -2,7 +2,18 @@ import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import { can } from '../lib/permissions'
 import useAuthStore from '../store/authStore'
+import { exportToCSV } from '../lib/exportExcel'
 import toast from 'react-hot-toast'
+
+const VISIT_CSV_COLUMNS = [
+  { key: 'visit_date', label: 'Tanggal', value: (r) => r.visit_date ? new Date(r.visit_date).toLocaleDateString('id-ID') : '-' },
+  { key: 'customer', label: 'Customer', value: (r) => r.plan_visit?.customer?.name || r.direct_customer?.name || r.customer_name || '-' },
+  { key: 'company', label: 'Perusahaan', value: (r) => r.plan_visit?.customer?.company || r.direct_customer?.company || r.customer_company || '-' },
+  { key: 'sales', label: 'Sales', value: (r) => r.visitor?.name || '-' },
+  { key: 'status', label: 'Status', value: (r) => ({ done: 'Completed', missed: 'Missed', pending: 'Pending' }[r.status] || r.status || '-') },
+  { key: 'visit_outcome', label: 'Outcome', value: (r) => ({ closed: 'Closed', follow_up: 'Follow-up', not_interested: 'Not Interested', rescheduled: 'Rescheduled' }[r.visit_outcome] || '-') },
+  { key: 'notes', label: 'Catatan', value: (r) => r.notes || '-' },
+]
 
 const PAGE_SIZE = 10
 
@@ -136,13 +147,22 @@ export default function VisitReportsPage() {
           <h1 className="mb-1 text-2xl font-bold text-slate-950">Laporan Kunjungan</h1>
           <p className="text-sm text-slate-500">Laporan dan analisis kunjungan sales</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          disabled={detailedVisits.length === 0}
-          className="rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844] disabled:bg-slate-300"
-        >
-          Export PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportToCSV(detailedVisits, VISIT_CSV_COLUMNS, 'Laporan_Kunjungan')}
+            disabled={detailedVisits.length === 0}
+            className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={detailedVisits.length === 0}
+            className="rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844] disabled:bg-slate-300"
+          >
+            Export PDF
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

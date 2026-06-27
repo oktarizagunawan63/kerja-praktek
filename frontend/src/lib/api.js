@@ -128,6 +128,8 @@ export const api = {
   logout: () => request('/auth/logout', { method: 'POST' }),
   getUser: () => request('/auth/me'),
   register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  updateProfile: (data) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  changePassword: (data) => request('/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
   
   // Password reset
   sendResetToken: (email) => request('/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
@@ -213,6 +215,7 @@ export const api = {
   },
   checkIn: (data) => request('/attendance/check-in', { method: 'POST', body: JSON.stringify(data) }),
   checkOut: (data) => request('/attendance/check-out', { method: 'POST', body: JSON.stringify(data) }),
+  deleteAttendance: (id) => request(`/attendance/${id}`, { method: 'DELETE' }),
   
   // Warnings
   getWarnings: (params = {}) => {

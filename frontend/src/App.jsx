@@ -35,13 +35,14 @@ const PlanVisitsPage = lazy(() => import('./pages/PlanVisitsPage'))
 const RealisasiVisitsPage = lazy(() => import('./pages/RealisasiVisitsPage'))
 const CreateUnplannedVisitPage = lazy(() => import('./pages/CreateUnplannedVisitPage'))
 const AttendancePage = lazy(() => import('./pages/AttendancePage'))
-const AttendanceMonitorPage = lazy(() => import('./pages/AttendanceMonitorPage'))
 const AdminAttendanceMonitorPage = lazy(() => import('./pages/AdminAttendanceMonitorPage'))
 const EngineerDashboard = lazy(() => import('./pages/EngineerDashboard'))
 const EngineerProjectsPage = lazy(() => import('./pages/EngineerProjectsPage'))
 const EngineerProgressReportsPage = lazy(() => import('./pages/EngineerProgressReportsPage'))
 const VisitReportsPage = lazy(() => import('./pages/VisitReportsPage'))
 const WarningsPage = lazy(() => import('./pages/WarningsPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const WelcomeModal = lazy(() => import('./components/ui/WelcomeModal'))
 
 // Loading component
@@ -214,11 +215,11 @@ export default function App() {
             
             {/* General Routes */}
             <Route path="notifications"    element={<NotificationsPage />} />
+            <Route path="profile"          element={<ProfilePage />} />
             
             {/* Administrator-only Routes */}
             <Route path="activity"         element={<AdministratorOnly><ActivityLogPage /></AdministratorOnly>} />
             <Route path="users"            element={<AdministratorOnly><UsersPage /></AdministratorOnly>} />
-            <Route path="attendance-monitor" element={<AdministratorOnly><AttendanceMonitorPage /></AdministratorOnly>} />
             <Route path="admin/attendance-monitor" element={<AdministratorOnly><AdminAttendanceMonitorPage /></AdministratorOnly>} />
             
             {/* Visit Management Routes - Sales Manager + Sales + Administrator */}
@@ -236,6 +237,7 @@ export default function App() {
             <Route path="funnels/:id"      element={<VisitManagementOnly><FunnelDetailPage /></VisitManagementOnly>} />
             <Route path="funnels/:id/edit" element={<VisitManagementOnly><FunnelFormPage /></VisitManagementOnly>} />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
 

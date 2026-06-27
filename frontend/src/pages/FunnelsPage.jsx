@@ -1,9 +1,26 @@
 import { useState, useEffect } from 'react'
-import { Search } from '@icons'
+import { Search, Download } from '@icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { exportToCSV } from '../lib/exportExcel'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+
+const FUNNEL_CSV_COLUMNS = [
+  { key: 'customer_name', label: 'Customer' },
+  { key: 'customer_company', label: 'Perusahaan' },
+  { key: 'customer_phone', label: 'Telepon' },
+  { key: 'city', label: 'Kota' },
+  { key: 'channel', label: 'Channel', value: (r) => r.channel === 'lainnya' ? (r.channel_other || 'Lainnya') : (r.channel || '-') },
+  { key: 'segment', label: 'Segmen', value: (r) => r.segment === 'umum' ? (r.segment_custom || 'Umum') : (r.segment || '-') },
+  { key: 'qty', label: 'Qty', value: (r) => `${r.qty ?? ''} ${r.unit ?? ''}`.trim() },
+  { key: 'estimated_value', label: 'Estimasi Nilai', value: (r) => r.estimated_value ? `Rp ${Number(r.estimated_value).toLocaleString('id-ID')}` : '-' },
+  { key: 'deal_stage', label: 'Stage', value: (r) => ({ prospek: 'Prospect', qualified: 'Qualified', proposal: 'Proposal', negosiasi: 'Negotiation', closing: 'Closing' }[r.deal_stage] || r.deal_stage || '-') },
+  { key: 'win_probability', label: 'Probabilitas', value: (r) => ({ low: 'Low', middle: 'Medium', high: 'High', very_high: 'Very High' }[r.win_probability] || '-') },
+  { key: 'target_close_date', label: 'Close Date', value: (r) => r.target_close_date ? new Date(r.target_close_date).toLocaleDateString('id-ID') : '-' },
+  { key: 'status', label: 'Status', value: (r) => ({ open: 'Open', won: 'Won', lost: 'Lost' }[r.status] || '-') },
+  { key: 'assigned_user', label: 'Sales', value: (r) => r.assigned_user?.name || '-' },
+]
 
 const PAGE_SIZE = 10
 
@@ -82,6 +99,23 @@ export default function FunnelsPage() {
       toast.error('Gagal memuat data funnel')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const [exporting, setExporting] = useState(false)
+
+  const handleExportCSV = async () => {
+    setExporting(true)
+    try {
+      const res = await api.getFunnels({ per_page: 9999 })
+      const all = res?.data?.data ?? []
+      if (all.length === 0) { toast('Tidak ada data untuk diexport'); return }
+      exportToCSV(all, FUNNEL_CSV_COLUMNS, 'Sales_Funnel_PT_Amsar')
+      toast.success(`${all.length} deal berhasil diexport`)
+    } catch {
+      toast.error('Gagal mengexport data')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -189,12 +223,22 @@ export default function FunnelsPage() {
             <h1 className="text-2xl font-bold text-slate-950">Sales Funnel</h1>
             <p className="mt-1 text-sm text-slate-500">Kelola pipeline penjualan Anda</p>
           </div>
-          <button
-            onClick={() => navigate('/funnels/create')}
-            className="inline-flex items-center justify-center rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844]"
-          >
-            + Tambah Deal
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              <Download size={15} />
+              {exporting ? 'Mengexport...' : 'Export CSV'}
+            </button>
+            <button
+              onClick={() => navigate('/funnels/create')}
+              className="inline-flex items-center justify-center rounded-lg bg-[#237043] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5a9844]"
+            >
+              + Tambah Deal
+            </button>
+          </div>
         </div>
 
         {stats && (

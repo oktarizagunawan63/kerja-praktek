@@ -1,10 +1,30 @@
 import { useState, useEffect } from 'react'
-import { Users, UserCheck, UserX, Clock, Search, Calendar, MapPin, AlertTriangle, Eye, X } from '@icons'
+import { Users, UserCheck, UserX, Clock, Search, Calendar, MapPin, AlertTriangle, Eye, X, Download } from '@icons'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import DataTable from '../components/ui/DataTable'
+import { exportToCSV } from '../lib/exportExcel'
 import toast from 'react-hot-toast'
+
+const ATTENDANCE_CSV_COLUMNS = [
+  { key: 'user_name', label: 'Nama' },
+  { key: 'user_role', label: 'Role', value: (r) => {
+    const map = { admin: 'Administrator', sales_manager: 'Sales Manager', sales: 'Sales', site_manager: 'Site Manager', engineer: 'Engineer' }
+    return map[r.user_role] || r.user_role || '-'
+  }},
+  { key: 'check_in_time', label: 'Check In', value: (r) => r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-' },
+  { key: 'check_out_time', label: 'Check Out', value: (r) => r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-' },
+  { key: 'duration', label: 'Jam Kerja', value: (r) => {
+    if (!r.check_in_time || !r.check_out_time) return '-'
+    const diff = new Date(r.check_out_time) - new Date(r.check_in_time)
+    const h = Math.floor(diff / 3600000)
+    const m = Math.floor((diff % 3600000) / 60000)
+    return `${h}j ${m}m`
+  }},
+  { key: 'status', label: 'Status', value: (r) => !r.check_in_time ? 'Tidak Hadir' : !r.check_out_time ? 'Sedang Bekerja' : 'Selesai' },
+  { key: 'gps_warning', label: 'GPS Warning', value: (r) => (r.gps_warning || r.gps_warnings?.length > 0) ? 'Ya' : 'Normal' },
+]
 
 // Helper functions
 const formatTime = (dateString) => {
@@ -63,11 +83,11 @@ export default function AdminAttendanceMonitorPage() {
   const fetchAttendanceData = async () => {
     try {
       setLoading(true)
-      const response = await api.getAdminAttendanceMonitor({ date: selectedDate })
-      
+      const response = await api.getAdminAttendanceMonitor({ date: selectedDate, per_page: 999 })
+
       if (response.success) {
-        setAttendanceData(response.data.attendance || [])
-        setSummary(response.data.summary || {
+        setAttendanceData(response.data || [])
+        setSummary(response.summary || {
           totalEmployees: 0,
           presentToday: 0,
           absentToday: 0,
@@ -314,7 +334,7 @@ export default function AdminAttendanceMonitorPage() {
             />
           </div>
           
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button
               onClick={fetchAttendanceData}
               disabled={loading}
@@ -322,6 +342,14 @@ export default function AdminAttendanceMonitorPage() {
             >
               Refresh Data
             </Button>
+            <button
+              onClick={() => exportToCSV(filteredData, ATTENDANCE_CSV_COLUMNS, `Attendance_${selectedDate}`)}
+              disabled={filteredData.length === 0}
+              className="inline-flex items-center gap-2 h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40"
+            >
+              <Download size={15} />
+              Export CSV
+            </button>
           </div>
         </div>
       </div>

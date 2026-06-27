@@ -23,10 +23,11 @@ export default function DashboardPage() {
   const projects = useAppStore(state => state.projects)
   const { user } = useAuthStore()
   const { users } = useUserStore()
-  const [filterSM, setFilterSM] = useState('all') // filter per sales manager (administrator only)
+  const [filterSM, setFilterSM] = useState('all')
   const [showWelcome, setShowWelcome] = useState(false)
   const [attendanceSummary, setAttendanceSummary] = useState(null)
   const [dashboardStats, setDashboardStats] = useState(null)
+  const [dataError, setDataError] = useState(false)
 
   useEffect(() => { 
     loadDashboardData()
@@ -41,16 +42,17 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     if (!user) return
-    
+
     try {
-      // Load role-specific dashboard data
+      setDataError(false)
       let dashboardResponse = null
-      
+
       if (user.role === 'administrator' || user.role === 'direktur') {
         try {
           dashboardResponse = await api.getAdminDashboard()
         } catch (error) {
-          console.warn('Admin dashboard API failed, using fallback data:', error.message)
+          console.warn('Admin dashboard API failed:', error.message)
+          setDataError(true)
           dashboardResponse = { success: true, data: {} }
         }
         
@@ -67,21 +69,24 @@ export default function DashboardPage() {
         try {
           dashboardResponse = await api.getSiteManagerDashboard()
         } catch (error) {
-          console.warn('Site dashboard API failed, using fallback data:', error.message)
+          console.warn('Site dashboard API failed:', error.message)
+          setDataError(true)
           dashboardResponse = { success: true, data: {} }
         }
       } else if (user.role === 'sales_manager') {
         try {
           dashboardResponse = await api.getSalesManagerDashboard()
         } catch (error) {
-          console.warn('Sales dashboard API failed, using fallback data:', error.message)
+          console.warn('Sales dashboard API failed:', error.message)
+          setDataError(true)
           dashboardResponse = { success: true, data: {} }
         }
       } else if (user.role === 'engineer') {
         try {
           dashboardResponse = await api.getEngineerDashboard()
         } catch (error) {
-          console.warn('Engineer dashboard API failed, using fallback data:', error.message)
+          console.warn('Engineer dashboard API failed:', error.message)
+          setDataError(true)
           dashboardResponse = { success: true, data: {} }
         }
       }
@@ -355,6 +360,19 @@ export default function DashboardPage() {
 
   return (
     <div className="min-w-0 space-y-4 sm:space-y-6">
+      {dataError && (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="shrink-0 text-base">⚠️</span>
+          <span>Gagal mengambil data dari server. Data yang ditampilkan mungkin tidak terkini. Pastikan server backend berjalan.</span>
+          <button
+            onClick={loadDashboardData}
+            className="ml-auto shrink-0 rounded-md border border-amber-300 px-3 py-1 text-xs font-medium hover:bg-amber-100 transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
+
       {/* Welcome Card for New Users */}
       {(showWelcome || isNewUser()) && (
         <WelcomeCard 

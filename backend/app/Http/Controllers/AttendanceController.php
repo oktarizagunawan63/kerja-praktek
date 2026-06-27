@@ -23,11 +23,15 @@ class AttendanceController extends Controller
             
             // Get attendance records for current user or all if admin
             $query = Attendance::with('user');
-            
+
             if ($user->role !== 'administrator') {
                 $query->where('user_id', $user->id);
             }
-            
+
+            if ($request->date) {
+                $query->whereDate('date', $request->date);
+            }
+
             $attendances = $query->orderBy('date', 'desc')
                 ->orderBy('check_in_time', 'desc')
                 ->paginate($perPage);
@@ -37,6 +41,7 @@ class AttendanceController extends Controller
                     'id' => $attendance->id,
                     'user_id' => $attendance->user_id,
                     'user_name' => $attendance->user->name ?? 'Unknown',
+                    'user_role' => $attendance->user->role ?? null,
                     'date' => $attendance->date ? $attendance->date->format('Y-m-d') : null,
                     'check_in_time' => $attendance->check_in_time ? $attendance->check_in_time->toISOString() : null,
                     'check_out_time' => $attendance->check_out_time ? $attendance->check_out_time->toISOString() : null,
@@ -56,9 +61,23 @@ class AttendanceController extends Controller
                 ];
             });
             
+            $summary = null;
+            if ($user->role === 'administrator' && $request->date) {
+                $totalActive   = User::where('is_active', true)->count();
+                $presentCount  = Attendance::whereDate('date', $request->date)->count();
+                $lateCount     = Attendance::whereDate('date', $request->date)->where('is_late', true)->count();
+                $summary = [
+                    'totalEmployees' => $totalActive,
+                    'presentToday'   => $presentCount,
+                    'absentToday'    => max(0, $totalActive - $presentCount),
+                    'lateToday'      => $lateCount,
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $formattedData,
+                'summary' => $summary,
                 'pagination' => [
                     'current_page' => $attendances->currentPage(),
                     'last_page' => $attendances->lastPage(),
